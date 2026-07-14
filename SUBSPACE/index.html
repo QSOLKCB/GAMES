@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071013">
+  <meta name="description" content="QSOL INERTIA ZERO is an offline, single-player inertia arena shooter with advanced AI and seeded procedural sectors.">
+  <title>QSOL INERTIA ZERO — Offline Arena</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" class="app is-menu">
+    <canvas id="game-canvas" tabindex="0" aria-label="Inertia Zero game arena"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <section id="hud" class="hud" aria-label="Flight information" hidden>
+      <div class="hud-left">
+        <div class="brand-chip"><span class="brand-mark">I/0</span> INERTIA ZERO</div>
+        <div class="sector-readout">
+          <span class="eyebrow">SECTOR</span>
+          <strong id="hud-sector">01</strong>
+          <span id="hud-arena">OPEN FRONTIER</span>
+        </div>
+        <div class="score-readout">
+          <span><b id="hud-score">000000</b> SCORE</span>
+          <span><b id="hud-kills">00</b> KILLS</span>
+          <span><b id="hud-lives">04</b> HULLS</span>
+        </div>
+      </div>
+
+      <div class="hud-centre">
+        <div class="objective-card">
+          <span class="eyebrow">ACTIVE DIRECTIVE</span>
+          <strong id="hud-objective">ELIMINATE THE HOSTILE WING</strong>
+          <div class="objective-track"><i id="objective-progress"></i></div>
+          <span id="hud-objective-detail">HOSTILES 0 / 0</span>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="status-grid">
+          <span>AI <b id="hud-ai">ACE</b></span>
+          <span>SEED <b id="hud-seed">—</b></span>
+          <span>FPS <b id="hud-fps">60</b></span>
+          <span>PING <b class="zero-ping">0 ms</b></span>
+        </div>
+        <canvas id="radar-canvas" width="208" height="144" aria-label="Tactical radar"></canvas>
+      </div>
+
+      <div id="combat-feed" class="combat-feed" aria-live="polite"></div>
+
+      <div class="flight-bar">
+        <div class="ship-identity">
+          <span id="hud-ship-icon" class="ship-icon">▲</span>
+          <span><b id="hud-ship">WARBIRD</b><small id="hud-role">PRECISION DUELIST</small></span>
+        </div>
+        <div class="energy-block">
+          <div class="energy-label"><span>ENERGY / WEAPONS / HULL</span><b id="hud-energy-text">1100 / 1100</b></div>
+          <div class="energy-track"><i id="energy-fill"></i><em id="energy-reserve"></em></div>
+        </div>
+        <div class="systems-block">
+          <span class="system" id="system-gun"><kbd>SPACE</kbd> GUN <i></i></span>
+          <span class="system" id="system-secondary"><kbd>X</kbd> BOMB <i></i></span>
+          <span class="system" id="system-special"><kbd>Q</kbd> SPECIAL <i></i></span>
+          <span class="system" id="system-repel"><kbd>R</kbd> REPEL <i></i></span>
+        </div>
+      </div>
+    </section>
+
+    <button id="pause-button" class="corner-button" type="button" aria-label="Pause game" hidden>II</button>
+
+    <section id="menu" class="overlay menu-overlay">
+      <div class="menu-shell">
+        <header class="hero">
+          <div class="hero-kicker"><span>QSOL // GAMES</span><span>OFFLINE COMBAT BUILD 1.0</span></div>
+          <div class="hero-title-row">
+            <div>
+              <p class="eyebrow">ZERO PING. NO QUEUE. NO COMPROMISE.</p>
+              <h1>INERTIA<span>ZERO</span></h1>
+              <p class="hero-subtitle">A single-player inertia arena forged for the latency frontier.</p>
+            </div>
+            <div class="hero-orbit" aria-hidden="true">
+              <i></i><i></i><i></i><b>I/0</b>
+            </div>
+          </div>
+        </header>
+
+        <div class="menu-content">
+          <section class="config-panel">
+            <div class="section-heading">
+              <div><span class="step">01</span><h2>Choose your hull</h2></div>
+              <p>Eight classic arena roles. Every silhouette, sound, and system is original to INERTIA ZERO.</p>
+            </div>
+            <div id="ship-grid" class="ship-grid" aria-label="Ship selection"></div>
+
+            <div class="section-heading compact">
+              <div><span class="step">02</span><h2>Authorise the opposition</h2></div>
+            </div>
+            <div class="settings-grid">
+              <label class="field field-wide">
+                <span>AI flight model</span>
+                <select id="difficulty-select"></select>
+                <small id="difficulty-description">Fast interception, projectile evasion, flanking, and range control.</small>
+              </label>
+              <label class="field">
+                <span>Initial hostiles</span>
+                <select id="bot-count-select">
+                  <option value="2">2 — Duel wing</option>
+                  <option value="3">3 — Hunter cell</option>
+                  <option value="4" selected>4 — Strike wing</option>
+                  <option value="6">6 — Kill box</option>
+                  <option value="8">8 — Swarm</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Arena recipe</span>
+                <select id="arena-select"></select>
+              </label>
+              <label class="field field-wide seed-field">
+                <span>Campaign seed</span>
+                <div><input id="seed-input" type="text" maxlength="36" value="ADELAIDE-ZERO-PING" spellcheck="false"><button id="random-seed" type="button">RANDOMISE</button></div>
+                <small>Every sector is generated locally from this seed. Reuse it to fly the same campaign.</small>
+              </label>
+            </div>
+
+            <div class="launch-row">
+              <button id="launch-button" class="launch-button" type="button">
+                <span>LAUNCH CAMPAIGN</span>
+                <small>Fixed-step local simulation</small>
+                <b aria-hidden="true">→</b>
+              </button>
+              <div class="local-proof">
+                <span><i></i> NETWORK DISCONNECTED BY DESIGN</span>
+                <span><i></i> PROCEDURAL SECTOR STREAM READY</span>
+                <span><i></i> ADVANCED PILOT AI LOADED</span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="briefing-panel">
+            <div class="briefing-sticky">
+              <span class="eyebrow">FLIGHT BRIEFING</span>
+              <h2>Skill survives<br>when latency dies.</h2>
+              <p>INERTIA ZERO keeps the momentum, energy economy, radar hunting, bank shots, and lethal geometry of classic online arena combat—then rebuilds the opposition for solo play.</p>
+
+              <div class="feature-stack">
+                <article><span>01</span><div><b>Layered tactical AI</b><p>Predictive leading, obstacle routing, threat evasion, range discipline, and ship-specific attack logic.</p></div></article>
+                <article><span>02</span><div><b>Seeded living sectors</b><p>Five arena recipes rotate through four objective types with increasing enemy compositions.</p></div></article>
+                <article><span>03</span><div><b>One honest energy bank</b><p>Hull integrity, weapons, boost, and active systems all spend the same regenerating resource.</p></div></article>
+              </div>
+
+              <div class="controls-card">
+                <div class="controls-title"><b>CLASSIC FLIGHT</b><button id="help-button" type="button">FULL CONTROLS</button></div>
+                <dl>
+                  <div><dt><kbd>W</kbd> <kbd>↑</kbd></dt><dd>Thrust</dd></div>
+                  <div><dt><kbd>A</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd></dt><dd>Rotate</dd></div>
+                  <div><dt><kbd>SPACE</kbd> <kbd>CTRL</kbd></dt><dd>Gun</dd></div>
+                  <div><dt><kbd>X</kbd> <kbd>TAB</kbd></dt><dd>Ordnance</dd></div>
+                  <div><dt><kbd>SHIFT</kbd></dt><dd>Afterburner</dd></div>
+                  <div><dt><kbd>Q</kbd> / <kbd>R</kbd></dt><dd>Special / repel</dd></div>
+                </dl>
+              </div>
+
+              <p class="legal-note">Independent reimplementation informed by public gameplay documentation. Not affiliated with the original SubSpace or Continuum developers. No original game assets or code are included.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="pause-overlay" class="overlay modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+      <div class="modal-card">
+        <span class="eyebrow">SIMULATION SUSPENDED</span>
+        <h2 id="pause-title">PAUSED</h2>
+        <p>The local sector clock is frozen. Nothing moves until you return.</p>
+        <div class="modal-actions">
+          <button id="resume-button" class="primary-button" type="button">RESUME FLIGHT</button>
+          <button id="restart-button" type="button">RESTART SECTOR</button>
+          <button id="menu-button" type="button">ABORT TO HANGAR</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="sector-overlay" class="overlay modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sector-complete-title" hidden>
+      <div class="modal-card sector-card">
+        <span class="eyebrow">DIRECTIVE COMPLETE</span>
+        <h2 id="sector-complete-title">SECTOR CLEARED</h2>
+        <div class="result-grid">
+          <span><small>SECTOR SCORE</small><b id="result-score">00000</b></span>
+          <span><small>HOSTILES DOWN</small><b id="result-kills">00</b></span>
+          <span><small>ACCURACY</small><b id="result-accuracy">00%</b></span>
+        </div>
+        <p id="next-sector-copy">A fresh arena is waiting beyond the rift.</p>
+        <button id="next-sector-button" class="primary-button" type="button">ENTER NEXT SECTOR →</button>
+      </div>
+    </section>
+
+    <section id="gameover-overlay" class="overlay modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title" hidden>
+      <div class="modal-card sector-card danger-card">
+        <span class="eyebrow">PILOT SIGNAL LOST</span>
+        <h2 id="gameover-title">RUN TERMINATED</h2>
+        <div class="result-grid">
+          <span><small>FINAL SCORE</small><b id="final-score">000000</b></span>
+          <span><small>SECTOR REACHED</small><b id="final-sector">01</b></span>
+          <span><small>HOSTILES DOWN</small><b id="final-kills">00</b></span>
+        </div>
+        <p id="best-score-copy">Campaign record stored locally.</p>
+        <div class="modal-actions horizontal">
+          <button id="retry-button" class="primary-button" type="button">RELAUNCH</button>
+          <button id="gameover-menu-button" type="button">RETURN TO HANGAR</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="help-overlay" class="overlay modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+      <div class="modal-card help-card">
+        <button id="close-help" class="close-button" type="button" aria-label="Close controls">×</button>
+        <span class="eyebrow">PILOT OPERATIONS MANUAL</span>
+        <h2 id="help-title">FLIGHT &amp; COMBAT</h2>
+        <div class="help-grid">
+          <article><kbd>W</kbd><kbd>↑</kbd><b>Forward thrust</b><p>Acceleration is inertial. Release thrust to coast.</p></article>
+          <article><kbd>S</kbd><kbd>↓</kbd><b>Reverse thrust</b><p>Slower than forward thrust, but invaluable for range control.</p></article>
+          <article><kbd>A</kbd><kbd>D</kbd><kbd>←</kbd><kbd>→</kbd><b>Rotate</b><p>Your weapons fire along the hull axis and inherit your velocity.</p></article>
+          <article><kbd>SPACE</kbd><kbd>CTRL</kbd><b>Primary gun</b><p>Low-cost direct fire. Lead moving targets.</p></article>
+          <article><kbd>X</kbd><kbd>TAB</kbd><b>Secondary ordnance</b><p>Bomb, mine, EMP, cluster, or ricochet payload by hull.</p></article>
+          <article><kbd>SHIFT</kbd><b>Afterburner</b><p>Exceeds normal speed while draining the shared energy bank.</p></article>
+          <article><kbd>Q</kbd><b>Hull special</b><p>Unique active system. Watch its energy cost and cooldown.</p></article>
+          <article><kbd>R</kbd><b>Repel charge</b><p>Pushes nearby ships and hostile projectiles away.</p></article>
+          <article><kbd>P</kbd><kbd>ESC</kbd><b>Pause</b><p>Freezes the local fixed-step simulation.</p></article>
+        </div>
+        <p class="help-tip"><b>PILOT TIP:</b> Energy is health, ammunition, boost fuel, and systems power. An empty bank is a death sentence.</p>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <noscript>QSOL INERTIA ZERO requires JavaScript. No network connection is required.</noscript>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
