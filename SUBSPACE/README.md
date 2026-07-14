@@ -1,10 +1,10 @@
-# QSOL INERTIA ZERO 1.0
+# INERTIA ZERO 1.0
 
 **Offline Single-Player Inertia Arena**
 
 > Zero ping. No queue. No compromise.
 
-QSOL INERTIA ZERO is an independent browser-native reimplementation of the feel of classic 2D inertia arena combat, informed by public gameplay and protocol documentation. It was built for the experience that network latency used to deny: immediate ship response, readable projectile geometry, demanding energy management, and opponents that win through piloting rather than lag.
+INERTIA ZERO is an independent browser-native reimplementation of the feel of classic 2D inertia arena combat, informed by public gameplay and protocol documentation. It was built for the experience that network latency used to deny: immediate ship response, readable projectile geometry, demanding energy management, and opponents that win through piloting rather than lag.
 
 It is deliberately **single-player only**. There is no networking code, login, telemetry, matchmaking, server, or multiplayer mode.
 
@@ -162,7 +162,7 @@ The dependency-free runtime smoke harness boots the real app against a lightweig
 
 ## Independent implementation and trademark notice
 
-QSOL INERTIA ZERO is independent software built from original code, vector geometry, procedural levels, interface work, and synthesized audio, using public gameplay and protocol documentation as historical reference. It does **not** include or redistribute original SubSpace/Continuum executables, source code, maps, tiles, ship bitmaps, sound archives, or other proprietary assets.
+INERTIA ZERO is independent software built from original code, vector geometry, procedural levels, interface work, and synthesized audio, using public gameplay and protocol documentation as historical reference. It does **not** include or redistribute original SubSpace/Continuum executables, source code, maps, tiles, ship bitmaps, sound archives, or other proprietary assets.
 
 The historical ship names are used descriptively to meet the project's classic-roster goal. QSOL INERTIA ZERO is not an official SubSpace product and is not affiliated with its original developers, publishers, or the Continuum community.
 
