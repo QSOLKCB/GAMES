@@ -1,4 +1,4 @@
-# QSOL GAMES
+# QSOL-IMC GAMES
 
 Browser-native games and interactive experiments from **QSOL-IMC**.
 
@@ -8,7 +8,7 @@ Every project in this repository is designed to run locally with no account, tel
 
 | Game | Description | Launch |
 |---|---|---|
-| [QSOL INERTIA ZERO](SUBSPACE/) | Offline single-player inertia-arena combat inspired by the feel of classic SubSpace. Eight distinct hulls, five skill-based AI tiers, seeded procedural sectors, four objective types, original vector art, and synthesized audio. No multiplayer and therefore no network latency. | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
+| [INERTIA ZERO](SUBSPACE/) | Offline single-player inertia-arena combat inspired by the feel of classic SubSpace. Eight distinct hulls, five skill-based AI tiers, seeded procedural sectors, four objective types, original vector art, and synthesized audio. No multiplayer and therefore no network latency. | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
 
 ## Running locally
 
