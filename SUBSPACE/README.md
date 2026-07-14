@@ -164,7 +164,7 @@ The dependency-free runtime smoke harness boots the real app against a lightweig
 
 INERTIA ZERO is independent software built from original code, vector geometry, procedural levels, interface work, and synthesized audio, using public gameplay and protocol documentation as historical reference. It does **not** include or redistribute original SubSpace/Continuum executables, source code, maps, tiles, ship bitmaps, sound archives, or other proprietary assets.
 
-The historical ship names are used descriptively to meet the project's classic-roster goal. QSOL INERTIA ZERO is not an official SubSpace product and is not affiliated with its original developers, publishers, or the Continuum community.
+The historical ship names are used descriptively to meet the project's classic-roster goal. INERTIA ZERO is not an official SubSpace product and is not affiliated with its original developers, publishers, or the Continuum community.
 
 Useful historical references informing the high-level mechanics and roster distinctions include:
 
