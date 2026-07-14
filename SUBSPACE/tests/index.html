@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INERTIA ZERO Core Verification</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, monospace; background:#04090b; color:#d7e2df; }
+    body { width:min(860px,calc(100% - 32px)); margin:0 auto; padding:54px 0; }
+    header { border-bottom:1px solid rgba(143,174,165,.25); padding-bottom:24px; margin-bottom:22px; }
+    p { color:#81918e; line-height:1.6; } #summary { color:#e8bd68; font-size:13px; letter-spacing:.08em; }
+    #results { display:grid; gap:7px; }
+    article { display:grid; grid-template-columns:58px 1fr; gap:10px; padding:12px 14px; border:1px solid rgba(143,174,165,.18); background:#081214; }
+    article b { color:#72b9ad; } article.fail { border-color:#d77a69; } article.fail b { color:#d77a69; }
+    article small { grid-column:2; color:#d77a69; line-height:1.5; }
+    a { color:#e8bd68; } .has-failures #summary { color:#d77a69; }
+  </style>
+</head>
+<body>
+  <header>
+    <p>QSOL // GAMES</p>
+    <h1>INERTIA ZERO Core Verification</h1>
+    <p id="summary">Running seeded simulation checks…</p>
+  </header>
+  <main id="results"></main>
+  <p><a href="../index.html">← Return to INERTIA ZERO</a></p>
+  <script src="../core.js"></script>
+  <script src="core.test.js"></script>
+</body>
+</html>
