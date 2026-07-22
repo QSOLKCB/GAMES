@@ -1,0 +1,40 @@
+name: Ternary Drift
+
+on:
+  push:
+    paths:
+      - "TERNARYDRIFT/**"
+      - ".github/workflows/ternary-drift.yml"
+  pull_request:
+    paths:
+      - "TERNARYDRIFT/**"
+      - ".github/workflows/ternary-drift.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test deterministic core
+        run: make -C TERNARYDRIFT test
+
+  win64-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MinGW-w64
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+      - name: Build native Win32 executable
+        run: make -C TERNARYDRIFT windows
+      - name: Enforce 1,350,000-byte internal package limit
+        run: make -C TERNARYDRIFT size
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ternary-drift-win64-vertical-slice
+          path: |
+            TERNARYDRIFT/build/TERNARY.EXE
+            TERNARYDRIFT/README.TXT
+          if-no-files-found: error
