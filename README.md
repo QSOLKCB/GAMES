@@ -1,18 +1,20 @@
 # QSOL-IMC GAMES
 
-Browser-native games and interactive experiments from **QSOL-IMC**.
+Native and browser-based games and interactive experiments from **QSOL-IMC**.
 
-Every project in this repository is designed to run locally with no account, telemetry, package manager, build system, or permanent network connection.
+Every project is designed for local, offline play with no account or telemetry. Runtime and build requirements are documented per project.
 
 ## Games
 
-| Game | Description | Launch |
-|---|---|---|
-| [INERTIA ZERO](SUBSPACE/) | Offline single-player inertia-arena combat inspired by the feel of classic SubSpace. Eight distinct hulls, five skill-based AI tiers, seeded procedural sectors, four objective types, original vector art, and synthesized audio. No multiplayer and therefore no network latency. | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
+| Game | Runtime | Status | Launch / build |
+|---|---|---|---|
+| [INERTIA ZERO](SUBSPACE/) | Offline browser | Playable | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
+| [TERNARY DRIFT](TERNARYDRIFT/) | Native C99/Win32 | Early native vertical slice | Build [`TERNARYDRIFT/`](TERNARYDRIFT/) with MinGW-w64; the packaged target is `TERNARY.EXE` + `README.TXT` under 1.44 MB |
 
 ## Running locally
 
-Clone or download the repository, then open the game's `index.html` directly in a modern desktop browser. No server is required.
+- Browser projects: open the project's `index.html` directly in a modern desktop browser. No server is required.
+- Native projects: follow the build and run instructions in the project's own README. Ternary Drift intentionally uses Win32, a software framebuffer, and `waveOut`; it contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
 
 ## License
 
