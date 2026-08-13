@@ -8,6 +8,7 @@ Every project is designed for local, offline play with no account or telemetry. 
 
 | Game | Runtime | Status | Launch / build |
 |---|---|---|---|
+| [CARTRIDGE ZERO: Seven Signals](CARTRIDGE_ZERO/) | Offline browser | Playable deterministic seven-game anthology | Open [`CARTRIDGE_ZERO/index.html`](CARTRIDGE_ZERO/index.html) |
 | [VECTOR ZERO](VECTOR_ZERO/) | Offline browser | Playable deterministic 6DOF shooter | Open [`VECTOR_ZERO/index.html`](VECTOR_ZERO/index.html) |
 | [BLACKSTAR AGA](BLACKSTAR_AGA/) | Offline browser | Playable three-mission FPS | Open [`BLACKSTAR_AGA/index.html`](BLACKSTAR_AGA/index.html) |
 | [PIXEL WARFRONT: Deterministic Command](PIXELWARFRONT/) | Offline browser | Playable | Open [`PIXELWARFRONT/index.html`](PIXELWARFRONT/index.html) |
