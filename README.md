@@ -8,6 +8,7 @@ Every project is designed for local, offline play with no account or telemetry. 
 
 | Game | Runtime | Status | Launch / build |
 |---|---|---|---|
+| [SEEDSTORM: Deterministic Strike](SEEDSTORM/) | Offline browser | Playable | Open [`SEEDSTORM/index.html`](SEEDSTORM/index.html) |
 | [INERTIA ZERO](SUBSPACE/) | Offline browser | Playable | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
 | [TERNARY DRIFT](TERNARYDRIFT/) | Native C99/Win32 | Early native vertical slice | Build [`TERNARYDRIFT/`](TERNARYDRIFT/) with MinGW-w64; the packaged target is `TERNARY.EXE` + `README.TXT` under 1.44 MB |
 
