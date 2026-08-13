@@ -446,21 +446,45 @@
     state.nextEntityId += 1;
   }
 
+  function enemyEvent(type, enemy, extra) {
+    return Object.assign({
+      type,
+      id: enemy.id,
+      kind: enemy.kind,
+      x: enemy.x,
+      y: enemy.y,
+      radius: enemy.radius,
+      health: Math.max(0, enemy.health),
+      maxHealth: enemy.maxHealth,
+    }, extra || {});
+  }
+
   function killEnemy(state, enemy) {
     if (enemy.dead) return;
     enemy.dead = true;
+    enemy.health = 0;
     const base = ENEMY_BASE[enemy.kind];
     state.chain += 1;
     state.multiplierBasis = Math.min(500, 100 + Math.floor(state.chain / 6) * 25);
     state.score += Math.floor(base.score * state.multiplierBasis / 100);
     state.stats.kills += 1;
     spawnPickup(state, enemy);
-    state.events.push({ type: enemy.kind === "boss" ? "boss-down" : "enemy-down", id: enemy.id });
+    state.events.push(enemyEvent(enemy.kind === "boss" ? "boss-down" : "enemy-down", enemy));
     if (enemy.kind === "boss") {
       state.bossDefeated = true;
       state.clearCountdown = 150;
       state.enemyBullets.length = 0;
     }
+  }
+
+  function damageEnemy(state, enemy, damage, source) {
+    if (enemy.dead) return false;
+    const applied = Math.min(enemy.health, Math.max(0, Math.floor(damage)));
+    if (applied <= 0) return false;
+    enemy.health -= applied;
+    state.events.push(enemyEvent("enemy-hit", enemy, { damage: applied, source }));
+    if (enemy.health <= 0) killEnemy(state, enemy);
+    return true;
   }
 
   function hitPlayer(state) {
@@ -485,9 +509,7 @@
       for (const enemy of state.enemies) {
         if (enemy.dead || !overlap(bullet, enemy)) continue;
         bullet.dead = true;
-        enemy.health -= bullet.damage;
-        state.stats.hits += 1;
-        if (enemy.health <= 0) killEnemy(state, enemy);
+        if (damageEnemy(state, enemy, bullet.damage, "shot")) state.stats.hits += 1;
         break;
       }
     }
@@ -540,8 +562,7 @@
     state.enemyBullets.length = 0;
     for (const enemy of state.enemies) {
       if (enemy.dead) continue;
-      enemy.health -= enemy.kind === "boss" ? 35 : 60;
-      if (enemy.health <= 0) killEnemy(state, enemy);
+      damageEnemy(state, enemy, enemy.kind === "boss" ? 35 : 60, "bomb");
     }
     state.events.push({ type: "bomb", id: state.tick });
   }

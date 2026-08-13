@@ -170,6 +170,84 @@ test("bomb input is edge-triggered rather than consumed every held tick", () => 
   assert.equal(state.bombs, 1);
 });
 
+test("enemy collisions emit complete hit and destruction snapshots", () => {
+  const state = core.createRun("COLLISION-EVENTS");
+  state.nextEvent = state.blueprint.events.length;
+  const enemy = {
+    id: state.nextEntityId++,
+    eventId: -1,
+    kind: "turret",
+    x: 240 * core.SCALE,
+    y: 200 * core.SCALE,
+    baseX: 240 * core.SCALE,
+    age: 0,
+    health: 3,
+    maxHealth: 3,
+    radius: 16 * core.SCALE,
+    fireTimer: 1_000_000,
+    pathSeed: 0,
+    drop: null,
+    dead: false,
+  };
+  state.enemies.push(enemy);
+
+  state.playerBullets.push({
+    id: state.nextEntityId++,
+    x: enemy.x,
+    y: enemy.y + 650,
+    vx: 0,
+    vy: -650,
+    radius: 500 * core.SCALE,
+    damage: 1,
+    dead: false,
+  });
+  core.step(state, 0);
+
+  const hit = state.events.find((event) => event.type === "enemy-hit");
+  assert.deepEqual(hit, {
+    type: "enemy-hit",
+    id: enemy.id,
+    kind: "turret",
+    x: enemy.x,
+    y: enemy.y,
+    radius: enemy.radius,
+    health: 2,
+    maxHealth: 3,
+    damage: 1,
+    source: "shot",
+  });
+  assert.equal(enemy.health, 2);
+  assert.equal(state.stats.hits, 1);
+
+  state.playerBullets.push({
+    id: state.nextEntityId++,
+    x: enemy.x,
+    y: enemy.y + 650,
+    vx: 0,
+    vy: -650,
+    radius: 500 * core.SCALE,
+    damage: 2,
+    dead: false,
+  });
+  core.step(state, 0);
+
+  const destroyed = state.events.find((event) => event.type === "enemy-down");
+  assert.deepEqual(destroyed, {
+    type: "enemy-down",
+    id: enemy.id,
+    kind: "turret",
+    x: enemy.x,
+    y: enemy.y,
+    radius: enemy.radius,
+    health: 0,
+    maxHealth: 3,
+  });
+  assert.equal(state.events.find((event) => event.type === "enemy-hit").health, 0);
+  assert.equal(state.enemies.some((item) => item.id === enemy.id), false);
+  assert.equal(state.stats.hits, 2);
+  assert.equal(state.stats.kills, 1);
+});
+
 test("the simulation core contains no ambient random source", () => {
   const source = fs.readFileSync(path.join(__dirname, "..", "core.js"), "utf8");
   assert.equal(source.includes("Math.random"), false);
