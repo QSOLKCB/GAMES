@@ -1,0 +1,43 @@
+name: VECTOR ZERO
+
+on:
+  push:
+    paths:
+      - "VECTOR_ZERO/**"
+      - ".github/workflows/vector-zero.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "VECTOR_ZERO/**"
+      - ".github/workflows/vector-zero.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determinism and offline-boundary tests
+        run: npm --prefix VECTOR_ZERO test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: VECTOR_ZERO/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix VECTOR_ZERO ci
+      - name: Install Chromium
+        run: npx --prefix VECTOR_ZERO playwright install --with-deps chromium
+      - name: Browser boot, six-axis flight, replay, and offline smoke test
+        run: npm --prefix VECTOR_ZERO run test:browser

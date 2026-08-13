@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071013">
+  <meta name="description" content="VECTOR ZERO is an original deterministic six-degrees-of-freedom arcade mine shooter that runs entirely offline.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>VECTOR ZERO — Deterministic 6DOF Mine Shooter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">QSOL-IMC // NULL-AXIS RECOVERY PROGRAM</p>
+        <h1>VECTOR <span>ZERO</span></h1>
+      </div>
+      <div class="status"><i></i> SIX-AXIS CORE ONLINE</div>
+    </header>
+
+    <section class="station">
+      <div class="display-column">
+        <div class="display-frame" id="displayFrame">
+          <div class="bezel-label"><span>VZ/01 FLIGHT COMPUTER</span><span>480 × 270 SOFTWARE VECTOR DISPLAY</span><span>60 HZ</span></div>
+          <div class="viewport" id="viewport">
+            <canvas id="game" width="480" height="270" tabindex="0" aria-label="Vector Zero six-axis flight view"></canvas>
+            <div class="scanlines" aria-hidden="true"></div>
+            <div id="pointerHint" class="pointer-hint">CLICK FLIGHT VIEW FOR MOUSE LOOK</div>
+
+            <section id="bootLayer" class="boot-layer">
+              <div class="boot-card">
+                <p class="eyebrow">RECOVERED NULL-SPACE PROTOTYPE // BUILD VZ01</p>
+                <h2>NO HORIZON.<br>NO SAFE AXIS.</h2>
+                <p>Recover three vector cores in each mine, survive the autonomous custodians, and reach the zero gate. Every sector is reconstructed from your campaign seed.</p>
+                <div class="boot-fields">
+                  <label>
+                    <span>Campaign seed</span>
+                    <input id="seedInput" value="ADELAIDE-VECTOR-ZERO" maxlength="48" spellcheck="false">
+                  </label>
+                  <label>
+                    <span>Flight contract</span>
+                    <select id="difficultySelect">
+                      <option value="0">Survey Pilot</option>
+                      <option value="1" selected>Vector Marine</option>
+                      <option value="2">Null-Space Ace</option>
+                    </select>
+                  </label>
+                </div>
+                <button id="startButton" class="launch" type="button">ENGAGE SIX-AXIS CORE <b>→</b></button>
+                <small>Local file // no account // no network // deterministic receipt enabled</small>
+              </div>
+            </section>
+
+            <section id="messageLayer" class="message-layer" hidden>
+              <div class="message-card">
+                <p id="messageKicker" class="eyebrow">FLIGHT COMPUTER</p>
+                <h2 id="messageTitle">PAUSED</h2>
+                <p id="messageBody"></p>
+                <button id="messageButton" type="button">CONTINUE</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <nav class="console-strip" aria-label="Simulation controls">
+          <button id="pauseButton" type="button" disabled>PAUSE</button>
+          <button id="restartButton" type="button" disabled>RESTART</button>
+          <button id="soundButton" type="button" aria-pressed="false">AUDIO: OFF</button>
+          <button id="replayButton" type="button" disabled>REPLAY / RECEIPT</button>
+          <button id="fullscreenButton" type="button">FULLSCREEN</button>
+        </nav>
+      </div>
+
+      <aside class="telemetry">
+        <section>
+          <p class="eyebrow">ACTIVE MINE</p>
+          <div class="sector-title"><b id="sectorReadout">—</b><span id="signatureReadout">--------</span></div>
+          <p id="objectiveReadout">Recover all vector cores and reach the zero gate.</p>
+          <div class="meter"><i id="coreMeter"></i></div>
+          <div class="readout-line"><span>VECTOR CORES</span><b id="coreReadout">0 / 3</b></div>
+          <div class="readout-line"><span>HOSTILES</span><b id="enemyReadout">0</b></div>
+        </section>
+
+        <section>
+          <p class="eyebrow">CANONICAL RECEIPT</p>
+          <div class="readout-line"><span>MODE</span><b id="modeReadout">STANDBY</b></div>
+          <div class="readout-line"><span>SEED</span><b id="seedReadout">--------</b></div>
+          <div class="readout-line"><span>TICK</span><b id="tickReadout">0</b></div>
+          <div class="readout-line"><span>STATE</span><b id="digestReadout">--------</b></div>
+          <div class="readout-line"><span>ENGINE</span><b>VZ01 / 60 HZ</b></div>
+        </section>
+
+        <section class="manual">
+          <p class="eyebrow">SIX-AXIS MANUAL</p>
+          <dl>
+            <div><dt>W / S</dt><dd>Thrust / reverse</dd></div>
+            <div><dt>A / D</dt><dd>Strafe left / right</dd></div>
+            <div><dt>R / F</dt><dd>Rise / fall</dd></div>
+            <div><dt>Q / E</dt><dd>Roll left / right</dd></div>
+            <div><dt>ARROWS</dt><dd>Yaw / pitch</dd></div>
+            <div><dt>SHIFT</dt><dd>Boost</dd></div>
+            <div><dt>SPACE</dt><dd>Pulse laser</dd></div>
+            <div><dt>X</dt><dd>Vector missile</dd></div>
+            <div><dt>TAB</dt><dd>Mine schematic</dd></div>
+            <div><dt>P</dt><dd>Pause</dd></div>
+          </dl>
+        </section>
+
+        <section>
+          <p class="eyebrow">PROTOTYPE PROVENANCE</p>
+          <p>Original software renderer, fixed-point flight core, procedural geometry, vector craft, and synthesized audio. Runs directly from local files.</p>
+        </section>
+      </aside>
+    </section>
+
+    <footer><span>VECTOR ZERO // QSOL-IMC</span><span>FICTIONAL RECOVERED PROTOTYPE // REAL REPRODUCIBLE SIMULATION</span></footer>
+  </main>
+
+  <dialog id="replayDialog">
+    <form method="dialog" class="replay-card">
+      <header><div><p class="eyebrow">DETERMINISTIC LEDGER</p><h2>REPLAY RECEIPT</h2></div><button class="close" value="cancel" aria-label="Close replay dialog">×</button></header>
+      <p>Every fixed-tick control word is run-length encoded with its seed, flight contract, and checksum. Paste a VZ01 receipt to reproduce a flight.</p>
+      <textarea id="replayText" rows="9" spellcheck="false" aria-label="Replay receipt"></textarea>
+      <p id="replayMeta" class="replay-meta">No active flight.</p>
+      <div class="dialog-actions">
+        <button id="copyReplayButton" type="button">COPY RECEIPT</button>
+        <button id="watchReplayButton" type="button" class="primary">WATCH RECEIPT</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
