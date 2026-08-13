@@ -785,7 +785,11 @@
   window.addEventListener("keyup", (event) => keys.delete(event.code));
   window.addEventListener("blur", releaseInput);
   document.addEventListener("visibilitychange", () => { if (document.hidden && state && !paused) setPaused(true); });
-  replayDialog.addEventListener("close", () => { releaseInput(); previousTime = performance.now(); restoreGameplayFocus(); });
+  replayDialog.addEventListener("close", () => {
+    releaseInput();
+    previousTime = performance.now();
+    requestAnimationFrame(restoreGameplayFocus);
+  });
 
   for (const button of document.querySelectorAll("[data-action]")) {
     const action = button.dataset.action;

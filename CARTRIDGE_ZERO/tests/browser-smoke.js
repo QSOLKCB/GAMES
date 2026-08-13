@@ -127,7 +127,7 @@ function allNumbersAreFiniteIntegers(value) {
   await page.click("#replayButton");
   await page.click(".dialog-head button");
   assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), false);
-  assert.equal(await page.evaluate(() => document.activeElement.id), "game");
+  await page.waitForFunction(() => document.activeElement.id === "game");
   await page.screenshot({ path: path.join(__dirname, "cartridge-zero-prism.png"), fullPage: true });
 
   await page.waitForFunction(() => cartridgeZero.state.tick > 35);
