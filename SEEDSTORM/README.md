@@ -48,7 +48,9 @@ SSR1.<8-hex checksum>.<base64url payload>
 The payload contains `[engineVersion, seed, tickCount, inputRuns]`. The checksum
 detects accidental damage or editing before simulation begins; it is not a
 cryptographic signature. A replay is accepted only by its matching engine version
-and is always simulated from a fresh initial state.
+and is always simulated from a fresh initial state. Recording seals cleanly after
+six hours while live play continues; the sealed code remains an exact replay of
+those first six hours.
 
 See [`docs/DETERMINISM.md`](docs/DETERMINISM.md) for the normative contract and
 limitations.

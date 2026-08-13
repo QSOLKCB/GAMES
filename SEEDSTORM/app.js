@@ -54,6 +54,8 @@
 
   let state = null;
   let recorder = null;
+  let recordingStopped = false;
+  let recordingTerminalDigest = null;
   let replay = null;
   let replayCursor = null;
   let mode = "standby";
@@ -174,6 +176,8 @@
     const seed = core.normalizeSeed(seedInput);
     state = core.createRun(seed);
     recorder = core.createRecorder(seed);
+    recordingStopped = false;
+    recordingTerminalDigest = null;
     replay = null;
     replayCursor = null;
     mode = "live";
@@ -185,6 +189,7 @@
     visualFlash = 0;
     shake = 0;
     lastRenderedLevel = 0;
+    ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(seed)}`;
     ui.intro.classList.add("is-hidden");
     hideMessage();
@@ -197,6 +202,8 @@
   function startReplay(replayData) {
     state = core.createRun(replayData.seed);
     recorder = null;
+    recordingStopped = false;
+    recordingTerminalDigest = null;
     replay = replayData;
     replayCursor = core.createReplayCursor(replayData);
     mode = "replay";
@@ -208,6 +215,7 @@
     visualFlash = 0;
     shake = 0;
     lastRenderedLevel = 0;
+    ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(replayData.seed)}`;
     ui.intro.classList.add("is-hidden");
     hideMessage();
@@ -315,7 +323,11 @@
       }
     } else {
       input = readLiveInput();
-      core.recordInput(recorder, input);
+      if (!recordingStopped && !core.tryRecordInput(recorder, input)) {
+        recordingStopped = true;
+        recordingTerminalDigest = core.stateDigest(state);
+        setStatus("Replay recorder sealed at its six-hour limit; live play continues.");
+      }
     }
     core.step(state, input);
     processCoreEvents();
@@ -342,7 +354,9 @@
       const percent = replay.ticks ? Math.min(100, replayCursor.tick / replay.ticks * 100) : 100;
       ui.mode.textContent = `REPLAY // ${percent.toFixed(1)}%`;
     } else {
-      ui.mode.textContent = state.gameOver ? "FLIGHT ENDED" : "LIVE INPUT";
+      ui.mode.textContent = state.gameOver
+        ? "FLIGHT ENDED"
+        : recordingStopped ? "LIVE // RECORDER SEALED" : "LIVE INPUT";
     }
   }
 
@@ -672,12 +686,14 @@
     return map[code] || 0;
   }
 
-  function isTypingTarget(target) {
-    return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  function isInteractiveTarget(target) {
+    return target instanceof Element && Boolean(target.closest(
+      "button, input, textarea, select, a[href], summary, [contenteditable='true'], [role='button'], [role='link']"
+    ));
   }
 
   document.addEventListener("keydown", (event) => {
-    if (isTypingTarget(event.target)) return;
+    if (isInteractiveTarget(event.target)) return;
     if (event.code === "KeyP" || event.code === "Escape") {
       if (ui.dialog.open) return;
       event.preventDefault();
@@ -693,12 +709,10 @@
   });
 
   document.addEventListener("keyup", (event) => {
-    if (isTypingTarget(event.target) || mode === "replay") return;
     const bit = codeToInput(event.code);
-    if (bit) {
-      event.preventDefault();
-      heldInput &= ~bit;
-    }
+    if (!bit || mode === "replay") return;
+    heldInput &= ~bit;
+    if (!isInteractiveTarget(event.target)) event.preventDefault();
   });
 
   globalThis.addEventListener("blur", () => {
@@ -755,7 +769,9 @@
     if (withCurrent && recorder) {
       try {
         ui.replayText.value = core.encodeReplay(recorder);
-        ui.replayMeta.textContent = `${recorder.ticks.toLocaleString()} ticks · seed ${core.seedHex(recorder.seed)} · digest ${state ? core.stateDigest(state) : "--------"}`;
+        const digest = recordingTerminalDigest || (state ? core.stateDigest(state) : "--------");
+        const boundary = recordingStopped ? " · recorder sealed" : "";
+        ui.replayMeta.textContent = `${recorder.ticks.toLocaleString()} ticks · seed ${core.seedHex(recorder.seed)} · digest ${digest}${boundary}`;
       } catch (error) {
         ui.replayMeta.textContent = error.message;
       }
@@ -804,7 +820,7 @@
       copied = document.execCommand("copy");
     }
     ui.replayMeta.textContent = copied
-      ? `COPIED · ${recorder.ticks.toLocaleString()} ticks · no state snapshot`
+      ? `COPIED · ${recorder.ticks.toLocaleString()} ticks · no state snapshot${recordingStopped ? " · recorder sealed" : ""}`
       : "Replay generated. Select the code and copy it manually.";
     setStatus(`Replay code generated at tick ${recorder.ticks.toLocaleString()}.`);
   }

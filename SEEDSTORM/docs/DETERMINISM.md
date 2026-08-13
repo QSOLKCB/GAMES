@@ -73,6 +73,11 @@ FNV-1a value over the unencoded payload. Decoding rejects:
 - inconsistent or excessive tick counts;
 - recordings longer than six hours at 60 Hz.
 
+At the six-hour boundary, the browser seals the valid replay at its terminal
+digest and continues live play without recording additional inputs. The renderer
+and simulation loop therefore remain active; an exported code still represents
+exactly the first six hours from tick zero.
+
 The checksum and state digest are reproducibility aids, not authentication or
 security primitives.
 
@@ -107,6 +112,7 @@ transition, procedural generator, replay interpretation, or digest schema.
 4. a checked 1,500-tick golden state digest;
 5. replay round-trip equality of complete final state digests;
 6. checksum rejection after replay tampering;
-7. command-craft defeat and deterministic level escalation;
-8. edge-triggered bomb semantics;
-9. absence of ambient time, randomness, and browser storage from the core.
+7. graceful recorder sealing at the six-hour boundary;
+8. command-craft defeat, prior-sector cleanup, and deterministic level escalation;
+9. edge-triggered bomb semantics;
+10. absence of ambient time, randomness, and browser storage from the core.

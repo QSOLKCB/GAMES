@@ -586,6 +586,7 @@
     state.nextEvent = 0;
     state.bossDefeated = false;
     state.clearCountdown = 0;
+    state.enemies.length = 0;
     state.enemyBullets.length = 0;
     state.playerBullets.length = 0;
     state.pickups.length = 0;
@@ -636,6 +637,15 @@
     else recorder.runs.push([mask, 1]);
     recorder.ticks += 1;
     return recorder;
+  }
+
+  function tryRecordInput(recorder, inputMask) {
+    if (!recorder || recorder.version !== ENGINE_VERSION || !Array.isArray(recorder.runs)) {
+      throw new Error("Invalid replay recorder");
+    }
+    if (recorder.ticks >= MAX_REPLAY_TICKS) return false;
+    recordInput(recorder, inputMask);
+    return true;
   }
 
   function encodeBase64Ascii(text) {
@@ -792,6 +802,7 @@
     step,
     createRecorder,
     recordInput,
+    tryRecordInput,
     encodeReplay,
     decodeReplay,
     createReplayCursor,

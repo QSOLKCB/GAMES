@@ -101,6 +101,15 @@ test("replay checksums reject tampering before simulation", () => {
   assert.throws(() => core.decodeReplay(tampered), /checksum|base64|JSON/i);
 });
 
+test("bounded recording reports its limit without throwing into the frame loop", () => {
+  const recorder = core.createRecorder("RECORDING-LIMIT");
+  recorder.ticks = core.MAX_REPLAY_TICKS;
+  assert.equal(core.tryRecordInput(recorder, core.INPUT.FIRE), false);
+  assert.equal(recorder.ticks, core.MAX_REPLAY_TICKS);
+  assert.deepEqual(recorder.runs, []);
+  assert.throws(() => core.recordInput(recorder, core.INPUT.FIRE), /six-hour limit/);
+});
+
 test("defeating a command craft advances to a harder derived level", () => {
   const state = core.createRun("LEVEL-TRANSITION");
   const firstSignature = state.blueprint.signature;
@@ -110,6 +119,22 @@ test("defeating a command craft advances to a harder derived level", () => {
 
   const boss = state.enemies.find((enemy) => enemy.kind === "boss");
   assert.ok(boss, "boss event must spawn at the scheduled tick");
+  state.enemies.push({
+    id: state.nextEntityId++,
+    eventId: -1,
+    kind: "turret",
+    x: 80 * core.SCALE,
+    y: 140 * core.SCALE,
+    baseX: 80 * core.SCALE,
+    age: 0,
+    health: 999,
+    maxHealth: 999,
+    radius: 16 * core.SCALE,
+    fireTimer: 1_000_000,
+    pathSeed: 0,
+    drop: null,
+    dead: false,
+  });
   boss.y = 200 * core.SCALE;
   boss.health = 1;
   state.playerBullets.push({
@@ -128,6 +153,7 @@ test("defeating a command craft advances to a harder derived level", () => {
   for (let tick = 0; tick < 149; tick += 1) core.step(state, 0);
   assert.equal(state.level, 2);
   assert.equal(state.stats.levelsCleared, 1);
+  assert.deepEqual(state.enemies, [], "surviving prior-sector enemies must not leak into the next blueprint");
   assert.notEqual(state.blueprint.signature, firstSignature);
   assert.ok(state.blueprint.difficulty.healthPercent > 100);
 });

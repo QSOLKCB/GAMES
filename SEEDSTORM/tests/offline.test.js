@@ -17,6 +17,8 @@ assert.doesNotMatch(`${html}\n${css}`, /@import\s|url\s*\(\s*['"]?\/\//i);
 assert.match(app, /requestAnimationFrame\(frame\)/);
 assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
+assert.match(app, /core\.tryRecordInput/);
+assert.match(app, /function isInteractiveTarget/);
 
 for (const relative of ["core.js", "app.js", "style.css"]) {
   assert.ok(fs.statSync(path.join(root, relative)).size > 0, `${relative} must exist and be non-empty`);
