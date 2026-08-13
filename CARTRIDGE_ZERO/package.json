@@ -1,0 +1,16 @@
+{
+  "name": "qsol-cartridge-zero-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development-only tests for the dependency-free CARTRIDGE ZERO deterministic browser anthology",
+  "scripts": {
+    "test": "node tests/core.test.js && node tests/offline.test.js",
+    "test:browser": "node tests/browser-smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

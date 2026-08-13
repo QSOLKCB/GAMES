@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171512">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>CARTRIDGE ZERO — Seven Deterministic Signals</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="console" aria-label="Cartridge Zero browser console">
+    <header class="console-header">
+      <div>
+        <p class="eyebrow">Recovered domestic signal computer · model CZ-77</p>
+        <h1>CARTRIDGE ZERO</h1>
+        <p class="subtitle">Seven Signals · One Exact Machine</p>
+      </div>
+      <div class="power-lamp" aria-label="Console power is on"><span></span> Power</div>
+    </header>
+
+    <section class="cartridge-bay" aria-label="Inserted cartridge">
+      <div class="slot-shadow"></div>
+      <div class="cartridge">
+        <div class="cartridge-grip" aria-hidden="true"></div>
+        <div class="cartridge-label">
+          <span id="cartridgeCode">CZ-01</span>
+          <strong id="cartridgeLabel">PRISM BREAK</strong>
+          <small>SEVEN SIGNALS // PROGRAM SELECT</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen-deck">
+      <div class="telemetry-strip" aria-live="polite">
+        <span>Program <strong id="gameReadout">PRISM BREAK</strong></span>
+        <span>Score <strong id="scoreReadout">000000</strong></span>
+        <span>Lives / rival <strong id="livesReadout">—</strong></span>
+        <span>Level <strong id="levelReadout">—</strong></span>
+      </div>
+
+      <div class="viewport" id="viewport">
+        <canvas id="game" width="160" height="192" tabindex="0" aria-label="Cartridge Zero game display"></canvas>
+        <div class="screen-glass" aria-hidden="true"></div>
+        <div class="scanlines" aria-hidden="true"></div>
+
+        <section class="boot-layer" id="bootLayer" aria-label="Program selection">
+          <div class="boot-copy">
+            <p class="boot-kicker">CARTRIDGE DIRECTORY // 7 PROGRAMS FOUND</p>
+            <h2 id="selectedTitle">PRISM BREAK</h2>
+            <p id="selectedTagline">Split the spectrum. Clear the wall.</p>
+          </div>
+
+          <div class="game-grid" id="gameGrid" role="group" aria-label="Choose a game"></div>
+
+          <div class="boot-contract">
+            <label>
+              <span>Signal seed</span>
+              <input id="seedInput" value="SEVEN-SIGNALS" maxlength="64" autocomplete="off" spellcheck="false">
+            </label>
+            <label>
+              <span>Difficulty switch</span>
+              <select id="difficultySelect">
+                <option value="0">Switch B · forgiving</option>
+                <option value="1" selected>Switch A · arcade</option>
+                <option value="2">Nightmare · hostile</option>
+              </select>
+            </label>
+            <button id="startButton" class="start-button" type="button">Engage selected signal</button>
+          </div>
+        </section>
+
+        <div class="notice" id="notice" hidden>READY</div>
+
+        <section class="message-layer" id="messageLayer" hidden>
+          <p id="messageKicker">CONSOLE HOLD</p>
+          <h2 id="messageTitle">PAUSED</h2>
+          <p id="messageBody">The canonical clock is frozen between ticks.</p>
+          <button id="messageButton" type="button">Resume</button>
+        </section>
+      </div>
+
+      <div class="ledger-strip">
+        <span>Mode <strong id="modeReadout">SELECT</strong></span>
+        <span>Seed <strong id="seedReadout">--------</strong></span>
+        <span>Tick <strong id="tickReadout">0</strong></span>
+        <span>State <strong id="digestReadout">--------</strong></span>
+      </div>
+      <p class="control-hint" id="controlHint">LEFT / RIGHT MOVE · FIRE SERVES</p>
+    </section>
+
+    <section class="switchboard" aria-label="Console switches">
+      <div class="switch-group">
+        <span class="switch-label">System</span>
+        <button id="selectButton" type="button">Game select</button>
+        <button id="resetButton" type="button" disabled>Reset</button>
+        <button id="pauseButton" type="button" disabled>Pause</button>
+      </div>
+      <div class="switch-group">
+        <span class="switch-label">Output</span>
+        <button id="colorButton" type="button" aria-pressed="false">Color</button>
+        <button id="soundButton" type="button" aria-pressed="false">Sound off</button>
+        <button id="fullscreenButton" type="button">Fullscreen</button>
+      </div>
+      <div class="switch-group">
+        <span class="switch-label">Ledger</span>
+        <button id="replayButton" type="button" disabled>Receipt</button>
+      </div>
+    </section>
+
+    <section class="controller" aria-label="Touch controller">
+      <div class="d-pad" aria-label="Directional controls">
+        <button type="button" data-action="up" aria-label="Up">▲</button>
+        <button type="button" data-action="left" aria-label="Left">◀</button>
+        <span aria-hidden="true"></span>
+        <button type="button" data-action="right" aria-label="Right">▶</button>
+        <button type="button" data-action="down" aria-label="Down">▼</button>
+      </div>
+      <div class="action-pad">
+        <button type="button" data-action="second" aria-label="Second action">B</button>
+        <button type="button" data-action="fire" aria-label="Fire">A</button>
+      </div>
+    </section>
+
+    <footer class="console-footer">
+      <p>Keyboard: arrows or WASD · Space/Z fire · X secondary · P pause</p>
+      <p>Offline deterministic entertainment system · no network · no telemetry</p>
+    </footer>
+  </main>
+
+  <dialog id="replayDialog" class="replay-dialog">
+    <form method="dialog" class="dialog-head">
+      <div>
+        <p>Canonical input ledger</p>
+        <h2>CZ01 Receipt</h2>
+      </div>
+      <button aria-label="Close receipt dialog" value="close">×</button>
+    </form>
+    <p id="replayMeta">No active receipt.</p>
+    <textarea id="replayText" spellcheck="false" aria-label="Replay receipt"></textarea>
+    <div class="dialog-actions">
+      <button id="copyReplayButton" type="button">Copy receipt</button>
+      <button id="watchReplayButton" type="button">Watch receipt</button>
+    </div>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

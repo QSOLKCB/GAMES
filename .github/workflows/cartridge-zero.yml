@@ -1,0 +1,43 @@
+name: CARTRIDGE ZERO
+
+on:
+  push:
+    paths:
+      - "CARTRIDGE_ZERO/**"
+      - ".github/workflows/cartridge-zero.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "CARTRIDGE_ZERO/**"
+      - ".github/workflows/cartridge-zero.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Seven-program determinism, AI, replay, and offline tests
+        run: npm --prefix CARTRIDGE_ZERO test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: CARTRIDGE_ZERO/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix CARTRIDGE_ZERO ci
+      - name: Install Chromium
+        run: npx --prefix CARTRIDGE_ZERO playwright install --with-deps chromium
+      - name: Browser cartridge, controls, AI, replay, offline, and mobile smoke test
+        run: npm --prefix CARTRIDGE_ZERO run test:browser
