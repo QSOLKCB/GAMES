@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0d1215">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>PIXEL WARFRONT — Deterministic Command</title>
+  <meta name="description" content="An original offline real-time strategy game with procedural missions and command-log replays.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">QSOL-IMC // OFFLINE STRATEGY SYSTEM</p>
+        <h1>PIXEL <span>WARFRONT</span></h1>
+        <p class="subtitle">Deterministic Command</p>
+      </div>
+      <div class="system-badges" aria-label="System properties">
+        <span>NO NETWORK</span>
+        <span>FIXED 20 Hz</span>
+        <span>COMMAND REPLAY v1</span>
+      </div>
+    </header>
+
+    <section class="game-layout" aria-label="PIXEL WARFRONT game">
+      <div class="cabinet">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="game" width="960" height="600" tabindex="0" aria-label="Top-down real-time strategy battlefield"></canvas>
+
+          <div class="screen-layer intro-layer" id="introLayer">
+            <div class="intro-card">
+              <p class="kicker">PROCEDURAL THEATRE // ORIGINAL SYSTEM</p>
+              <h2>BUILD.<br>HARVEST.<br>COMMAND.</h2>
+              <p>One seed constructs the terrain, flux fields, enemy pressure, and every later mission. Replays rebuild the war from tick zero using only your sparse command log.</p>
+              <label for="seedInput">CAMPAIGN SEED</label>
+              <div class="seed-entry">
+                <input id="seedInput" value="PIXEL-WARFRONT" maxlength="80" autocomplete="off" spellcheck="false">
+                <button id="randomSeed" class="icon-button" type="button" title="Generate a new seed" aria-label="Generate a new seed">↻</button>
+              </div>
+              <div class="intro-actions">
+                <button id="startButton" class="primary" type="button">DEPLOY COMMAND</button>
+                <button id="introReplayButton" type="button">LOAD REPLAY</button>
+              </div>
+              <p class="microcopy">Left-drag select · Right-click command · A attack · G gather · P pause</p>
+            </div>
+          </div>
+
+          <div class="screen-layer message-layer is-hidden" id="messageLayer" aria-live="polite">
+            <div>
+              <p id="messageKicker">COMMAND SYSTEM</p>
+              <h2 id="messageTitle">PAUSED</h2>
+              <p id="messageText">Press P to continue</p>
+            </div>
+          </div>
+        </div>
+
+        <section class="tactical-strip" aria-label="Tactical command shortcuts">
+          <button id="moveModeButton" type="button">M // MOVE</button>
+          <button id="attackModeButton" type="button">A // ATTACK</button>
+          <button id="gatherModeButton" type="button">G // GATHER</button>
+          <button id="stopButton" type="button">S // STOP</button>
+          <span id="placementStatus">SELECT UNITS TO ISSUE ORDERS</span>
+        </section>
+      </div>
+
+      <aside class="control-rail" aria-label="Command instruments">
+        <section class="instrument identity-instrument">
+          <p class="instrument-label">CAMPAIGN IDENTITY</p>
+          <output id="seedReadout">--------</output>
+          <span id="runMode">STANDBY</span>
+        </section>
+
+        <section class="instrument economy-grid" aria-label="Campaign economy">
+          <div><span>FLUX</span><strong id="creditsReadout">0000</strong></div>
+          <div><span>SUPPLY</span><strong id="supplyReadout">0/0</strong></div>
+          <div><span>POWER</span><strong id="powerReadout">0/0</strong></div>
+          <div><span>MISSION</span><strong id="missionReadout">01</strong></div>
+          <div><span>SCORE</span><strong id="scoreReadout">000000</strong></div>
+          <div><span>ENEMY RANK</span><strong id="rankReadout">01</strong></div>
+        </section>
+
+        <section class="instrument theatre-instrument">
+          <p class="instrument-label">CURRENT THEATRE</p>
+          <strong id="biomeReadout">—</strong>
+          <div class="threat-track"><span id="threatBar"></span></div>
+          <small id="signatureReadout">SIG --------</small>
+        </section>
+
+        <section class="instrument selection-instrument">
+          <p class="instrument-label">ACTIVE SELECTION</p>
+          <strong id="selectionName">NO UNITS SELECTED</strong>
+          <p id="selectionMeta">Left-click or drag over friendly units.</p>
+        </section>
+
+        <section class="command-section" aria-label="Production commands">
+          <p class="instrument-label">PRODUCTION</p>
+          <div class="command-grid">
+            <button id="trainDrone" type="button"><span>DRONE</span><small>90F · 1S</small></button>
+            <button id="trainRanger" type="button"><span>RANGER</span><small>150F · 2S</small></button>
+            <button id="trainTank" type="button"><span>CRAWLER</span><small>320F · 4S</small></button>
+          </div>
+        </section>
+
+        <section class="command-section" aria-label="Construction commands">
+          <p class="instrument-label">DRONE CONSTRUCTION</p>
+          <div class="command-grid construction-grid">
+            <button id="buildRelay" type="button"><span>RELAY</span><small>190F · +10P</small></button>
+            <button id="buildRefinery" type="button"><span>REFINERY</span><small>240F · −2P</small></button>
+            <button id="buildFactory" type="button"><span>FORGE</span><small>430F · −4P</small></button>
+            <button id="buildTurret" type="button"><span>TURRET</span><small>270F · −3P</small></button>
+          </div>
+        </section>
+
+        <section class="rail-actions">
+          <button id="pauseButton" type="button" disabled>PAUSE</button>
+          <button id="restartButton" type="button" disabled>RESTART SEED</button>
+          <button id="replayButton" type="button" disabled>EXPORT REPLAY</button>
+          <button id="loadReplayButton" type="button">LOAD REPLAY</button>
+          <button id="soundButton" type="button" aria-pressed="true">SOUND: ON</button>
+        </section>
+
+        <section class="instrument contract">
+          <p class="instrument-label">DETERMINISM CONTRACT</p>
+          <p>The seed rebuilds every battlefield. The replay adds timestamped commands only—never a save-state snapshot.</p>
+        </section>
+
+        <p class="status-line" id="statusLine" aria-live="polite">Command system ready.</p>
+      </aside>
+    </section>
+
+    <footer>
+      <p>Independent original implementation. No third-party game code, artwork, audio, names, factions, maps, or story assets are included.</p>
+      <p>© 2026 QSOL-IMC · MIT code license</p>
+    </footer>
+  </main>
+
+  <dialog id="replayDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">DETERMINISTIC COMMAND RECORDER</p>
+          <h2>REPLAY CODE</h2>
+        </div>
+        <button class="close-button" value="cancel" aria-label="Close replay dialog">×</button>
+      </div>
+      <p>Paste a PIXEL WARFRONT replay to reconstruct that campaign from tick zero, or copy the current command log.</p>
+      <textarea id="replayText" rows="8" spellcheck="false" autocomplete="off" placeholder="PWR1.XXXXXXXX.…"></textarea>
+      <div class="dialog-meta" id="replayMeta">No replay loaded.</div>
+      <div class="dialog-actions">
+        <button id="copyReplayButton" value="copy" type="button">COPY CURRENT</button>
+        <button id="watchReplayButton" value="watch" class="primary" type="button">WATCH REPLAY</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
