@@ -266,6 +266,7 @@
       previousTime = performance.now();
       canvas.focus();
     }
+    updateTelemetry(true);
   }
 
   function showMessage(kicker, title, body, button, action) {
@@ -311,13 +312,25 @@
         notice = `${state.blueprint.code} // ${state.blueprint.directive}`;
         noticeTicks = 150;
       } else if (event.type === "game-over") {
-        paused = true;
-        releaseInput();
-        showMessage("SIGNAL LOST", "MARINE DOWN", `Final score ${event.score}. State receipt ${core.stateDigest(state)}.`, "RESTART", restartRun);
+        if (mode === "replay") {
+          notice = "MARINE DOWN // LEDGER CONTINUES";
+          noticeTicks = 90;
+        } else {
+          paused = true;
+          releaseInput();
+          showMessage("SIGNAL LOST", "MARINE DOWN", `Final score ${event.score}. State receipt ${core.stateDigest(state)}.`, "RESTART", restartRun);
+        }
+        updateTelemetry(true);
       } else if (event.type === "victory") {
-        paused = true;
-        releaseInput();
-        showMessage("DISK FOUR TRANSMITTED", "MASTER RECOVERED", `The lost release is alive again. Score ${event.score}. Canonical state ${core.stateDigest(state)}.`, "PLAY AGAIN", restartRun);
+        if (mode === "replay") {
+          notice = "MASTER RECOVERED // LEDGER CONTINUES";
+          noticeTicks = 90;
+        } else {
+          paused = true;
+          releaseInput();
+          showMessage("DISK FOUR TRANSMITTED", "MASTER RECOVERED", `The lost release is alive again. Score ${event.score}. Canonical state ${core.stateDigest(state)}.`, "PLAY AGAIN", restartRun);
+        }
+        updateTelemetry(true);
       }
     }
   }
@@ -329,6 +342,7 @@
       word = core.nextReplayInput(replayCursor);
       if (word === null) {
         paused = true;
+        updateTelemetry(true);
         showMessage("REPLAY EOF", "RECEIPT COMPLETE", `Reproduced ${replay.ticks} ticks. Final state ${core.stateDigest(state)}.`, "NEW LIVE RUN", restartRun);
         return;
       }
@@ -336,12 +350,14 @@
       word = inputWord();
       if (!core.tryRecordInput(recorder, word)) {
         paused = true;
+        updateTelemetry(true);
         showMessage("RECORDER LIMIT", "SIX-HOUR CAP", "This run reached the bounded replay-recording limit.", "RESTART", restartRun);
         return;
       }
     }
     core.step(state, word);
     handleEvents(state.events);
+    if (mode === "replay" && (state.gameOver || state.victory)) updateTelemetry(true);
     if (flash > 0) flash -= 1;
     if (shake > 0) shake -= 1;
     if (noticeTicks > 0) noticeTicks -= 1;
@@ -431,9 +447,11 @@
     const halfFovRadians = FOV / core.ANGLE_MAX * TAU / 2;
     if (Math.abs(difference) > halfFovRadians * 1.25) return null;
     const distance = Math.max(1, Math.hypot(dx, dy));
+    const depth = Math.trunc((dx * core.cosAngle(state.player.angle) + dy * core.sinAngle(state.player.angle)) / core.TRIG_SCALE);
+    if (depth <= 0) return null;
     const screenX = WIDTH / 2 + difference / halfFovRadians * WIDTH / 2;
-    const size = clamp(74 * core.FP / distance, 3, 118);
-    return { screenX, distance, size };
+    const size = clamp(74 * core.FP / depth, 3, 118);
+    return { screenX, distance, depth, size };
   }
 
   function pixelRect(x, y, w, h, color) {
@@ -442,11 +460,11 @@
   }
 
   function drawEnemySprite(enemy, projection) {
-    const { screenX, distance, size } = projection;
+    const { screenX, depth, size } = projection;
     const left = Math.floor(screenX - size / 2);
     const top = Math.floor(80 - size * 0.62 + Math.sin((state.tick + enemy.phase) * 0.08) * 1.2);
     const centerColumn = clamp(Math.floor(screenX), 0, WIDTH - 1);
-    if (distance > zBuffer[centerColumn] + 140) return;
+    if (depth > zBuffer[centerColumn] + 140) return;
     const type = enemy.kind;
     const pain = enemy.pain > 0;
     const base = pain ? "#f4d8a1" : type === "warden" ? "#893c38" : type === "drone" ? "#5b978c" : type === "trooper" ? "#9b6542" : "#677c6e";
@@ -474,12 +492,12 @@
   }
 
   function drawPickupSprite(pickup, projection) {
-    const { screenX, distance, size } = projection;
+    const { screenX, depth, size } = projection;
     const actualSize = Math.max(3, size * 0.42);
     const x = screenX - actualSize / 2;
     const y = 80 + size * 0.2 + Math.sin((state.tick + pickup.phase) * 0.09) * 2;
     const centerColumn = clamp(Math.floor(screenX), 0, WIDTH - 1);
-    if (distance > zBuffer[centerColumn] + 120) return;
+    if (depth > zBuffer[centerColumn] + 120) return;
     const colors = {
       medkit: "#d7d1ad", armor: "#4f9b8d", cells: "#dd9b4f", shells: "#b05942",
       breach: "#8d5b3c", vulcan: "#7b897d", key: "#f0c764", archive: "#d7be83",
@@ -494,13 +512,13 @@
   }
 
   function drawExitSprite(exit, projection) {
-    const { screenX, distance, size } = projection;
+    const { screenX, depth, size } = projection;
     const actualSize = Math.max(7, size * 0.68);
     const left = screenX - actualSize / 2;
     const top = 80 - actualSize * 0.38;
     const centerColumn = clamp(Math.floor(screenX), 0, WIDTH - 1);
-    if (distance > zBuffer[centerColumn] + 120) return;
-    const sealed = state.missionIndex === core.MISSIONS.length - 1 && state.enemies.some((enemy) => enemy.kind === "warden");
+    if (depth > zBuffer[centerColumn] + 120) return;
+    const sealed = Boolean(core.missionObjectiveDenial(state));
     pixelRect(left, top, actualSize, actualSize * 0.86, "#111817");
     pixelRect(left + actualSize * 0.14, top + actualSize * 0.1, actualSize * 0.72, actualSize * 0.58, sealed ? "#71372f" : "#4f8f7f");
     pixelRect(left + actualSize * 0.25, top + actualSize * 0.19, actualSize * 0.5, actualSize * 0.23, sealed ? "#c06145" : "#afe2bd");
@@ -523,7 +541,7 @@
     };
     const exitProjection = projectEntity(exit);
     if (exitProjection) entries.push({ kind: "exit", entity: exit, projection: exitProjection });
-    entries.sort((a, b) => b.projection.distance - a.projection.distance);
+    entries.sort((a, b) => b.projection.depth - a.projection.depth);
     for (const entry of entries) {
       if (entry.kind === "enemy") drawEnemySprite(entry.entity, entry.projection);
       else if (entry.kind === "pickup") drawPickupSprite(entry.entity, entry.projection);
@@ -706,7 +724,15 @@
     enemyReadout.textContent = `${state.enemies.length} / ${state.totalLevelEnemies}`;
     const defeated = state.totalLevelEnemies - state.enemies.length;
     killMeter.style.width = `${state.totalLevelEnemies ? defeated / state.totalLevelEnemies * 100 : 0}%`;
-    modeReadout.textContent = mode === "replay" ? `REPLAY ${replayCursor ? replayCursor.tick : 0}/${replay ? replay.ticks : 0}` : paused ? "PAUSED" : "LIVE INPUT";
+    if (mode === "replay") {
+      const replayTick = replayCursor ? replayCursor.tick : 0;
+      const replayTicks = replay ? replay.ticks : 0;
+      if (paused && replayTick >= replayTicks) modeReadout.textContent = `REPLAY COMPLETE ${replayTick}/${replayTicks}`;
+      else if (paused) modeReadout.textContent = `REPLAY PAUSED ${replayTick}/${replayTicks}`;
+      else modeReadout.textContent = `REPLAY ${replayTick}/${replayTicks}`;
+    } else if (state.victory) modeReadout.textContent = "VICTORY";
+    else if (state.gameOver) modeReadout.textContent = "GAME OVER";
+    else modeReadout.textContent = paused ? "PAUSED" : "LIVE INPUT";
     seedReadout.textContent = core.seedHex(state.seed);
     tickReadout.textContent = String(state.tick);
     digestReadout.textContent = core.stateDigest(state);
@@ -845,8 +871,10 @@
     get mode() { return mode; },
     get paused() { return paused; },
     get recorder() { return recorder; },
+    get replayTick() { return replayCursor ? replayCursor.tick : null; },
     start: startRun,
     restart: restartRun,
+    project(entity) { return state && entity ? projectEntity(entity) : null; },
     digest() { return state ? core.stateDigest(state) : null; },
   });
 

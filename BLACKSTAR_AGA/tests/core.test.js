@@ -29,6 +29,30 @@ function scriptedInput(tick) {
   return core.packInput(actions, tick % 17 === 0 ? 2 : 0);
 }
 
+function useMissionExit(state) {
+  const { x, y } = state.blueprint.exit;
+  const approaches = [
+    { x: x - 1, y, angle: 0 },
+    { x: x + 1, y, angle: core.ANGLE_MAX / 2 },
+    { x, y: y - 1, angle: core.ANGLE_MAX / 4 },
+    { x, y: y + 1, angle: core.ANGLE_MAX * 3 / 4 },
+  ];
+  const approach = approaches.find((candidate) => !core.isBlockingCell(state, candidate.x, candidate.y));
+  assert.ok(approach, `${state.blueprint.code} exit needs a usable approach`);
+  state.player.x = approach.x * core.FP + core.FP / 2;
+  state.player.y = approach.y * core.FP + core.FP / 2;
+  state.player.angle = approach.angle;
+  state.previousActions = 0;
+  core.step(state, core.packInput(core.INPUT.USE, 0));
+  return state.events.slice();
+}
+
+function finishTransition(state) {
+  const previousMission = state.missionIndex;
+  for (let tick = 0; tick < 120; tick += 1) core.step(state, 0);
+  assert.equal(state.missionIndex, previousMission + 1);
+}
+
 test("seed parsing and fixed-point trigonometry are stable", () => {
   assert.equal(core.normalizeSeed(0x1234abcd), 0x1234abcd);
   assert.equal(core.normalizeSeed("0x1234ABCD"), 0x1234abcd);
@@ -111,6 +135,37 @@ test("every campaign objective is reachable and each cipher precedes its lock", 
   }
 });
 
+test("mission exits enforce the cipher, archive purge, and Warden objectives", () => {
+  const state = core.createRun("OBJECTIVE-GATES", 0);
+
+  assert.equal(core.missionObjectiveDenial(state), "AMBER CIPHER NOT RECOVERED");
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), false);
+  assert.equal(state.events.find((event) => event.type === "denied").reason, "AMBER CIPHER NOT RECOVERED");
+
+  const cipher = state.pickups.find((pickup) => pickup.kind === "key");
+  assert.ok(cipher);
+  state.player.x = cipher.x;
+  state.player.y = cipher.y;
+  core.step(state, 0);
+  assert.equal(core.missionObjectiveDenial(state), null);
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), true);
+  finishTransition(state);
+
+  assert.match(core.missionObjectiveDenial(state), /^\d+ ARCHIVE GUARDS? REMAIN$/);
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), false);
+  assert.match(state.events.find((event) => event.type === "denied").reason, /ARCHIVE GUARDS? REMAIN/);
+  state.enemies.length = 0;
+  assert.equal(core.missionObjectiveDenial(state), null);
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), true);
+  finishTransition(state);
+
+  assert.equal(core.missionObjectiveDenial(state), "WARDEN SIGNAL STILL ACTIVE");
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), false);
+  state.enemies = state.enemies.filter((enemy) => enemy.kind !== "warden");
+  assert.equal(core.missionObjectiveDenial(state), null);
+  assert.equal(useMissionExit(state).some((event) => event.type === "mission-complete"), true);
+});
+
 test("the fixed-tick simulation matches its checked golden digest", () => {
   const state = core.createRun("GOLDEN-BLACKSTAR", 1);
   for (let tick = 0; tick < 1800 && !state.gameOver; tick += 1) core.step(state, scriptedInput(tick));
@@ -138,6 +193,41 @@ test("replay receipt reproduces the exact final state", () => {
   assert.deepEqual(replayed.stats, original.stats);
 });
 
+test("replay steps after a terminal event remain part of the canonical state", () => {
+  const words = [
+    core.packInput(0, 0),
+    core.packInput(core.INPUT.FIRE, 3),
+    core.packInput(core.INPUT.WEAPON_2, -4),
+    core.packInput(core.INPUT.WEAPON_3, 0),
+  ];
+  const recorder = core.createRecorder("TERMINAL-LEDGER", 2);
+  for (const word of words) core.recordInput(recorder, word);
+  const decoded = core.decodeReplay(core.encodeReplay(recorder));
+
+  function armFatalHit(state) {
+    state.player.health = 1;
+    const enemy = state.enemies[0];
+    enemy.x = state.player.x;
+    enemy.y = state.player.y;
+    enemy.active = true;
+    enemy.cooldown = 0;
+  }
+
+  const original = core.createRun(decoded.seed, decoded.difficulty);
+  armFatalHit(original);
+  for (const word of words) core.step(original, word);
+  assert.equal(original.gameOver, true);
+
+  const replayed = core.createRun(decoded.seed, decoded.difficulty);
+  armFatalHit(replayed);
+  const cursor = core.createReplayCursor(decoded);
+  let word;
+  while ((word = core.nextReplayInput(cursor)) !== null) core.step(replayed, word);
+  assert.equal(cursor.tick, decoded.ticks);
+  assert.equal(replayed.previousActions, core.INPUT.WEAPON_3);
+  assert.equal(core.stateDigest(replayed), core.stateDigest(original));
+});
+
 test("replay receipt rejects checksum tampering and malicious metadata", () => {
   const recorder = core.createRecorder("TAMPER", 1);
   for (let tick = 0; tick < 50; tick += 1) core.recordInput(recorder, scriptedInput(tick));
@@ -153,6 +243,21 @@ test("bounded replay recording stops without throwing into a frame loop", () => 
   assert.equal(core.tryRecordInput(recorder, 0), false);
   assert.deepEqual(recorder.runs, []);
   assert.throws(() => core.recordInput(recorder, 0), /six-hour limit/);
+});
+
+test("the receipt bound covers a worst-case changing input for all six hours", () => {
+  const emptyPayload = JSON.stringify([
+    core.ENGINE_VERSION,
+    0xffffffff,
+    core.DIFFICULTIES.length - 1,
+    core.MAX_REPLAY_TICKS,
+    [],
+  ]);
+  const largestOneTickRun = JSON.stringify([0xffffffff, 1]);
+  const worstPayloadLength = emptyPayload.length + core.MAX_REPLAY_TICKS * (largestOneTickRun.length + 1) - 1;
+  const worstEncodedLength = core.REPLAY_PREFIX.length + 10 + Math.ceil(worstPayloadLength / 3) * 4;
+  assert.ok(core.MAX_REPLAY_CODE_LENGTH >= worstEncodedLength);
+  assert.ok(core.MAX_REPLAY_CODE_LENGTH > 12_000_000);
 });
 
 test("walls block movement and open doors become traversable", () => {

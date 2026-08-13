@@ -52,15 +52,32 @@ const core = require("../core.js");
   assert.ok(after.x > before.x);
   assert.ok(after.shots > 0);
   assert.ok(after.hits > 0, "the opening hostile must be visible and hittable");
+
+  const edgeProjection = await page.evaluate(() => {
+    const { state } = blackstarAGA;
+    const forward = 8 * BlackstarCore.FP;
+    const side = 4 * BlackstarCore.FP;
+    const cos = BlackstarCore.cosAngle(state.player.angle);
+    const sin = BlackstarCore.sinAngle(state.player.angle);
+    const entity = {
+      x: state.player.x + Math.trunc((cos * forward - sin * side) / BlackstarCore.TRIG_SCALE),
+      y: state.player.y + Math.trunc((sin * forward + cos * side) / BlackstarCore.TRIG_SCALE),
+    };
+    return blackstarAGA.project(entity);
+  });
+  assert.ok(Math.abs(edgeProjection.depth - 8 * core.FP) <= 2);
+  assert.ok(edgeProjection.distance > edgeProjection.depth * 1.1, "edge projection must retain distinct Euclidean and camera depths");
   await page.screenshot({ path: path.join(__dirname, "blackstar-game.png"), fullPage: true });
 
   await page.click("#pauseButton");
   assert.equal(await page.locator("#messageLayer").isVisible(), true);
+  assert.equal(await page.locator("#modeReadout").innerText(), "PAUSED");
   const pausedTick = await page.evaluate(() => blackstarAGA.state.tick);
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(() => blackstarAGA.state.tick), pausedTick);
   await page.click("#messageButton");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
+  assert.equal(await page.locator("#modeReadout").innerText(), "LIVE INPUT");
 
   await page.click("#replayButton");
   assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
@@ -74,6 +91,50 @@ const core = require("../core.js");
   await page.waitForFunction(() => /REPLAY/.test(document.querySelector("#modeReadout").textContent));
   await page.waitForFunction(() => document.querySelector("#messageTitle").textContent === "RECEIPT COMPLETE", null, { timeout: 10000 });
   assert.equal(await page.locator("#messageLayer").isVisible(), true);
+  assert.match(await page.locator("#modeReadout").innerText(), /^REPLAY COMPLETE \d+\/\d+$/);
+  assert.equal(await page.locator("#digestReadout").innerText(), await page.evaluate(() => blackstarAGA.digest()));
+
+  const terminalRecorder = core.createRecorder("BROWSER-TERMINAL-LEDGER", 2);
+  for (let tick = 0; tick < 119; tick += 1) core.recordInput(terminalRecorder, 0);
+  core.recordInput(terminalRecorder, core.packInput(core.INPUT.WEAPON_3, -7));
+  const terminalReplay = core.decodeReplay(core.encodeReplay(terminalRecorder));
+  await page.evaluate((decoded) => {
+    blackstarAGA.start(decoded.seed, decoded.difficulty, "replay", decoded);
+    const replayState = blackstarAGA.state;
+    replayState.player.health = 1;
+    const enemy = replayState.enemies[0];
+    enemy.x = replayState.player.x;
+    enemy.y = replayState.player.y;
+    enemy.active = true;
+    enemy.cooldown = 0;
+  }, terminalReplay);
+  await page.waitForFunction(() => blackstarAGA.state.gameOver);
+  assert.equal(await page.evaluate(() => blackstarAGA.paused), false, "terminal replay must continue while ledger input remains");
+  await page.waitForFunction((expectedTicks) => (
+    blackstarAGA.replayTick === expectedTicks &&
+    !document.querySelector("#messageLayer").hidden &&
+    document.querySelector("#messageTitle").textContent === "RECEIPT COMPLETE"
+  ), terminalReplay.ticks, { timeout: 5000 });
+  assert.equal(await page.evaluate(() => blackstarAGA.replayTick), terminalReplay.ticks);
+  assert.equal(await page.evaluate(() => blackstarAGA.state.previousActions), core.INPUT.WEAPON_3);
+  assert.equal(await page.locator("#modeReadout").innerText(), `REPLAY COMPLETE ${terminalReplay.ticks}/${terminalReplay.ticks}`);
+  assert.equal(await page.locator("#digestReadout").innerText(), await page.evaluate(() => blackstarAGA.digest()));
+
+  await page.click("#messageButton");
+  await page.waitForFunction(() => blackstarAGA.mode === "live" && blackstarAGA.state.tick > 0);
+  await page.evaluate(() => {
+    const liveState = blackstarAGA.state;
+    liveState.player.health = 1;
+    const enemy = liveState.enemies[0];
+    enemy.x = liveState.player.x;
+    enemy.y = liveState.player.y;
+    enemy.active = true;
+    enemy.cooldown = 0;
+  });
+  await page.waitForFunction(() => blackstarAGA.state.gameOver && blackstarAGA.paused);
+  assert.equal(await page.locator("#modeReadout").innerText(), "GAME OVER");
+  assert.equal(await page.locator("#tickReadout").innerText(), String(await page.evaluate(() => blackstarAGA.state.tick)));
+  assert.equal(await page.locator("#digestReadout").innerText(), await page.evaluate(() => blackstarAGA.digest()));
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url, { waitUntil: "load" });
@@ -93,7 +154,7 @@ const core = require("../core.js");
   assert.deepEqual(requests.filter((requestUrl) => !requestUrl.startsWith("file://")), []);
   assert.deepEqual(errors, []);
   await browser.close();
-  process.stdout.write("ok - boot, fixed-step FPS input, pause, replay receipt, offline boundary, and mobile layout\n");
+  process.stdout.write("ok - boot, fixed-step FPS input, pause, terminal replay drain, telemetry, camera depth, offline boundary, and mobile layout\n");
 })().catch((error) => {
   process.stderr.write(`${error.stack}\n`);
   process.exit(1);

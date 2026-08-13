@@ -21,6 +21,8 @@ assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
 assert.match(app, /function raycast/);
 assert.match(app, /function drawEnemySprite/);
+assert.match(app, /projection\.depth/);
+assert.doesNotMatch(app, /distance > zBuffer/);
 assert.match(app, /function createAudio/);
 assert.match(app, /function isInteractiveTarget/);
 assert.match(notice, /independently implemented/i);

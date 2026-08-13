@@ -15,6 +15,10 @@
   const PLAYER_RADIUS = 218;
   const DOOR_PASS = 820;
   const MAX_REPLAY_TICKS = TICK_RATE * 60 * 60 * 6;
+  // One changing uint32 input per tick is the largest legal ledger: each
+  // serialized run costs at most 15 characters, including its separator.
+  const MAX_REPLAY_PAYLOAD_LENGTH = 96 + MAX_REPLAY_TICKS * 15;
+  const MAX_REPLAY_CODE_LENGTH = REPLAY_PREFIX.length + 10 + Math.ceil(MAX_REPLAY_PAYLOAD_LENGTH / 3) * 4;
   const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
   const INPUT = Object.freeze({
@@ -483,6 +487,20 @@
     return true;
   }
 
+  function missionObjectiveDenial(state) {
+    if (state.missionIndex === 0 && state.pickups.some((pickup) => pickup.kind === "key")) {
+      return "AMBER CIPHER NOT RECOVERED";
+    }
+    if (state.missionIndex === 1 && state.enemies.length > 0) {
+      const suffix = state.enemies.length === 1 ? "" : "S";
+      return `${state.enemies.length} ARCHIVE GUARD${suffix} REMAIN`;
+    }
+    if (state.missionIndex === MISSIONS.length - 1 && state.enemies.some((enemy) => enemy.kind === "warden")) {
+      return "WARDEN SIGNAL STILL ACTIVE";
+    }
+    return null;
+  }
+
   function useAhead(state) {
     const p = state.player;
     const dirX = cosAngle(p.angle);
@@ -520,8 +538,9 @@
         return;
       }
       if (tileX === state.blueprint.exit.x && tileY === state.blueprint.exit.y) {
-        if (state.missionIndex === MISSIONS.length - 1 && state.enemies.some((enemy) => enemy.kind === "warden")) {
-          state.events.push({ type: "denied", reason: "WARDEN SIGNAL STILL ACTIVE" });
+        const denial = missionObjectiveDenial(state);
+        if (denial) {
+          state.events.push({ type: "denied", reason: denial });
           return;
         }
         completeMission(state);
@@ -846,12 +865,14 @@
     const payload = JSON.stringify([ENGINE_VERSION, recorder.seed >>> 0, recorder.difficulty, recorder.ticks, recorder.runs]);
     const checksum = seedHex(fnv1a(payload));
     const encoded = encodeBase64Ascii(payload).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-    return `${REPLAY_PREFIX}.${checksum}.${encoded}`;
+    const code = `${REPLAY_PREFIX}.${checksum}.${encoded}`;
+    if (code.length > MAX_REPLAY_CODE_LENGTH) throw new Error("Replay code is too large");
+    return code;
   }
 
   function decodeReplay(codeInput) {
     const code = String(codeInput || "").trim();
-    if (code.length > 12_000_000) throw new Error("Replay code is too large");
+    if (code.length > MAX_REPLAY_CODE_LENGTH) throw new Error("Replay code is too large");
     const parts = code.split(".");
     if (parts.length !== 3 || parts[0] !== REPLAY_PREFIX || !/^[0-9A-F]{8}$/.test(parts[1])) throw new Error("Replay code header is invalid");
     let encoded = parts[2].replace(/-/g, "+").replace(/_/g, "/");
@@ -943,6 +964,7 @@
     PLAYER_RADIUS,
     DOOR_PASS,
     MAX_REPLAY_TICKS,
+    MAX_REPLAY_CODE_LENGTH,
     INPUT,
     ACTION_MASK,
     DIFFICULTIES,
@@ -966,6 +988,7 @@
     isBlockingCell,
     canOccupy,
     hasLineOfSight,
+    missionObjectiveDenial,
     completeMission,
     step,
     createRecorder,
