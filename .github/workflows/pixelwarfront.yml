@@ -1,0 +1,43 @@
+name: PIXEL WARFRONT
+
+on:
+  push:
+    paths:
+      - "PIXELWARFRONT/**"
+      - ".github/workflows/pixelwarfront.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "PIXELWARFRONT/**"
+      - ".github/workflows/pixelwarfront.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determinism and offline-boundary tests
+        run: npm --prefix PIXELWARFRONT test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: PIXELWARFRONT/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix PIXELWARFRONT ci
+      - name: Install Chromium
+        run: npx --prefix PIXELWARFRONT playwright install --with-deps chromium
+      - name: Browser launch, commands, and replay smoke test
+        run: npm --prefix PIXELWARFRONT run test:browser
