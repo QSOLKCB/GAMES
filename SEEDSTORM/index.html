@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#111418">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SEEDSTORM — Deterministic Strike</title>
+  <meta name="description" content="An original, offline, deterministic vertical shooter with procedural levels and exact input-log replays.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">QSOL-IMC // OFFLINE ARCADE SYSTEM</p>
+        <h1>SEED<span>STORM</span></h1>
+        <p class="subtitle">Deterministic Strike</p>
+      </div>
+      <div class="system-badges" aria-label="System properties">
+        <span>NO NETWORK</span>
+        <span>FIXED 60 Hz</span>
+        <span>REPLAY v1</span>
+      </div>
+    </header>
+
+    <section class="game-layout" aria-label="SEEDSTORM game">
+      <div class="cabinet">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="game" width="480" height="720" tabindex="0" aria-label="Vertical scrolling shooter play field"></canvas>
+
+          <div class="screen-layer intro-layer" id="introLayer">
+            <div class="intro-card">
+              <p class="kicker">PROCEDURAL AIRSPACE // ORIGINAL SYSTEM</p>
+              <h2>ONE SEED.<br>NO SAVE<br>STATES.</h2>
+              <p>Every wave, drop, boss pattern, and terrain sector is regenerated from the run seed. Exact flights replay from tick zero using the recorded control stream.</p>
+              <label for="seedInput">RUN SEED</label>
+              <div class="seed-entry">
+                <input id="seedInput" value="QSOL-SEEDSTORM" maxlength="80" autocomplete="off" spellcheck="false">
+                <button id="randomSeed" class="icon-button" type="button" title="Generate a new seed" aria-label="Generate a new seed">↻</button>
+              </div>
+              <div class="intro-actions">
+                <button id="startButton" class="primary" type="button">LAUNCH FLIGHT</button>
+                <button id="introReplayButton" type="button">LOAD REPLAY</button>
+              </div>
+              <p class="microcopy">Arrows / WASD move · Z / Space fire · Shift focus · X bomb</p>
+            </div>
+          </div>
+
+          <div class="screen-layer message-layer is-hidden" id="messageLayer" aria-live="polite">
+            <div>
+              <p id="messageKicker">SYSTEM</p>
+              <h2 id="messageTitle">PAUSED</h2>
+              <p id="messageText">Press P to continue</p>
+            </div>
+          </div>
+
+          <div class="touch-controls" aria-label="Touch controls">
+            <button id="touchBomb" type="button">BOMB</button>
+            <span>DRAG TO PILOT + FIRE</span>
+            <button id="touchFocus" type="button">FOCUS</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="control-rail" aria-label="Flight instruments">
+        <section class="instrument hero-instrument">
+          <p class="instrument-label">RUN IDENTITY</p>
+          <output id="seedReadout">--------</output>
+          <span id="runMode">STANDBY</span>
+        </section>
+
+        <section class="instrument telemetry-grid" aria-label="Run telemetry">
+          <div><span>SCORE</span><strong id="scoreReadout">00000000</strong></div>
+          <div><span>LEVEL</span><strong id="levelReadout">01</strong></div>
+          <div><span>CHAIN</span><strong id="chainReadout">000</strong></div>
+          <div><span>RANK</span><strong id="rankReadout">1.00×</strong></div>
+          <div><span>LIVES</span><strong id="livesReadout">3</strong></div>
+          <div><span>BOMBS</span><strong id="bombsReadout">3</strong></div>
+        </section>
+
+        <section class="instrument stage-instrument">
+          <p class="instrument-label">CURRENT SECTOR</p>
+          <strong id="biomeReadout">—</strong>
+          <div class="progress-track"><span id="levelProgress"></span></div>
+          <small id="signatureReadout">SIG --------</small>
+        </section>
+
+        <section class="rail-actions">
+          <button id="pauseButton" type="button" disabled>PAUSE</button>
+          <button id="restartButton" type="button" disabled>RESTART SEED</button>
+          <button id="replayButton" type="button" disabled>EXPORT REPLAY</button>
+          <button id="loadReplayButton" type="button">LOAD REPLAY</button>
+          <button id="soundButton" type="button" aria-pressed="true">SOUND: ON</button>
+        </section>
+
+        <section class="instrument contract">
+          <p class="instrument-label">DETERMINISM CONTRACT</p>
+          <p>The seed rebuilds procedural content. The replay code adds the exact per-tick inputs. It contains no save-state snapshot.</p>
+        </section>
+
+        <p class="status-line" id="statusLine" aria-live="polite">System ready.</p>
+      </aside>
+    </section>
+
+    <footer>
+      <p>Independent original implementation. No third-party game assets, audio, code, characters, names, or level layouts are included.</p>
+      <p>© 2026 QSOL-IMC · MIT code license</p>
+    </footer>
+  </main>
+
+  <dialog id="replayDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">DETERMINISTIC FLIGHT RECORDER</p>
+          <h2>REPLAY CODE</h2>
+        </div>
+        <button class="close-button" value="cancel" aria-label="Close replay dialog">×</button>
+      </div>
+      <p id="replayHelp">Paste a SEEDSTORM replay code to simulate that flight from tick zero, or copy the current run.</p>
+      <textarea id="replayText" rows="8" spellcheck="false" autocomplete="off" placeholder="SSR1.XXXXXXXX.…"></textarea>
+      <div class="dialog-meta" id="replayMeta">No replay loaded.</div>
+      <div class="dialog-actions">
+        <button id="copyReplayButton" value="copy" type="button">COPY CURRENT</button>
+        <button id="watchReplayButton" value="watch" class="primary" type="button">WATCH REPLAY</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

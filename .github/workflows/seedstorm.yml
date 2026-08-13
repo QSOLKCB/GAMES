@@ -1,0 +1,43 @@
+name: SEEDSTORM
+
+on:
+  push:
+    paths:
+      - "SEEDSTORM/**"
+      - ".github/workflows/seedstorm.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "SEEDSTORM/**"
+      - ".github/workflows/seedstorm.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determinism and offline-boundary tests
+        run: npm --prefix SEEDSTORM test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: SEEDSTORM/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix SEEDSTORM ci
+      - name: Install Chromium
+        run: npx --prefix SEEDSTORM playwright install --with-deps chromium
+      - name: Browser launch, input, and replay smoke test
+        run: npm --prefix SEEDSTORM run test:browser
