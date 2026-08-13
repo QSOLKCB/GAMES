@@ -399,7 +399,7 @@
     }
     game.enemyShots = enemyShots;
     if (game.enemies.some((enemy) => enemy.y >= 165 * FP)) {
-      loseLife(state, "MOONLINE OVERRUN");
+      if (game.invulnerable <= 0) loseLife(state, "MOONLINE OVERRUN");
       if (!state.gameOver) { state.level = Math.max(1, state.level - 1); makeOrbitalWave(state); resetOrbitalPlayer(state); }
     } else if (game.enemies.length === 0) {
       state.level += 1;
@@ -689,12 +689,21 @@
     return best;
   }
 
+  function segmentIntersectsBox(x0, y0, x1, y1, box) {
+    const left = box.x - Math.trunc(box.w / 2);
+    const right = box.x + Math.trunc(box.w / 2);
+    const top = box.y - Math.trunc(box.h / 2);
+    const bottom = box.y + Math.trunc(box.h / 2);
+    if (Math.max(x0, x1) < left || Math.min(x0, x1) > right || Math.max(y0, y1) < top || Math.min(y0, y1) > bottom) return false;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const cross = (x, y) => dx * (y - y0) - dy * (x - x0);
+    const corners = [cross(left, top), cross(right, top), cross(right, bottom), cross(left, bottom)];
+    return !corners.every((value) => value > 0) && !corners.every((value) => value < 0);
+  }
+
   function circuitLineClear(game, x0, y0, x1, y1) {
-    for (let step = 1; step < 16; step += 1) {
-      const point = { x: x0 + Math.trunc((x1 - x0) * step / 16), y: y0 + Math.trunc((y1 - y0) * step / 16), w: FP, h: FP };
-      if (game.walls.some((wall) => boxesOverlap(point, wall))) return false;
-    }
-    return true;
+    return !game.walls.some((wall) => segmentIntersectsBox(x0, y0, x1, y1, wall));
   }
 
   function spawnCircuitShell(state, owner, tank) {
@@ -1079,5 +1088,6 @@
     stateDigest,
     riverBoundsAt,
     circuitCanOccupy,
+    circuitLineClear,
   });
 });

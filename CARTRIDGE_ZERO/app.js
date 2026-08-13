@@ -227,13 +227,20 @@
     messageLayer.hidden = true;
   }
 
+  function restoreGameplayFocus() {
+    if (state && mode !== "standby" && !replayDialog.open) canvas.focus();
+  }
+
   function setPaused(value) {
-    if (!state || mode === "standby" || state.gameOver || state.victory || replayCursor && replayCursor.tick >= replay.ticks) return;
+    if (!state || mode === "standby") return;
+    const liveRunEnded = mode === "live" && (state.gameOver || state.victory);
+    const replayEnded = mode === "replay" && replayCursor && replayCursor.tick >= replay.ticks;
+    if (liveRunEnded || replayEnded) return;
     paused = Boolean(value);
     releaseInput();
     pauseButton.textContent = paused ? "RESUME" : "PAUSE";
     if (paused) showMessage("CONSOLE HOLD", "PAUSED", "The canonical clock is frozen between ticks.", "RESUME", () => setPaused(false));
-    else hideMessage();
+    else { hideMessage(); restoreGameplayFocus(); }
     updateTelemetry(true);
   }
 
@@ -281,7 +288,7 @@
     messageLayer.hidden = true;
     pauseButton.disabled = true;
     resetButton.disabled = true;
-    replayButton.disabled = true;
+    replayButton.disabled = false;
     setSelectedGame(selectedGameId);
     updateTelemetry(true);
   }
@@ -687,7 +694,10 @@
     seedReadout.textContent = core.seedHex(state.seed);
     tickReadout.textContent = String(state.tick);
     digestReadout.textContent = core.stateDigest(state);
-    if (mode === "replay") modeReadout.textContent = replayCursor && replayCursor.tick >= replay.ticks ? `REPLAY COMPLETE ${replay.ticks}/${replay.ticks}` : `REPLAY ${replayCursor.tick}/${replay.ticks}`;
+    if (mode === "replay") {
+      if (replayCursor && replayCursor.tick >= replay.ticks) modeReadout.textContent = `REPLAY COMPLETE ${replay.ticks}/${replay.ticks}`;
+      else modeReadout.textContent = `${paused ? "PAUSED " : ""}REPLAY ${replayCursor.tick}/${replay.ticks}`;
+    }
     else modeReadout.textContent = paused ? "PAUSED" : state.gameOver || state.victory ? "TERMINAL" : "LIVE";
   }
 
@@ -711,9 +721,11 @@
   }
 
   function openReplayDialog() {
-    if (!state) return;
     releaseInput();
-    if (mode === "live" && recorder) {
+    if (!state) {
+      replayText.value = "";
+      replayMeta.textContent = "Paste a CZ01 receipt to reproduce its signal.";
+    } else if (mode === "live" && recorder) {
       replayText.value = core.encodeReplay(recorder);
       replayMeta.textContent = `${gameDefinition(recorder.gameId).name} // ${recorder.ticks} ticks // state ${core.stateDigest(state)}`;
     } else if (replay) {
@@ -732,17 +744,20 @@
     const enabled = audio.toggle();
     soundButton.textContent = enabled ? "SOUND ON" : "SOUND OFF";
     soundButton.setAttribute("aria-pressed", String(enabled));
+    restoreGameplayFocus();
   });
   colorButton.addEventListener("click", () => {
     monochrome = !monochrome;
     document.documentElement.classList.toggle("mono", monochrome);
     colorButton.textContent = monochrome ? "B/W" : "COLOR";
     colorButton.setAttribute("aria-pressed", String(monochrome));
+    restoreGameplayFocus();
   });
   fullscreenButton.addEventListener("click", () => {
     const consoleElement = document.querySelector(".console");
     if (!document.fullscreenElement) consoleElement.requestFullscreen().catch(() => {});
     else document.exitFullscreen();
+    restoreGameplayFocus();
   });
   copyReplayButton.addEventListener("click", async () => {
     replayText.select();
@@ -770,7 +785,7 @@
   window.addEventListener("keyup", (event) => keys.delete(event.code));
   window.addEventListener("blur", releaseInput);
   document.addEventListener("visibilitychange", () => { if (document.hidden && state && !paused) setPaused(true); });
-  replayDialog.addEventListener("close", () => { releaseInput(); previousTime = performance.now(); });
+  replayDialog.addEventListener("close", () => { releaseInput(); previousTime = performance.now(); restoreGameplayFocus(); });
 
   for (const button of document.querySelectorAll("[data-action]")) {
     const action = button.dataset.action;

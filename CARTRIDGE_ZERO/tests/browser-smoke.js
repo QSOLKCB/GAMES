@@ -38,6 +38,23 @@ function allNumbersAreFiniteIntegers(value) {
     assert.equal(await page.locator("#selectedTitle").innerText(), game.name);
     assert.equal(await page.locator("#cartridgeLabel").innerText(), game.name);
   }
+
+  const standbyRecorder = core.createRecorder("star-talon", "STANDBY-RECEIPT", 1);
+  for (let tick = 0; tick < 30; tick += 1) core.recordInput(standbyRecorder, tick === 29 ? core.INPUT.FIRE : 0);
+  const standbyCode = core.encodeReplay(standbyRecorder);
+  assert.equal(await page.locator("#replayButton").isEnabled(), true);
+  await page.click("#replayButton");
+  assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
+  assert.equal(await page.locator("#replayText").inputValue(), "");
+  assert.match(await page.locator("#replayMeta").innerText(), /Paste a CZ01 receipt/);
+  await page.fill("#replayText", standbyCode);
+  await page.click("#watchReplayButton");
+  await page.waitForFunction(() => cartridgeZero.mode === "replay" && cartridgeZero.state.gameId === "star-talon");
+  await page.waitForFunction(() => document.querySelector("#messageTitle").textContent === "RECEIPT COMPLETE");
+  assert.equal(await page.evaluate(() => cartridgeZero.replayTick), standbyRecorder.ticks);
+  await page.click("#messageButton");
+  await page.locator("#bootLayer").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#replayButton").isEnabled(), true);
   await page.screenshot({ path: path.join(__dirname, "cartridge-zero-boot.png"), fullPage: true });
 
   const renderMetrics = {};
@@ -100,6 +117,17 @@ function allNumbersAreFiniteIntegers(value) {
   await page.click("#messageButton");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#modeReadout").innerText(), "LIVE");
+  const beforeSwitchInput = await page.evaluate(() => cartridgeZero.state.game.paddleX);
+  await page.click("#colorButton");
+  assert.equal(await page.evaluate(() => document.activeElement.id), "game");
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(180);
+  await page.keyboard.up("ArrowLeft");
+  assert.ok(await page.evaluate((beforeX) => cartridgeZero.state.game.paddleX < beforeX, beforeSwitchInput), "keyboard control must resume immediately after a console switch");
+  await page.click("#replayButton");
+  await page.click(".dialog-head button");
+  assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), false);
+  assert.equal(await page.evaluate(() => document.activeElement.id), "game");
   await page.screenshot({ path: path.join(__dirname, "cartridge-zero-prism.png"), fullPage: true });
 
   await page.waitForFunction(() => cartridgeZero.state.tick > 35);
@@ -123,7 +151,7 @@ function allNumbersAreFiniteIntegers(value) {
   assert.match(await page.locator("#modeReadout").innerText(), /^REPLAY COMPLETE \d+\/\d+$/);
 
   const terminalRecorder = core.createRecorder("gridburn", "BROWSER-TERMINAL-TAIL", 2);
-  for (let tick = 0; tick < 89; tick += 1) core.recordInput(terminalRecorder, 0);
+  for (let tick = 0; tick < 179; tick += 1) core.recordInput(terminalRecorder, 0);
   core.recordInput(terminalRecorder, core.INPUT.LEFT | core.INPUT.FIRE);
   const terminalReplay = core.decodeReplay(core.encodeReplay(terminalRecorder));
   const beganUnpaused = await page.evaluate((replayObject) => {
@@ -132,6 +160,14 @@ function allNumbersAreFiniteIntegers(value) {
     return !cartridgeZero.paused;
   }, terminalReplay);
   assert.equal(beganUnpaused, true, "a terminal replay must continue consuming its ledger tail");
+  await page.click("#pauseButton");
+  assert.equal(await page.evaluate(() => cartridgeZero.paused), true);
+  assert.match(await page.locator("#modeReadout").innerText(), /^PAUSED REPLAY /);
+  const pausedReplayTick = await page.evaluate(() => cartridgeZero.replayTick);
+  await page.waitForTimeout(180);
+  assert.equal(await page.evaluate(() => cartridgeZero.replayTick), pausedReplayTick);
+  await page.click("#messageButton");
+  assert.equal(await page.evaluate(() => cartridgeZero.paused), false);
   await page.waitForFunction((ticks) => (
     cartridgeZero.replayTick === ticks &&
     document.querySelector("#messageTitle").textContent === "RECEIPT COMPLETE"

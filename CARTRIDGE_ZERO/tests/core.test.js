@@ -134,6 +134,22 @@ test("Orbital Siege resolves a final formation target into the next wave", () =>
   assert.ok(state.score >= 750);
 });
 
+test("Orbital Siege charges at most one life when fire and an overrun coincide", () => {
+  const state = core.createRun("orbital-siege", "ORBITAL-SINGLE-HIT", 2);
+  state.game.enemies = [{ ...state.game.enemies[0], x: 20 * core.FP, y: 165 * core.FP }];
+  state.game.enemyShots = [{
+    x: state.game.playerX,
+    y: 177 * core.FP - (29 + state.difficulty * 4),
+  }];
+
+  core.step(state, 0);
+
+  assert.equal(state.lives, 1);
+  assert.equal(state.gameOver, false);
+  assert.equal(state.events.filter((event) => event.type === "life-lost").length, 1);
+  assert.ok(state.game.enemies.length > 20, "the overrun must still reset the formation");
+});
+
 test("Star Talon launches deterministic autonomous dives", () => {
   const first = core.createRun("star-talon", "DIVE-TEST", 2);
   const second = core.createRun("star-talon", "DIVE-TEST", 2);
@@ -174,6 +190,13 @@ test("Iron Circuit fields deterministic AI opponents that move and fire", () => 
   core.step(hit, 0);
   assert.equal(hit.level, 2);
   assert.ok(hit.score >= 1500);
+});
+
+test("Iron Circuit line of sight cannot skip a narrow wall between samples", () => {
+  const state = core.createRun("iron-circuit", "CIRCUIT-OCCLUSION", 1);
+  state.game.walls = [{ x: 22 * core.FP, y: 28 * core.FP, w: 6 * core.FP, h: 7 * core.FP }];
+  assert.equal(core.circuitLineClear(state.game, 8 * core.FP, 12 * core.FP, 152 * core.FP, 181 * core.FP), false);
+  assert.equal(core.circuitLineClear(state.game, 8 * core.FP, 60 * core.FP, 152 * core.FP, 60 * core.FP), true);
 });
 
 test("Skywater Command runs a deterministic rival battery to a terminal score", () => {
