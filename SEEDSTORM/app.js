@@ -86,6 +86,10 @@
       this.enabled = true;
       this.context = null;
       this.master = null;
+      this.resetRun();
+    }
+
+    resetRun() {
       this.lastShotTick = -100;
       this.lastHitTick = -100;
     }
@@ -196,6 +200,7 @@
     shake = 0;
     visualEffects = [];
     enemyHitUntil = new Map();
+    audio.resetRun();
     lastRenderedLevel = 0;
     ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(seed)}`;
@@ -224,6 +229,7 @@
     shake = 0;
     visualEffects = [];
     enemyHitUntil = new Map();
+    audio.resetRun();
     lastRenderedLevel = 0;
     ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(replayData.seed)}`;
@@ -331,8 +337,8 @@
         visualFlash = Math.max(visualFlash, 14);
         shake = Math.max(shake, 18);
       } else if (event.type === "bomb") {
-        visualFlash = 18;
-        shake = 12;
+        visualFlash = Math.max(visualFlash, 18);
+        shake = Math.max(shake, 12);
       } else if (event.type === "player-hit") {
         visualFlash = 12;
         shake = 16;
