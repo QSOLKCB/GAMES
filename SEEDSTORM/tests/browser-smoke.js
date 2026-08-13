@@ -46,7 +46,10 @@ const core = require("../core.js");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
 
   await page.keyboard.down("KeyZ");
-  await page.waitForTimeout(1850);
+  await page.waitForTimeout(4300);
+  await page.screenshot({ path: path.join(__dirname, "seedstorm-health.png"), fullPage: true });
+  await page.waitForFunction(() => Number(document.querySelector("#scoreReadout").textContent) > 0, null, { timeout: 5000 });
+  await page.screenshot({ path: path.join(__dirname, "seedstorm-explosion.png"), fullPage: true });
   await page.keyboard.down("ArrowLeft");
   await page.waitForTimeout(300);
   await page.keyboard.up("ArrowLeft");
@@ -81,7 +84,7 @@ const core = require("../core.js");
   await page.waitForFunction(() => document.querySelector("#runMode").textContent.startsWith("REPLAY"));
   assert.equal(await page.locator("#pauseButton").innerText(), "PAUSE");
   assert.match(await page.locator("#runMode").innerText(), /^REPLAY \/\/ \d+(?:\.\d+)?%$/);
-  await page.waitForFunction(() => /REPLAY COMPLETE|GAME OVER/.test(document.querySelector("#messageTitle").textContent), null, { timeout: 5000 });
+  await page.waitForFunction(() => /REPLAY COMPLETE|GAME OVER/.test(document.querySelector("#messageTitle").textContent), null, { timeout: 10000 });
   await page.locator("#messageLayer").waitFor({ state: "visible" });
   assert.match(await page.locator("#messageTitle").textContent(), /REPLAY COMPLETE|GAME OVER/);
 
@@ -102,7 +105,7 @@ const core = require("../core.js");
 
   await page.screenshot({ path: path.join(__dirname, "seedstorm-smoke.png"), fullPage: true });
   await browser.close();
-  process.stdout.write("ok - offline browser launch, live controls, replay export, and replay playback\n");
+  process.stdout.write("ok - offline browser launch, combat feedback, live controls, replay export, and replay playback\n");
 })().catch((error) => {
   process.stderr.write(`${error.stack}\n`);
   process.exit(1);

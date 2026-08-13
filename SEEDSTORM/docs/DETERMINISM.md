@@ -93,7 +93,10 @@ security primitives.
 ## Deliberately outside the contract
 
 - Canvas pixels, CSS layout, scanline overlay, animation interpolation, and screen
-  shake;
+  shake, health-bar styling, impact sparks, and explosion particles;
+- the transient `state.events` presentation queue and its payload shape. Enemy hit
+  and destruction records are derived from authoritative collision state, but the
+  queue is neither serialized into a replay nor included in `stateDigest`;
 - Web Audio scheduling, speaker output, and mute state;
 - the non-authoritative random-seed button;
 - browser focus, window size, and display refresh rate;
@@ -115,4 +118,5 @@ transition, procedural generator, replay interpretation, or digest schema.
 7. graceful recorder sealing at the six-hour boundary;
 8. command-craft defeat, prior-sector cleanup, and deterministic level escalation;
 9. edge-triggered bomb semantics;
-10. absence of ambient time, randomness, and browser storage from the core.
+10. complete enemy hit and destruction event snapshots;
+11. absence of ambient time, randomness, and browser storage from the core.

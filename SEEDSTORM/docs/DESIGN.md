@@ -26,6 +26,20 @@ The player has three interacting resources:
 The small player hit radius supports close navigation and deterministic grazing.
 Focus mode slows movement and exposes a visual hit-area guide.
 
+## Combat feedback
+
+Projectile and bomb damage is resolved once in the deterministic core. Each
+successful strike emits a transient event snapshot containing the enemy identity,
+position, collision radius, remaining health, damage source, and applied damage.
+The browser layer consumes those snapshots to draw impact sparks, a brief damage
+flash, and a compact health bar after an enemy has been wounded.
+
+Destruction emits a final snapshot before the entity is removed. The renderer
+uses it to continue a procedural debris burst at the correct position, including
+a longer multi-ring sequence for command craft. These Canvas effects and their
+audio cues never feed back into simulation state, so a replay produces the same
+collisions, health, score, and digest regardless of display frame rate.
+
 ## Procedural grammar
 
 The generator assembles each sector from five enemy roles:

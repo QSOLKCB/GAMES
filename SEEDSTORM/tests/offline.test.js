@@ -19,6 +19,10 @@ assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
 assert.match(app, /core\.tryRecordInput/);
 assert.match(app, /function isInteractiveTarget/);
+assert.match(app, /function drawEnemyHealth/);
+assert.match(app, /function drawImpact/);
+assert.match(app, /function drawExplosion/);
+assert.match(app, /function drawVisualEffects/);
 
 for (const relative of ["core.js", "app.js", "style.css"]) {
   assert.ok(fs.statSync(path.join(root, relative)).size > 0, `${relative} must exist and be non-empty`);

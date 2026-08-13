@@ -18,6 +18,9 @@ storage is required.
   command-craft parameters from a level-specific derived seed.
 - Simulates gameplay at a fixed 60 ticks per second using integer gameplay
   coordinates and a versioned deterministic core.
+- Confirms every projectile collision with a hit flash and impact spark, reveals a
+  compact health bar above damaged enemies, and renders larger procedural
+  explosions when enemies and command craft are destroyed.
 - Records only the seed and run-length-encoded input masks. Replays do not contain
   serialized world state, checkpoints, screenshots, or save-state snapshots.
 - Synthesizes its sound effects and sparse score at runtime with the Web Audio API.
@@ -63,7 +66,7 @@ limitations.
 | [`app.js`](app.js) | Browser controls, Canvas 2D renderer, synthesized audio, replay UI, and frame scheduling |
 | [`index.html`](index.html) | Offline application shell and accessibility structure |
 | [`style.css`](style.css) | Responsive industrial arcade interface |
-| [`tests/core.test.js`](tests/core.test.js) | Golden digest, determinism, progression, replay, and input regressions |
+| [`tests/core.test.js`](tests/core.test.js) | Golden digest, determinism, collision events, progression, replay, and input regressions |
 | [`tests/offline.test.js`](tests/offline.test.js) | Offline-boundary and application-shell checks |
 | [`tests/browser-smoke.js`](tests/browser-smoke.js) | Real-browser launch, input, replay export, and replay playback smoke test |
 

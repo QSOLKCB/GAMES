@@ -68,6 +68,8 @@
   let accumulator = 0;
   let visualFlash = 0;
   let shake = 0;
+  let visualEffects = [];
+  let enemyHitUntil = new Map();
   let lastRenderedLevel = 0;
 
   function visualHash(a, b, c) {
@@ -85,6 +87,7 @@
       this.context = null;
       this.master = null;
       this.lastShotTick = -100;
+      this.lastHitTick = -100;
     }
 
     ensure() {
@@ -124,6 +127,9 @@
       if (event.type === "shot" && gameState.tick - this.lastShotTick >= 4) {
         this.lastShotTick = gameState.tick;
         this.tone(340 + gameState.player.power * 32, 0.055, "square", 0.035, 170);
+      } else if (event.type === "enemy-hit" && gameState.tick - this.lastHitTick >= 3) {
+        this.lastHitTick = gameState.tick;
+        this.tone(760, 0.035, "square", 0.018, 420);
       } else if (event.type === "enemy-down") {
         this.tone(105, 0.13, "sawtooth", 0.055, 45);
       } else if (event.type === "pickup") {
@@ -188,6 +194,8 @@
     accumulator = 0;
     visualFlash = 0;
     shake = 0;
+    visualEffects = [];
+    enemyHitUntil = new Map();
     lastRenderedLevel = 0;
     ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(seed)}`;
@@ -214,6 +222,8 @@
     accumulator = 0;
     visualFlash = 0;
     shake = 0;
+    visualEffects = [];
+    enemyHitUntil = new Map();
     lastRenderedLevel = 0;
     ui.pause.textContent = "PAUSE";
     ui.seedInput.value = `0x${core.seedHex(replayData.seed)}`;
@@ -284,12 +294,42 @@
     return mask & 0x7f;
   }
 
+  function addVisualEffect(type, event) {
+    const boss = event.kind === "boss";
+    visualEffects.push({
+      type,
+      x: event.x / core.SCALE,
+      y: event.y / core.SCALE,
+      radius: event.radius / core.SCALE,
+      startTick: state.tick,
+      duration: type === "impact" ? 12 : boss ? 96 : 38,
+      seed: visualHash(state.seed, event.id, state.tick ^ (type === "impact" ? 0x51f15e : 0xe7a10de)),
+      boss,
+    });
+    if (visualEffects.length > 128) visualEffects.splice(0, visualEffects.length - 128);
+  }
+
+  function pruneVisualEffects() {
+    visualEffects = visualEffects.filter((effect) => state.tick - effect.startTick <= effect.duration);
+    for (const [id, until] of enemyHitUntil) {
+      if (until < state.tick) enemyHitUntil.delete(id);
+    }
+  }
+
   function processCoreEvents() {
     for (const event of state.events) {
       audio.event(event, state);
-      if (event.type === "enemy-down") {
+      if (event.type === "enemy-hit") {
+        enemyHitUntil.set(event.id, state.tick + 4);
+        addVisualEffect("impact", event);
+      } else if (event.type === "enemy-down") {
+        addVisualEffect("explosion", event);
         visualFlash = Math.max(visualFlash, 2);
         shake = Math.max(shake, 2);
+      } else if (event.type === "boss-down") {
+        addVisualEffect("explosion", event);
+        visualFlash = Math.max(visualFlash, 14);
+        shake = Math.max(shake, 18);
       } else if (event.type === "bomb") {
         visualFlash = 18;
         shake = 12;
@@ -306,6 +346,7 @@
         if (mode === "live") ui.replay.disabled = false;
       }
     }
+    pruneVisualEffects();
     audio.musicTick(state);
   }
 
@@ -500,6 +541,128 @@
       ctx.fillRect(-7, -7, 14, 25);
     }
     ctx.restore();
+
+    if ((enemyHitUntil.get(enemy.id) || -1) >= tick) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.34;
+      ctx.fillStyle = "#fff4dc";
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawEnemyHealth(enemy, x, y, radius);
+  }
+
+  function drawEnemyHealth(enemy, x, y, radius) {
+    if (enemy.kind === "boss" || enemy.health >= enemy.maxHealth || enemy.maxHealth <= 0) return;
+    const width = Math.max(24, Math.min(52, radius * 2.25));
+    const ratio = Math.max(0, Math.min(1, enemy.health / enemy.maxHealth));
+    const left = x - width / 2;
+    const top = y - radius - 10;
+    ctx.fillStyle = "rgba(3,5,6,0.88)";
+    ctx.fillRect(left - 1, top - 1, width + 2, 5);
+    ctx.fillStyle = ratio > 0.5 ? "#8fb18a" : ratio > 0.25 ? "#d9a25b" : "#e36543";
+    ctx.fillRect(left, top, width * ratio, 3);
+    ctx.strokeStyle = "rgba(225,224,214,0.45)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(left - 0.5, top - 0.5, width + 1, 4);
+  }
+
+  function drawImpact(effect, age) {
+    const progress = age / effect.duration;
+    const alpha = Math.max(0, 1 - progress);
+    const count = 6;
+    ctx.save();
+    ctx.translate(effect.x, effect.y);
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = "#fff1cc";
+    ctx.lineWidth = 1.5;
+    for (let index = 0; index < count; index += 1) {
+      const hash = visualHash(effect.seed, index, 0x1a2b3c);
+      const angle = (hash % 6283) / 1000;
+      const speed = 0.7 + ((hash >>> 12) % 90) / 100;
+      const distance = 2 + age * speed;
+      const length = 3 + ((hash >>> 22) % 5);
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(1, 4 * alpha), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawExplosion(effect, age) {
+    const progress = age / effect.duration;
+    const alpha = Math.max(0, 1 - progress);
+    const scale = effect.boss ? 2.35 : Math.max(0.8, effect.radius / 16);
+    const particleCount = effect.boss ? 30 : 14;
+    ctx.save();
+    ctx.translate(effect.x, effect.y);
+    ctx.globalCompositeOperation = "screen";
+
+    const ringRadius = (5 + progress * (effect.boss ? 92 : 34)) * scale;
+    ctx.globalAlpha = alpha * 0.82;
+    ctx.strokeStyle = "#ff8254";
+    ctx.lineWidth = Math.max(1, (1 - progress) * 6 * scale);
+    ctx.beginPath();
+    ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = Math.max(0, 0.72 - progress * 1.2);
+    ctx.fillStyle = "#fff2cf";
+    ctx.beginPath();
+    ctx.arc(0, 0, (1 - progress) * 15 * scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let index = 0; index < particleCount; index += 1) {
+      const hash = visualHash(effect.seed, index, 0xe710de);
+      const angle = (hash % 6283) / 1000;
+      const speed = (0.65 + ((hash >>> 11) % 130) / 100) * scale;
+      const distance = age * speed;
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance + age * age * 0.008;
+      const size = (2 + ((hash >>> 24) % 5)) * Math.max(0.45, alpha);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle + age * (((hash >>> 8) & 1) ? 0.08 : -0.08));
+      ctx.globalAlpha = alpha * (0.45 + ((hash >>> 20) % 50) / 100);
+      ctx.fillStyle = index % 3 === 0 ? "#e8dfc9" : index % 3 === 1 ? "#ff7548" : "#7da7ad";
+      ctx.fillRect(-size / 2, -size / 2, size * 1.8, size);
+      ctx.restore();
+    }
+
+    if (effect.boss) {
+      for (let ring = 0; ring < 3; ring += 1) {
+        const delayed = Math.max(0, Math.min(1, progress * 1.7 - ring * 0.2));
+        if (delayed <= 0) continue;
+        ctx.globalAlpha = (1 - delayed) * 0.42;
+        ctx.strokeStyle = ring % 2 ? "#dce6df" : "#df6843";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, delayed * (50 + ring * 28), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawVisualEffects(gameState) {
+    for (const effect of visualEffects) {
+      const age = gameState.tick - effect.startTick;
+      if (age < 0 || age > effect.duration) continue;
+      if (effect.type === "impact") drawImpact(effect, age);
+      else drawExplosion(effect, age);
+    }
   }
 
   function drawEntities(gameState) {
@@ -546,6 +709,7 @@
       ctx.stroke();
     }
 
+    drawVisualEffects(gameState);
     drawPlayer(gameState.player, gameState.tick);
   }
 
@@ -575,7 +739,7 @@
       ctx.fillStyle = "#c8c0b2";
       ctx.font = "9px monospace";
       ctx.textAlign = "center";
-      ctx.fillText("COMMAND CORE", core.WIDTH / 2, 75);
+      ctx.fillText(`COMMAND CORE // ${Math.ceil(ratio * 100)}%`, core.WIDTH / 2, 75);
     }
 
     if (gameState.levelTick < 150) {
