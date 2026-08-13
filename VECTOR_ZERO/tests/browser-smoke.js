@@ -35,17 +35,6 @@ const core = require("../core.js");
   assert.match(await page.locator("#seedReadout").innerText(), /^[0-9A-F]{8}$/);
   assert.match(await page.locator("#digestReadout").innerText(), /^[0-9A-F]{8}$/);
 
-  const yawBeforeKeyboardSteering = await page.evaluate(() => vectorZero.state.player.yaw);
-  await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(220);
-  await page.keyboard.up("ArrowLeft");
-  await page.waitForTimeout(60);
-  const keyboardYawDelta = await page.evaluate((before) => {
-    const after = vectorZero.state.player.yaw;
-    return ((after - before + VectorZeroCore.ANGLE_MAX / 2) % VectorZeroCore.ANGLE_MAX) - VectorZeroCore.ANGLE_MAX / 2;
-  }, yawBeforeKeyboardSteering);
-  assert.ok(keyboardYawDelta < -1000, `held ArrowLeft must steer continuously, received yaw delta ${keyboardYawDelta}`);
-
   const before = await page.evaluate(() => ({
     tick: vectorZero.state.tick,
     x: vectorZero.state.player.x,
@@ -95,6 +84,18 @@ const core = require("../core.js");
   assert.ok(Math.abs(projected.x - 240) < 2);
   assert.ok(Math.abs(projected.y - 135) < 2);
   assert.ok(Math.abs(projected.depth - 8 * core.FP) < 8);
+
+  const yawBeforeKeyboardSteering = await page.evaluate(() => vectorZero.state.player.yaw);
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(220);
+  await page.keyboard.up("ArrowLeft");
+  await page.waitForTimeout(60);
+  const keyboardYawDelta = await page.evaluate((before) => {
+    const after = vectorZero.state.player.yaw;
+    return ((after - before + VectorZeroCore.ANGLE_MAX / 2) % VectorZeroCore.ANGLE_MAX) - VectorZeroCore.ANGLE_MAX / 2;
+  }, yawBeforeKeyboardSteering);
+  assert.ok(keyboardYawDelta < -1000, `held ArrowLeft must steer continuously, received yaw delta ${keyboardYawDelta}`);
+
   await page.screenshot({ path: path.join(__dirname, "vector-zero-flight.png"), fullPage: true });
 
   await page.click("#pauseButton");
