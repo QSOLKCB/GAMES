@@ -269,7 +269,7 @@
   }
 
   function queueCommand(command) {
-    if (!state || mode !== "live" || paused || state.gameOver) return;
+    if (!state || mode !== "live" || paused || state.missionWon || state.gameOver) return;
     pendingCommands.push(command);
   }
 
@@ -286,6 +286,10 @@
 
   function updateCommandMode() {
     for (const button of [ui.moveMode, ui.attackMode, ui.gatherMode]) button.classList.remove("is-active");
+    if (state && state.missionWon) {
+      ui.placementStatus.textContent = "THEATRE SECURED · COMMAND INPUT LOCKED UNTIL DEPLOYMENT";
+      return;
+    }
     if (commandMode === "move") ui.moveMode.classList.add("is-active");
     if (commandMode === "attack") ui.attackMode.classList.add("is-active");
     if (commandMode === "gather") ui.gatherMode.classList.add("is-active");
@@ -301,14 +305,14 @@
   }
 
   function setCommandMode(next) {
-    if (mode === "replay") return;
+    if (!state || mode === "replay" || state.missionWon || state.gameOver) return;
     commandMode = next;
     pendingBuild = null;
     updateCommandMode();
   }
 
   function setBuildMode(kind) {
-    if (mode === "replay") return;
+    if (!state || mode === "replay" || state.missionWon || state.gameOver) return;
     const drones = liveSelectedUnits().filter((unit) => unit.kind === "drone");
     if (!drones.length) {
       setStatus("Select at least one drone before placing a structure.");
@@ -350,10 +354,14 @@
       } else if (event.type === "unit-ready" && event.team === core.PLAYER) {
         setStatus(`${core.UNIT_TYPES[event.kind].label} ready for orders.`);
       } else if (event.type === "victory") {
+        pendingBuild = null;
+        commandMode = "move";
+        updateCommandMode();
         showMessage("THEATRE SECURED", "COMMAND NODE DOWN", "Next procedural mission deploying");
       } else if (event.type === "mission") {
         hideMessage();
         selectedIds.clear();
+        updateCommandMode();
         setStatus(`Mission ${state.level} deployed. Enemy rank ${state.blueprint.difficulty.rank}.`);
       } else if (event.type === "game-over") {
         showMessage("COMMAND LINK LOST", "DEFEAT", mode === "live" ? "Export the command replay or restart this seed" : "Recorded campaign reached defeat");
@@ -383,7 +391,10 @@
       if (!recordingStopped && !core.tryRecordCommands(recorder, commands)) {
         recordingStopped = true;
         recordingTerminalDigest = core.stateDigest(state);
-        setStatus("Command recorder sealed at six hours; live strategy continues.");
+        const limit = recorder.stopReason === "size"
+          ? "its 16,000,000-character replay-code limit"
+          : "six hours";
+        setStatus(`Command recorder sealed at ${limit}; live strategy continues.`);
       }
     }
     core.step(state, commands);
@@ -415,7 +426,9 @@
     if (mode === "replay") {
       const percent = replay.ticks ? Math.min(100, replayCursor.tick / replay.ticks * 100) : 100;
       ui.mode.textContent = `REPLAY // ${percent.toFixed(1)}%`;
-    } else ui.mode.textContent = state.gameOver ? "COMMAND LOST" : recordingStopped ? "LIVE // RECORDER SEALED" : "LIVE COMMAND";
+    } else if (state.gameOver) ui.mode.textContent = "COMMAND LOST";
+    else if (state.missionWon) ui.mode.textContent = "MISSION SECURED";
+    else ui.mode.textContent = recordingStopped ? "LIVE // RECORDER SEALED" : "LIVE COMMAND";
 
     const selected = liveSelectedUnits();
     if (!selected.length) {
@@ -428,7 +441,10 @@
       ui.selectionMeta.textContent = Array.from(counts).map(([kind, count]) => `${count} ${core.UNIT_TYPES[kind].label}`).join(" · ");
     }
 
-    const productionLocked = mode !== "live" || state.gameOver;
+    const commandLocked = mode !== "live" || state.missionWon || state.gameOver;
+    for (const button of [ui.moveMode, ui.attackMode, ui.gatherMode]) button.disabled = commandLocked;
+    ui.stop.disabled = commandLocked || !selected.length;
+    const productionLocked = commandLocked;
     ui.trainDrone.disabled = productionLocked;
     ui.trainRanger.disabled = productionLocked;
     const hasFactory = state.buildings.some((building) =>
@@ -488,6 +504,7 @@
   }
 
   function issueAt(point, explicitRightClick) {
+    if (!state || state.missionWon || state.gameOver) return;
     const ids = selectedIdArray();
     if (!ids.length) {
       setStatus("Select friendly units before issuing a command.");
@@ -881,7 +898,7 @@
       if (ui.dialog.open) return;
       event.preventDefault(); togglePause(); return;
     }
-    if (mode === "replay") return;
+    if (!state || mode === "replay" || state.missionWon || state.gameOver) return;
     if (event.code === "KeyM") { event.preventDefault(); setCommandMode("move"); }
     else if (event.code === "KeyA") { event.preventDefault(); setCommandMode("attack"); }
     else if (event.code === "KeyG") { event.preventDefault(); setCommandMode("gather"); }
@@ -892,12 +909,12 @@
 
   canvas.addEventListener("contextmenu", (event) => {
     event.preventDefault();
-    if (!state || mode === "replay" || paused) return;
+    if (!state || mode === "replay" || paused || state.missionWon || state.gameOver) return;
     issueAt(canvasPoint(event), true);
   });
 
   canvas.addEventListener("pointerdown", (event) => {
-    if (!state || mode === "replay" || paused || event.button !== 0) return;
+    if (!state || mode === "replay" || paused || state.missionWon || state.gameOver || event.button !== 0) return;
     event.preventDefault();
     canvas.setPointerCapture(event.pointerId);
     const point = canvasPoint(event);

@@ -56,3 +56,7 @@ screen shake, and synthesized audio. These effects never write back to gameplay.
 The game has no save-state system. A seed is a battlefield recipe, while a replay
 is a sparse command history. Empty simulation ticks are implicit. Playback starts
 from a fresh deployment and applies each canonical command at its recorded tick.
+Victory transitions lock player command input until the replacement battlefield
+is deployed, preventing resources from being spent on queues that are about to be
+discarded. Produced units choose the spawn side facing the battlefield interior
+and all unit centers are clamped by their collision radius.

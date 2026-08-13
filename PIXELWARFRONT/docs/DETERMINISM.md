@@ -54,11 +54,15 @@ Ticks with no player commands are absent. Accepted commands are:
 
 Playback initializes `S_0`, emits an empty command list for omitted ticks, and
 applies recorded commands in strictly increasing tick order. Commands are bounded,
-canonicalized, and revalidated during decoding.
+canonicalized, and revalidated during decoding. Command lists are ignored while a
+secured mission is in its fixed transition countdown; the next mission starts with
+a fresh force and accepts commands again.
 
 The textual envelope is `PWR1.<checksum>.<base64url>`. The checksum is an eight-hex
 FNV-1a value over the payload. It detects accidental corruption, not adversarial
-tampering. Recording is capped at six hours at 20 Hz.
+tampering. Recording is capped at six hours at 20 Hz and seals earlier if another
+frame would make the encoded replay exceed 16,000,000 characters. The encoder
+enforces the same ceiling as the decoder.
 
 ## Included in the contract
 

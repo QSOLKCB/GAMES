@@ -113,6 +113,29 @@ test("replay checksums and non-canonical commands reject tampering", () => {
   assert.deepEqual(core.sanitizeCommands([{ t: "launch-nuke", ids: [11] }]), []);
 });
 
+test("recorders seal before they can emit a code the decoder refuses", () => {
+  const recorder = core.createRecorder("BOUNDED-REPLAY");
+  core.recordCommands(recorder, [{ t: "move", ids: [11], x: 300, y: 300 }]);
+  const code = core.encodeReplay(recorder);
+  assert.ok(code.length <= core.MAX_REPLAY_CODE_LENGTH);
+  assert.equal(core.decodeReplay(code).ticks, recorder.ticks);
+
+  const full = core.createRecorder("FULL-REPLAY");
+  full.entryCharacters = core.MAX_REPLAY_PAYLOAD_LENGTH;
+  assert.equal(core.tryRecordCommands(full, []), false);
+  assert.equal(full.stopReason, "size");
+  assert.equal(full.ticks, 0);
+  assert.throws(() => core.recordCommands(full, []), /character code limit/i);
+
+  const oversized = {
+    version: core.ENGINE_VERSION,
+    seed: 1,
+    ticks: 1,
+    entries: ["X".repeat(core.MAX_REPLAY_PAYLOAD_LENGTH)],
+  };
+  assert.throws(() => core.encodeReplay(oversized), /character code limit/i);
+});
+
 test("drones harvest deterministic flux and return it to the economy", () => {
   const state = core.createRun("HARVEST-LOOP");
   const initialCredits = state.credits;
@@ -136,6 +159,61 @@ test("construction and production consume credits and complete on fixed ticks", 
   for (let tick = 0; tick < core.UNIT_TYPES.drone.trainTicks; tick += 1) core.step(state, []);
   assert.equal(playerUnits(state, "drone").length, beforeUnits + 1);
   assert.equal(state.stats.unitsBuilt, 1);
+});
+
+test("victory transitions reject commands without spending carried flux", () => {
+  const state = core.createRun("VICTORY-LOCK");
+  for (const unit of playerUnits(state, "drone")) unit.order = "idle";
+  state.missionWon = true;
+  state.transitionCountdown = 50;
+  const credits = state.credits;
+  const buildingCount = state.buildings.length;
+  const structuresBuilt = state.stats.structuresBuilt;
+  const hq = state.buildings.find((building) => building.team === core.PLAYER && building.kind === "hq");
+  const drones = playerUnits(state, "drone").map((unit) => unit.id);
+
+  core.step(state, [
+    { t: "train", kind: "ranger" },
+    { t: "build", kind: "relay", ids: drones, x: 170, y: 200 },
+  ]);
+
+  assert.equal(state.credits, credits);
+  assert.equal(state.buildings.length, buildingCount);
+  assert.equal(state.stats.structuresBuilt, structuresBuilt);
+  assert.deepEqual(hq.queue, []);
+  assert.equal(state.transitionCountdown, 49);
+});
+
+test("forge production spawns units inward and inside battlefield bounds", () => {
+  const state = core.createRun("EDGE-FORGE");
+  state.units = state.units.filter((unit) => unit.team === core.PLAYER);
+  state.buildings = state.buildings.filter((building) => building.team === core.PLAYER);
+  const type = core.BUILDING_TYPES.factory;
+  const factory = {
+    id: state.nextEntityId++,
+    team: core.PLAYER,
+    kind: "factory",
+    x: (core.WIDTH - 55) * core.SCALE,
+    y: 300 * core.SCALE,
+    radius: type.radius * core.SCALE,
+    health: type.health,
+    maxHealth: type.health,
+    construction: 0,
+    constructionTotal: 0,
+    cooldown: 0,
+    queue: [{ kind: "tank", remaining: 1 }],
+    dead: false,
+  };
+  state.buildings.push(factory);
+
+  core.step(state, []);
+  const tank = playerUnits(state, "tank")[0];
+  assert.ok(tank, "queued tank should be produced");
+  assert.ok(tank.x < factory.x, "a right-edge forge should spawn toward the battlefield interior");
+  assert.ok(tank.x - tank.radius >= 0);
+  assert.ok(tank.x + tank.radius <= core.WIDTH * core.SCALE);
+  assert.ok(tank.y - tank.radius >= 0);
+  assert.ok(tank.y + tank.radius <= core.HEIGHT * core.SCALE);
 });
 
 test("destroying the enemy command node advances to a harder fresh battlefield", () => {

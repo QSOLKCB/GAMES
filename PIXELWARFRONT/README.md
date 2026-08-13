@@ -76,8 +76,9 @@ is `[tick, commands]`; empty ticks are omitted. Playback creates a fresh mission
 from the seed and applies those commands at the recorded ticks.
 
 The checksum detects accidental damage or editing before simulation. It is not a
-cryptographic signature. Recordings seal cleanly at six hours while live play can
-continue.
+cryptographic signature. Recordings seal cleanly at whichever comes first: six
+hours or the decoder's 16,000,000-character code ceiling. Live play can continue,
+and every code emitted before the recorder seals remains loadable.
 
 See [`docs/DETERMINISM.md`](docs/DETERMINISM.md) for the normative contract.
 

@@ -19,6 +19,8 @@ assert.match(app, /requestAnimationFrame\(frame\)/);
 assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
 assert.match(app, /core\.tryRecordCommands/);
+assert.match(app, /paused \|\| state\.missionWon \|\| state\.gameOver/);
+assert.match(app, /const commandLocked = mode !== "live" \|\| state\.missionWon \|\| state\.gameOver/);
 assert.match(app, /function drawBuilding/);
 assert.match(app, /function drawUnit/);
 assert.match(app, /function drawExplosion/);

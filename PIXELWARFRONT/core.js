@@ -14,6 +14,11 @@
   const TICK_RATE = 20;
   const MAX_REPLAY_TICKS = TICK_RATE * 60 * 60 * 6;
   const MAX_COMMANDS_PER_TICK = 32;
+  const MAX_REPLAY_CODE_LENGTH = 16_000_000;
+  const REPLAY_ENVELOPE_LENGTH = REPLAY_PREFIX.length + 10;
+  const MAX_REPLAY_PAYLOAD_LENGTH = Math.floor(
+    (MAX_REPLAY_CODE_LENGTH - REPLAY_ENVELOPE_LENGTH) * 3 / 4
+  );
   const PLAYER = 1;
   const ENEMY = 2;
   const GRID_COLUMNS = 30;
@@ -228,19 +233,22 @@
   function addUnit(state, team, kind, xPixels, yPixels) {
     const type = UNIT_TYPES[kind];
     const maxHealth = scaledHealth(type.health, team, state.blueprint.difficulty);
+    const radius = type.radius * SCALE;
+    const x = clamp(Math.round(xPixels * SCALE), radius, WIDTH * SCALE - radius);
+    const y = clamp(Math.round(yPixels * SCALE), radius, HEIGHT * SCALE - radius);
     const unit = {
       id: nextId(state),
       team,
       kind,
-      x: Math.round(xPixels * SCALE),
-      y: Math.round(yPixels * SCALE),
-      radius: type.radius * SCALE,
+      x,
+      y,
+      radius,
       health: maxHealth,
       maxHealth,
       cooldown: 0,
       order: "idle",
-      targetX: Math.round(xPixels * SCALE),
-      targetY: Math.round(yPixels * SCALE),
+      targetX: x,
+      targetY: y,
       targetId: 0,
       resourceId: 0,
       carry: 0,
@@ -609,7 +617,7 @@
   }
 
   function spawnQueuedUnit(state, building, kind) {
-    const direction = building.team === PLAYER ? 1 : -1;
+    const direction = building.x < WIDTH * SCALE / 2 ? 1 : -1;
     const x = building.x / SCALE + direction * (BUILDING_TYPES[building.kind].radius + 28);
     const y = building.y / SCALE + ((building.id * 19 + state.tick * 7) % 51) - 25;
     const unit = addUnit(state, building.team, kind, x, y);
@@ -885,7 +893,7 @@
     if (state.gameOver) return state;
     state.tick += 1;
     state.levelTick += 1;
-    applyCommands(state, commandsInput);
+    applyCommands(state, state.missionWon ? [] : commandsInput);
     updateEnemyAi(state);
     updateBuildings(state);
     updateUnits(state);
@@ -899,26 +907,79 @@
   }
 
   function createRecorder(seedInput) {
-    return { version: ENGINE_VERSION, seed: normalizeSeed(seedInput), ticks: 0, entries: [] };
+    return {
+      version: ENGINE_VERSION,
+      seed: normalizeSeed(seedInput),
+      ticks: 0,
+      entries: [],
+      entryCharacters: 0,
+      stopReason: null,
+    };
   }
 
-  function recordCommands(recorder, commandsInput) {
-    if (!recorder || recorder.version !== ENGINE_VERSION || !Array.isArray(recorder.entries)) {
+  function validateRecorder(recorder) {
+    if (!recorder || recorder.version !== ENGINE_VERSION || !Array.isArray(recorder.entries) ||
+        !Number.isInteger(recorder.ticks) || recorder.ticks < 0 || recorder.ticks > MAX_REPLAY_TICKS) {
       throw new Error("Invalid replay recorder");
     }
-    if (recorder.ticks >= MAX_REPLAY_TICKS) throw new Error("Replay exceeds the six-hour limit");
+  }
+
+  function countEntryCharacters(entries) {
+    let characters = 0;
+    for (let index = 0; index < entries.length; index += 1) {
+      characters += JSON.stringify(entries[index]).length + (index > 0 ? 1 : 0);
+    }
+    return characters;
+  }
+
+  function replayPayloadLength(recorder, ticks, entryCharacters) {
+    return String(ENGINE_VERSION).length + String(recorder.seed >>> 0).length +
+      String(ticks).length + entryCharacters + 7;
+  }
+
+  function prepareRecordedFrame(recorder, commandsInput) {
+    validateRecorder(recorder);
+    if (recorder.ticks >= MAX_REPLAY_TICKS) return { ok: false, reason: "ticks" };
     const commands = sanitizeCommands(commandsInput);
-    if (commands.length) recorder.entries.push([recorder.ticks, commands]);
-    recorder.ticks += 1;
+    const entry = commands.length ? [recorder.ticks, commands] : null;
+    const currentCharacters = Number.isInteger(recorder.entryCharacters) && recorder.entryCharacters >= 0
+      ? recorder.entryCharacters
+      : countEntryCharacters(recorder.entries);
+    const entryCharacters = currentCharacters + (entry
+      ? JSON.stringify(entry).length + (recorder.entries.length ? 1 : 0)
+      : 0);
+    const ticks = recorder.ticks + 1;
+    if (replayPayloadLength(recorder, ticks, entryCharacters) > MAX_REPLAY_PAYLOAD_LENGTH) {
+      return { ok: false, reason: "size" };
+    }
+    return { ok: true, commands, entry, entryCharacters, ticks };
+  }
+
+  function commitRecordedFrame(recorder, prepared) {
+    if (prepared.entry) recorder.entries.push(prepared.entry);
+    recorder.entryCharacters = prepared.entryCharacters;
+    recorder.ticks = prepared.ticks;
+    recorder.stopReason = null;
     return recorder;
   }
 
-  function tryRecordCommands(recorder, commandsInput) {
-    if (!recorder || recorder.version !== ENGINE_VERSION || !Array.isArray(recorder.entries)) {
-      throw new Error("Invalid replay recorder");
+  function recordCommands(recorder, commandsInput) {
+    const prepared = prepareRecordedFrame(recorder, commandsInput);
+    if (!prepared.ok) {
+      recorder.stopReason = prepared.reason;
+      if (prepared.reason === "ticks") throw new Error("Replay exceeds the six-hour limit");
+      throw new Error("Replay exceeds the 16,000,000-character code limit");
     }
-    if (recorder.ticks >= MAX_REPLAY_TICKS) return false;
-    recordCommands(recorder, commandsInput);
+    return commitRecordedFrame(recorder, prepared);
+  }
+
+  function tryRecordCommands(recorder, commandsInput) {
+    const prepared = prepareRecordedFrame(recorder, commandsInput);
+    if (!prepared.ok) {
+      recorder.stopReason = prepared.reason;
+      return false;
+    }
+    commitRecordedFrame(recorder, prepared);
     return true;
   }
 
@@ -956,18 +1017,23 @@
   }
 
   function encodeReplay(recorder) {
-    if (!recorder || recorder.version !== ENGINE_VERSION || !Array.isArray(recorder.entries)) {
-      throw new Error("Invalid replay recorder");
-    }
+    validateRecorder(recorder);
     const payload = JSON.stringify([ENGINE_VERSION, recorder.seed >>> 0, recorder.ticks, recorder.entries]);
+    if (payload.length > MAX_REPLAY_PAYLOAD_LENGTH) {
+      throw new Error("Replay exceeds the 16,000,000-character code limit");
+    }
     const checksum = seedHex(fnv1a(payload));
     const encoded = encodeBase64Ascii(payload).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-    return `${REPLAY_PREFIX}.${checksum}.${encoded}`;
+    const code = `${REPLAY_PREFIX}.${checksum}.${encoded}`;
+    if (code.length > MAX_REPLAY_CODE_LENGTH) {
+      throw new Error("Replay exceeds the 16,000,000-character code limit");
+    }
+    return code;
   }
 
   function decodeReplay(codeInput) {
     const code = String(codeInput || "").trim();
-    if (code.length > 16_000_000) throw new Error("Replay code is too large");
+    if (code.length > MAX_REPLAY_CODE_LENGTH) throw new Error("Replay code is too large");
     const parts = code.split(".");
     if (parts.length !== 3 || parts[0] !== REPLAY_PREFIX || !/^[0-9A-F]{8}$/.test(parts[1])) {
       throw new Error("Replay code header is invalid");
@@ -1067,6 +1133,8 @@
     TICK_RATE,
     MAX_REPLAY_TICKS,
     MAX_COMMANDS_PER_TICK,
+    MAX_REPLAY_CODE_LENGTH,
+    MAX_REPLAY_PAYLOAD_LENGTH,
     PLAYER,
     ENEMY,
     GRID_COLUMNS,
