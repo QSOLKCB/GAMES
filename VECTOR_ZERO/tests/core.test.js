@@ -171,8 +171,22 @@ test("vector cores gate the exit and campaign transitions end in victory", () =>
     state.player.x = state.blueprint.exit.x;
     state.player.y = state.blueprint.exit.y;
     state.player.z = state.blueprint.exit.z;
-    core.step(state, 0);
+    core.step(state, core.packInput(core.INPUT.FORWARD, 0, 0));
     assert.equal(state.sectorComplete, false);
+    assert.ok(state.events.some((event) => event.type === "denied"));
+    core.step(state, 0);
+    assert.equal(state.events.some((event) => event.type === "denied"), false);
+    state.player.x = state.blueprint.start.x;
+    state.player.y = state.blueprint.start.y;
+    state.player.z = state.blueprint.start.z;
+    state.player.vx = 0;
+    state.player.vy = 0;
+    state.player.vz = 0;
+    core.step(state, 0);
+    state.player.x = state.blueprint.exit.x;
+    state.player.y = state.blueprint.exit.y;
+    state.player.z = state.blueprint.exit.z;
+    core.step(state, 0);
     assert.ok(state.events.some((event) => event.type === "denied"));
     state.coresCollected = state.coresRequired;
     core.step(state, 0);
@@ -188,7 +202,7 @@ test("the fixed-tick simulation matches its checked golden digest", () => {
   const state = core.createRun("GOLDEN-VECTOR-ZERO", 1);
   for (let tick = 0; tick < 1500 && !state.gameOver; tick += 1) core.step(state, scriptedInput(tick));
   assert.ok(state.tick > 300);
-  assert.equal(core.stateDigest(state), "3C9ECE2A");
+  assert.equal(core.stateDigest(state), "FC6E1F37");
 });
 
 test("replay receipts reproduce the exact canonical state including terminal tails", () => {
@@ -232,6 +246,36 @@ test("receipts reject tampering and the size bound covers all permitted ticks", 
   const worstPayload = emptyPayload.length + core.MAX_REPLAY_TICKS * (largestRun.length + 1) - 1;
   const worstCode = core.REPLAY_PREFIX.length + 10 + Math.ceil(worstPayload / 3) * 4;
   assert.ok(core.MAX_REPLAY_CODE_LENGTH >= worstCode);
+
+  const nativeBtoa = globalThis.btoa;
+  const nativeAtob = globalThis.atob;
+  let encodeCalls = 0;
+  let decodeCalls = 0;
+  globalThis.btoa = (text) => {
+    encodeCalls += 1;
+    return nativeBtoa(text);
+  };
+  globalThis.atob = (text) => {
+    decodeCalls += 1;
+    return nativeAtob(text);
+  };
+  try {
+    const changing = core.createRecorder("MAXIMUM-CHANGE-LEDGER", 2);
+    changing.ticks = core.MAX_REPLAY_TICKS;
+    changing.runs = Array.from({ length: changing.ticks }, (_value, index) => [index % 2 ? 0xfffffffe : 0xffffffff, 1]);
+    const maximumCode = core.encodeReplay(changing);
+    assert.ok(maximumCode.length <= core.MAX_REPLAY_CODE_LENGTH);
+    const maximumReplay = core.decodeReplay(maximumCode);
+    assert.equal(maximumReplay.ticks, core.MAX_REPLAY_TICKS);
+    assert.equal(maximumReplay.runs.length, core.MAX_REPLAY_TICKS);
+    assert.deepEqual(maximumReplay.runs[0], [0xffffffff, 1]);
+    assert.deepEqual(maximumReplay.runs.at(-1), [0xfffffffe, 1]);
+    assert.equal(encodeCalls, 1);
+    assert.equal(decodeCalls, 1);
+  } finally {
+    globalThis.btoa = nativeBtoa;
+    globalThis.atob = nativeAtob;
+  }
 });
 
 test("the canonical core has no ambient clock, random source, DOM, storage, or network", () => {

@@ -210,16 +210,18 @@
     if (down("Space") || mouseFire) actions |= core.INPUT.FIRE;
     if (down("KeyX") || mouseMissile) actions |= core.INPUT.MISSILE;
     if (down("ShiftLeft") || down("ShiftRight")) actions |= core.INPUT.BOOST;
-    let yaw = Math.trunc(mouseYaw);
-    let pitch = Math.trunc(mousePitch);
+    const pointerYaw = clamp(Math.trunc(mouseYaw), -64, 63);
+    const pointerPitch = clamp(Math.trunc(mousePitch), -64, 63);
+    mouseYaw -= pointerYaw;
+    mousePitch -= pointerPitch;
+    let yaw = pointerYaw;
+    let pitch = pointerPitch;
     if (down("ArrowLeft")) yaw -= 5;
     if (down("ArrowRight")) yaw += 5;
     if (down("ArrowUp")) pitch -= 5;
     if (down("ArrowDown")) pitch += 5;
     yaw = clamp(yaw, -64, 63);
     pitch = clamp(pitch, -64, 63);
-    mouseYaw -= yaw;
-    mousePitch -= pitch;
     return core.packInput(actions, yaw, pitch);
   }
 

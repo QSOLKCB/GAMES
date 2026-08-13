@@ -18,7 +18,6 @@
   const MAX_REPLAY_TICKS = TICK_RATE * 60 * 60 * 2;
   const MAX_REPLAY_PAYLOAD_LENGTH = 96 + MAX_REPLAY_TICKS * 15;
   const MAX_REPLAY_CODE_LENGTH = REPLAY_PREFIX.length + 10 + Math.ceil(MAX_REPLAY_PAYLOAD_LENGTH / 3) * 4;
-  const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
   const INPUT = Object.freeze({
     FORWARD: 1,
@@ -436,6 +435,7 @@
       coresCollected: 0,
       coresRequired: 3,
       previousActions: 0,
+      exitContact: false,
       sectorComplete: false,
       transition: 0,
       gameOver: false,
@@ -464,6 +464,7 @@
     state.levelTick = 0;
     state.coresCollected = 0;
     state.coresRequired = blueprint.pickups.filter((pickup) => pickup.kind === "core").length;
+    state.exitContact = false;
     state.sectorComplete = false;
     state.transition = 0;
     state.player = {
@@ -734,13 +735,18 @@
 
   function checkExit(state) {
     const exit = state.blueprint.exit;
-    if (distanceApprox(state.player.x - exit.x, state.player.y - exit.y, state.player.z - exit.z) >= 540) return;
-    if (state.coresCollected < state.coresRequired) {
-      if (!(state.previousActions & INPUT.FORWARD)) {
-        state.events.push({ type: "denied", reason: `${state.coresRequired - state.coresCollected} VECTOR CORE${state.coresRequired - state.coresCollected === 1 ? "" : "S"} MISSING` });
-      }
+    if (distanceApprox(state.player.x - exit.x, state.player.y - exit.y, state.player.z - exit.z) >= 540) {
+      state.exitContact = false;
       return;
     }
+    if (state.coresCollected < state.coresRequired) {
+      if (!state.exitContact) {
+        state.events.push({ type: "denied", reason: `${state.coresRequired - state.coresCollected} VECTOR CORE${state.coresRequired - state.coresCollected === 1 ? "" : "S"} MISSING` });
+      }
+      state.exitContact = true;
+      return;
+    }
+    state.exitContact = true;
     completeSector(state);
   }
 
@@ -799,34 +805,18 @@
   }
 
   function encodeBase64Ascii(text) {
-    let output = "";
-    for (let index = 0; index < text.length; index += 3) {
-      const a = text.charCodeAt(index);
-      const hasB = index + 1 < text.length;
-      const hasC = index + 2 < text.length;
-      const b = hasB ? text.charCodeAt(index + 1) : 0;
-      const c = hasC ? text.charCodeAt(index + 2) : 0;
-      output += BASE64[a >>> 2];
-      output += BASE64[((a & 3) << 4) | (b >>> 4)];
-      output += hasB ? BASE64[((b & 15) << 2) | (c >>> 6)] : "=";
-      output += hasC ? BASE64[c & 63] : "=";
-    }
-    return output;
+    if (typeof btoa !== "function") throw new Error("ASCII base64 encoding is unavailable");
+    return btoa(text);
   }
 
   function decodeBase64Ascii(encoded) {
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 !== 0) throw new Error("Replay payload is not valid base64");
-    let output = "";
-    for (let index = 0; index < encoded.length; index += 4) {
-      const a = BASE64.indexOf(encoded[index]);
-      const b = BASE64.indexOf(encoded[index + 1]);
-      const c = encoded[index + 2] === "=" ? 0 : BASE64.indexOf(encoded[index + 2]);
-      const d = encoded[index + 3] === "=" ? 0 : BASE64.indexOf(encoded[index + 3]);
-      output += String.fromCharCode((a << 2) | (b >>> 4));
-      if (encoded[index + 2] !== "=") output += String.fromCharCode(((b & 15) << 4) | (c >>> 2));
-      if (encoded[index + 3] !== "=") output += String.fromCharCode(((c & 3) << 6) | d);
+    if (typeof atob !== "function") throw new Error("ASCII base64 decoding is unavailable");
+    try {
+      return atob(encoded);
+    } catch (_error) {
+      throw new Error("Replay payload is not valid base64");
     }
-    return output;
   }
 
   function encodeReplay(recorder) {
@@ -912,6 +902,7 @@
       coresCollected: state.coresCollected,
       coresRequired: state.coresRequired,
       previousActions: state.previousActions,
+      exitContact: state.exitContact,
       sectorComplete: state.sectorComplete,
       transition: state.transition,
       gameOver: state.gameOver,
