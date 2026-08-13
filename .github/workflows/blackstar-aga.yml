@@ -1,0 +1,43 @@
+name: BLACKSTAR AGA
+
+on:
+  push:
+    paths:
+      - "BLACKSTAR_AGA/**"
+      - ".github/workflows/blackstar-aga.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "BLACKSTAR_AGA/**"
+      - ".github/workflows/blackstar-aga.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Determinism and offline-boundary tests
+        run: npm --prefix BLACKSTAR_AGA test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: BLACKSTAR_AGA/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix BLACKSTAR_AGA ci
+      - name: Install Chromium
+        run: npx --prefix BLACKSTAR_AGA playwright install --with-deps chromium
+      - name: Browser boot, combat input, pause, replay, and offline smoke test
+        run: npm --prefix BLACKSTAR_AGA run test:browser
