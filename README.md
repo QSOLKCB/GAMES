@@ -8,6 +8,7 @@ Every project is designed for local, offline play with no account or telemetry. 
 
 | Game | Runtime | Status | Launch / build |
 |---|---|---|---|
+| [BLACKSTAR AGA](BLACKSTAR_AGA/) | Offline browser | Playable three-mission FPS | Open [`BLACKSTAR_AGA/index.html`](BLACKSTAR_AGA/index.html) |
 | [PIXEL WARFRONT: Deterministic Command](PIXELWARFRONT/) | Offline browser | Playable | Open [`PIXELWARFRONT/index.html`](PIXELWARFRONT/index.html) |
 | [SEEDSTORM: Deterministic Strike](SEEDSTORM/) | Offline browser | Playable | Open [`SEEDSTORM/index.html`](SEEDSTORM/index.html) |
 | [INERTIA ZERO](SUBSPACE/) | Offline browser | Playable | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |

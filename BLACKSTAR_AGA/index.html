@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>BLACKSTAR AGA — The Lost Amiga FPS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="wordmark" aria-label="Blackstar AGA">
+      <span class="wordmark-small">QSOL-IMC RECOVERY DIVISION // DISK 4 OF 4</span>
+      <strong>BLACKSTAR <i>AGA</i></strong>
+    </div>
+    <div class="status-lamp"><span aria-hidden="true"></span> MASTER FOUND // 1996–2026</div>
+  </header>
+
+  <main class="layout">
+    <section class="machine" aria-label="BLACKSTAR AGA game console">
+      <div class="machine-label">
+        <span>OCS SAFE SHELL</span>
+        <span>AGA ENHANCED 320 × 200</span>
+        <span>68020 // 4-VOICE</span>
+      </div>
+
+      <div class="viewport" id="viewport">
+        <canvas id="game" width="320" height="200" tabindex="0" aria-label="First-person game view. Click to capture the mouse.">
+          BLACKSTAR AGA requires a browser with Canvas support.
+        </canvas>
+        <div class="glass" aria-hidden="true"></div>
+
+        <section class="boot-layer" id="bootLayer" aria-labelledby="bootTitle">
+          <div class="boot-card">
+            <p class="boot-prompt">SYS:BLACKSTAR/RECOVERED_MASTER</p>
+            <h1 id="bootTitle">BLACKSTAR AGA</h1>
+            <p class="boot-subtitle">The last game released for Amiga. Then it vanished.</p>
+            <p class="boot-copy">A fictional 1996 micro-release, recovered as an original offline deterministic FPS. Recover the archive. Kill the signal. Bring Disk Four home.</p>
+            <div class="boot-grid">
+              <label for="seedInput">CAMPAIGN SEED
+                <input id="seedInput" value="DISK-FOUR-1996" maxlength="64" autocomplete="off" spellcheck="false">
+              </label>
+              <label for="difficultySelect">DUTY ROSTER
+                <select id="difficultySelect">
+                  <option value="0">TOURIST MARINE</option>
+                  <option value="1" selected>AGA VETERAN</option>
+                  <option value="2">NO-COPY NIGHTMARE</option>
+                </select>
+              </label>
+            </div>
+            <button class="primary" id="startButton" type="button">BOOT RECOVERED MASTER</button>
+            <p class="boot-foot">NO DOWNLOADS · NO ACCOUNTS · NO TELEMETRY · ORIGINAL CODE &amp; ART</p>
+          </div>
+        </section>
+
+        <section class="message-layer" id="messageLayer" hidden aria-live="polite">
+          <div class="message-card">
+            <p id="messageKicker">SYSTEM MESSAGE</p>
+            <h2 id="messageTitle">PAUSED</h2>
+            <p id="messageBody">Press P or select resume.</p>
+            <button class="primary" id="messageButton" type="button">RESUME</button>
+          </div>
+        </section>
+
+        <div class="pointer-hint" id="pointerHint">CLICK VIEW FOR MOUSE LOOK</div>
+      </div>
+
+      <div class="console-strip" role="toolbar" aria-label="Game controls">
+        <button id="pauseButton" type="button" disabled>PAUSE</button>
+        <button id="restartButton" type="button" disabled>RESTART</button>
+        <button id="soundButton" type="button" aria-pressed="false">AUDIO: OFF</button>
+        <button id="replayButton" type="button" disabled>REPLAY / RECEIPT</button>
+        <button id="fullscreenButton" type="button">FULLSCREEN</button>
+      </div>
+
+      <div class="touch-controls" aria-label="Touch game controls">
+        <div class="touch-move">
+          <button type="button" data-hold="TURN_LEFT" aria-label="Turn left">↶</button>
+          <button type="button" data-hold="FORWARD" aria-label="Move forward">▲</button>
+          <button type="button" data-hold="TURN_RIGHT" aria-label="Turn right">↷</button>
+          <button type="button" data-hold="STRAFE_LEFT" aria-label="Strafe left">◀</button>
+          <button type="button" data-hold="BACK" aria-label="Move backward">▼</button>
+          <button type="button" data-hold="STRAFE_RIGHT" aria-label="Strafe right">▶</button>
+        </div>
+        <div class="touch-action">
+          <button type="button" data-hold="FIRE">FIRE</button>
+          <button type="button" data-tap="USE">USE</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sidecar" aria-label="Mission and determinism telemetry">
+      <section class="panel mission-panel">
+        <p class="panel-label">CURRENT ASSIGNMENT</p>
+        <h2 id="missionReadout">DISK NOT BOOTED</h2>
+        <p id="directiveReadout">Insert the recovered master to begin.</p>
+        <div class="meter"><span id="killMeter"></span></div>
+        <div class="row"><span>HOSTILES</span><strong id="enemyReadout">-- / --</strong></div>
+      </section>
+
+      <section class="panel telemetry-panel">
+        <p class="panel-label">DETERMINISTIC RECEIPT</p>
+        <dl>
+          <div><dt>MODE</dt><dd id="modeReadout">STANDBY</dd></div>
+          <div><dt>SEED</dt><dd id="seedReadout">--------</dd></div>
+          <div><dt>TICK</dt><dd id="tickReadout">0</dd></div>
+          <div><dt>STATE</dt><dd id="digestReadout">--------</dd></div>
+          <div><dt>ENGINE</dt><dd>BSA/1 @ 60 HZ</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel controls-panel">
+        <p class="panel-label">FIELD MANUAL</p>
+        <div class="key-grid">
+          <kbd>W/S</kbd><span>MOVE</span>
+          <kbd>A/D</kbd><span>TURN</span>
+          <kbd>Q/E</kbd><span>STRAFE</span>
+          <kbd>SHIFT</kbd><span>RUN</span>
+          <kbd>SPACE</kbd><span>FIRE</span>
+          <kbd>F</kbd><span>USE / OPEN</span>
+          <kbd>1–3</kbd><span>WEAPONS</span>
+          <kbd>TAB</kbd><span>AUTOMAP</span>
+          <kbd>P</kbd><span>PAUSE</span>
+        </div>
+        <p class="manual-note">Mouse: click the view, then look and fire. Esc releases the pointer.</p>
+      </section>
+
+      <section class="panel provenance-panel">
+        <p class="panel-label">DISK PROVENANCE</p>
+        <p>Independent engine. Procedural textures, sprites and tracker-like audio. Runs directly from local files.</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer>
+    <span>BLACKSTAR AGA // QSOL-IMC</span>
+    <span>FICTIONAL RECOVERED-RELEASE FRAME // REAL REPRODUCIBLE SIMULATION</span>
+  </footer>
+
+  <dialog id="replayDialog">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-head">
+        <div>
+          <p class="panel-label">INPUT LEDGER</p>
+          <h2>REPLAY / RECEIPT</h2>
+        </div>
+        <button class="icon-button close-button" value="cancel" aria-label="Close replay dialog">×</button>
+      </div>
+      <p>Every fixed-tick input is run-length encoded with its seed, difficulty and checksum. Paste a receipt below to reproduce the run.</p>
+      <textarea id="replayText" rows="9" spellcheck="false" aria-label="Replay receipt"></textarea>
+      <p id="replayMeta" class="replay-meta">No active run.</p>
+      <div class="dialog-actions">
+        <button id="copyReplayButton" type="button">COPY</button>
+        <button id="watchReplayButton" type="button" class="primary">WATCH RECEIPT</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
