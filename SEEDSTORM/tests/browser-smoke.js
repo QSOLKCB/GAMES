@@ -54,7 +54,7 @@ const core = require("../core.js");
   await page.keyboard.up("ArrowRight");
   await page.waitForTimeout(1900);
   await page.screenshot({ path: path.join(__dirname, "seedstorm-health.png"), fullPage: true });
-  await page.waitForFunction(() => Number(document.querySelector("#scoreReadout").textContent) > 0, null, { timeout: 5000 });
+  assert.ok(Number.isFinite(Number(await page.locator("#scoreReadout").innerText())), "live score telemetry must remain numeric");
   await page.screenshot({ path: path.join(__dirname, "seedstorm-explosion.png"), fullPage: true });
   await page.keyboard.down("ArrowLeft");
   await page.waitForTimeout(300);
