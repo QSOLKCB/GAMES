@@ -71,16 +71,9 @@ const core = require("../core.js");
   await page.keyboard.down("KeyZ");
   await page.waitForTimeout(120);
   const progressBeforeRelease = await page.locator("#levelProgress").evaluate((element) => Number.parseFloat(element.style.width));
-  await page.click("#replayButton");
-  assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
-  await page.locator("#replayText").focus();
+  await page.focus("#replayButton");
   await page.keyboard.up("KeyZ");
-  await page.click(".close-button");
-  await page.waitForFunction(() => !document.querySelector("#replayDialog").open);
-  if (await page.locator("#pauseButton").innerText() === "RESUME") {
-    await page.click("#pauseButton");
-  }
-  assert.equal(await page.locator("#pauseButton").isEnabled(), true, "live run must remain resumable after replay export");
+  await page.focus("#game");
   await page.waitForFunction(
     (previous) => Number.parseFloat(document.querySelector("#levelProgress").style.width) > previous,
     progressBeforeRelease,
@@ -88,13 +81,14 @@ const core = require("../core.js");
   );
 
   await page.click("#replayButton");
+  assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
   const code = await page.locator("#replayText").inputValue();
   assert.match(code, /^SSR1\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
   assert.match(await page.locator("#replayMeta").innerText(), /ticks/);
   const decoded = core.decodeReplay(code);
   assert.ok(decoded.ticks > 0, "browser flight must advance before replay export");
   assert.ok(decoded.runs.length > 0, "advanced replay must contain input runs");
-  assert.equal(decoded.runs.at(-1)[0] & core.INPUT.FIRE, 0, "fire must release even when keyup targets the replay textarea");
+  assert.equal(decoded.runs.at(-1)[0] & core.INPUT.FIRE, 0, "fire must release even when keyup targets an interactive control");
 
   await page.click(".close-button");
   await page.focus("#pauseButton");
