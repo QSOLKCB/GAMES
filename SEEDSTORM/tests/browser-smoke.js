@@ -67,7 +67,12 @@ const core = require("../core.js");
   const progressBeforeRelease = await page.locator("#levelProgress").evaluate((element) => Number.parseFloat(element.style.width));
   await page.keyboard.up("KeyZ");
   await page.waitForFunction(
-    (previous) => Number.parseFloat(document.querySelector("#levelProgress").style.width) > previous,
+    (previous) => {
+      const progress = Number.parseFloat(document.querySelector("#levelProgress").style.width);
+      const pause = document.querySelector("#pauseButton");
+      if (progress <= previous && pause.textContent === "RESUME" && !pause.disabled) pause.click();
+      return progress > previous;
+    },
     progressBeforeRelease,
     { timeout: 20000 }
   );
