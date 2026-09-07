@@ -1,0 +1,16 @@
+[package]
+name = "signal-breach-sampler"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Bounded deterministic arena sampler compatible with the QSOL GALAXY browser ABI"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

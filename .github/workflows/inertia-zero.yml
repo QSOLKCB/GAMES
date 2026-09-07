@@ -1,0 +1,36 @@
+name: INERTIA ZERO
+
+on:
+  push:
+    paths:
+      - "SUBSPACE/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
+      - ".github/workflows/inertia-zero.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "SUBSPACE/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
+      - ".github/workflows/inertia-zero.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  simulation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test generation, navigation, motion, combat, and runtime paths
+        run: |
+          node SUBSPACE/tests/core.test.js
+          node SUBSPACE/tests/runtime-smoke.js
+          node --check shared/qsol-three-stage.js

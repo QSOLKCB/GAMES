@@ -20,7 +20,8 @@ storage is required.
   coordinates and a versioned deterministic core.
 - Confirms every projectile collision with a hit flash and impact spark, reveals a
   compact health bar above damaged enemies, and renders larger procedural
-  explosions when enemies and command craft are destroyed.
+  explosions when enemies and command craft are destroyed. Large targets carry
+  readable threat rings and the player craft leaves a velocity-scaled engine trail.
 - Records only the seed and run-length-encoded input masks. Replays do not contain
   serialized world state, checkpoints, screenshots, or save-state snapshots.
 - Synthesizes its sound effects and sparse score at runtime with the Web Audio API.
@@ -63,7 +64,8 @@ limitations.
 | File | Responsibility |
 |---|---|
 | [`core.js`](core.js) | Pure deterministic level generation, fixed-tick simulation, replay codec, and state digest |
-| [`app.js`](app.js) | Browser controls, Canvas 2D renderer, synthesized audio, replay UI, and frame scheduling |
+| [`app.js`](app.js) | Browser controls, layered Canvas 2D renderer, synthesized audio, replay UI, and frame scheduling |
+| [`../shared/qsol-three-stage.js`](../shared/qsol-three-stage.js) | Local Three.js star-depth and event pulses outside canonical simulation state |
 | [`index.html`](index.html) | Offline application shell and accessibility structure |
 | [`style.css`](style.css) | Responsive industrial arcade interface |
 | [`tests/core.test.js`](tests/core.test.js) | Golden digest, determinism, collision events, progression, replay, and input regressions |

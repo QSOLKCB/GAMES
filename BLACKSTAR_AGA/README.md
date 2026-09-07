@@ -5,7 +5,7 @@ micro-release, rebuilt as an original deterministic offline browser FPS.**
 
 BLACKSTAR AGA is a compact grid-and-sector-flavoured first-person shooter with a
 320×200 software framebuffer, chunky procedural pixel art, four-voice-inspired
-Web Audio effects, three linked missions, and replay receipts that reproduce the
+layered Web Audio effects, four linked missions, and replay receipts that reproduce the
 fixed-tick simulation from its campaign seed and input ledger.
 
 ## Play
@@ -40,6 +40,8 @@ Touch controls appear automatically on coarse-pointer devices.
 - **Dock Nine:** recover the amber cipher and reach the uplink lift.
 - **Cryo Archive:** purge the archive guards and find the sealed stair.
 - **Reactor Crown:** destroy the Black Warden and transmit Disk Four.
+- **Blackstar Citadel:** breach a more open command ring, counter strafing Specters
+  and armored Bulwarks, silence the final Warden, and reach the black gate.
 
 The seed changes deterministic enemy phases and item drops without changing the
 hand-authored navigable mission topology. Three difficulty contracts scale player
@@ -68,14 +70,18 @@ tick. The telemetry panel publishes the current canonical state digest. See
 ## Architecture
 
 - `core.js` — pure deterministic simulation, campaign parsing, combat, replay and digest.
-- `app.js` — fixed-step scheduler, raycaster, procedural sprites, UI, input and audio.
+- `app.js` — fixed-step scheduler, raycaster, differentiated enemy/weapon sprites,
+  layered procedural sound effects, UI, and input.
+- `../shared/qsol-three-stage.js` — optional local Three.js depth, particles, and
+  impact pulses behind the authoritative 320×200 software view.
 - `style.css` — responsive recovered-hardware shell with no fetched fonts or images.
 - `index.html` — local-file-compatible application and strict offline CSP.
 - `tests/` — Node determinism/offline tests and a Playwright end-to-end smoke test.
 
-The raycaster and all art/audio are original. The implementation does not use a
-third-party game engine, framework, package at runtime, ROM, WAD, map, texture,
-sprite, or sample. See [`NOTICE.md`](NOTICE.md).
+The raycaster and all art/audio are original. The only runtime library is the
+repository's pinned local Three.js distribution; no network or third-party game
+assets, ROMs, WADs, maps, textures, sprites, or samples are used. See
+[`NOTICE.md`](NOTICE.md).
 
 ## Development checks
 
@@ -92,6 +98,6 @@ the game runtime.
 
 ## Status
 
-Playable vertical slice / complete three-mission mini-campaign. Version 1 replay
+Playable vertical slice / complete four-mission mini-campaign. Version 2 replay
 receipts are intentionally versioned rather than promised compatible with future
 simulation revisions.

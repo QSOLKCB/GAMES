@@ -12,6 +12,9 @@ game, console, manufacturer, or rights holder. Every program name, rule set,
 visual, sound, opponent, playfield, and piece of fiction in this directory was
 created for this project from code-native primitives.
 
+Presentation also uses the repository's unmodified, MIT-licensed Three.js
+distribution. It supplies no historical game content, ROM data, or expressive assets.
+
 Historical platforms and games may inform the broad genre vocabulary. That does
 not imply affiliation, licensing, sponsorship, endorsement, emulation, source
 compatibility, ROM compatibility, or data compatibility.

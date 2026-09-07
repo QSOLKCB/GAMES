@@ -202,7 +202,7 @@ test("the fixed-tick simulation matches its checked golden digest", () => {
   const state = core.createRun("GOLDEN-VECTOR-ZERO", 1);
   for (let tick = 0; tick < 1500 && !state.gameOver; tick += 1) core.step(state, scriptedInput(tick));
   assert.ok(state.tick > 300);
-  assert.equal(core.stateDigest(state), "FC6E1F37");
+  assert.equal(core.stateDigest(state), "D1FE35C6");
 });
 
 test("replay receipts reproduce the exact canonical state including terminal tails", () => {
@@ -214,7 +214,7 @@ test("replay receipts reproduce the exact canonical state including terminal tai
     core.step(original, word);
   }
   const code = core.encodeReplay(recorder);
-  assert.match(code, /^VZ01\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
+  assert.match(code, /^VZ02\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
   const decoded = core.decodeReplay(code);
   const replayed = core.createRun(decoded.seed, decoded.difficulty);
   const cursor = core.createReplayCursor(decoded);

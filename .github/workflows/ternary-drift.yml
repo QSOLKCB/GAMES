@@ -4,16 +4,28 @@ on:
   push:
     paths:
       - "TERNARYDRIFT/**"
+      - "vendor/three/**"
       - ".github/workflows/ternary-drift.yml"
   pull_request:
     paths:
       - "TERNARYDRIFT/**"
+      - "vendor/three/**"
       - ".github/workflows/ternary-drift.yml"
 
 permissions:
   contents: read
 
 jobs:
+  web-edition:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test deterministic offline web edition
+        run: npm --prefix TERNARYDRIFT/web test
+
   deterministic-core:
     runs-on: ubuntu-latest
     steps:

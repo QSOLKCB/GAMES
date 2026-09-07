@@ -2,7 +2,9 @@
 
 **Ternary Drift** is a native C99/Win32 2D space-trading and combat sandbox built under a hard floppy-sized distribution constraint. Its economy, missions, combat, replay stream, and adaptive tracker score all derive from a declared 64-bit universe seed.
 
-This directory contains the first native vertical slice of the larger design—not a browser prototype and not a claim that the complete game is finished.
+This directory contains the first native vertical slice of the larger design and
+a separate offline browser edition. Neither claims that the complete long-form
+design is finished.
 
 ## Current vertical slice
 
@@ -20,7 +22,24 @@ The implementation currently provides:
 - versioned save images, transition-compressed input replays, deterministic final-state verification, and logical state hashes;
 - host-side determinism tests, a MinGW-w64 build, and an automated 1,350,000-byte internal package limit (below a 1,474,560-byte floppy).
 
-No web technology, SDL, Electron, external game runtime, downloaded content, recorded soundtrack, MP3, OGG, WAV music, or large raster asset is used.
+The native executable uses no web technology, SDL, Electron, external game
+runtime, downloaded content, recorded soundtrack, MP3, OGG, WAV music, or large
+raster asset.
+
+## Offline Three.js edition
+
+Open [`web/index.html`](web/index.html) directly in a modern browser. This new
+edition translates the vertical slice into a responsive local Three.js flight
+deck with fixed-tick seeded systems, inertial flight and engine kill, markets,
+cargo, contracts, upgrades, combat, salvage, gates, synthesized sound, and all
+five adaptive qutrits. It has its own JavaScript fixed-point simulation and is
+not replay/save compatible with the native C build.
+
+Run its deterministic and offline checks with:
+
+```sh
+npm --prefix web test
+```
 
 ## Build
 

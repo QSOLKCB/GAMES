@@ -1,0 +1,43 @@
+name: SIGNAL BREACH
+
+on:
+  push:
+    paths:
+      - "SIGNAL_BREACH/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
+      - ".github/workflows/signal-breach.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "SIGNAL_BREACH/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
+      - ".github/workflows/signal-breach.yml"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test deterministic simulation, Wasm parity, and offline boundary
+        run: npm --prefix SIGNAL_BREACH test
+
+  rust-sampler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Test Rust sampler
+        run: cargo test --manifest-path SIGNAL_BREACH/rust/Cargo.toml --locked
+      - name: Build browser WebAssembly
+        run: cargo build --manifest-path SIGNAL_BREACH/rust/Cargo.toml --release --target wasm32-unknown-unknown --locked

@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>BLACKSTAR AGA — The Lost Amiga FPS</title>
+  <link rel="stylesheet" href="../shared/qsol-three.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -106,7 +107,7 @@
           <div><dt>SEED</dt><dd id="seedReadout">--------</dd></div>
           <div><dt>TICK</dt><dd id="tickReadout">0</dd></div>
           <div><dt>STATE</dt><dd id="digestReadout">--------</dd></div>
-          <div><dt>ENGINE</dt><dd>BSA/1 @ 60 HZ</dd></div>
+          <div><dt>ENGINE</dt><dd>BSA/2 @ 60 HZ</dd></div>
         </dl>
       </section>
 
@@ -157,6 +158,9 @@
     </form>
   </dialog>
 
+  <script src="../vendor/galaxy-sampler/galaxy-wasm.js"></script>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../shared/qsol-three-stage.js"></script>
   <script src="core.js"></script>
   <script src="app.js"></script>
 </body>

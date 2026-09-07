@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SIGNAL BREACH — Tactical Twin-Stick Assault</title>
+  <meta name="description" content="A deterministic offline tactical twin-stick shooter powered by Three.js and a Rust/WebAssembly arena sampler.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="console">
+    <header>
+      <div><p>QSOL // BLACK CHANNEL OPERATIONS</p><h1>SIGNAL <span>BREACH</span></h1></div>
+      <div class="runtime"><i></i><span id="runtimeReadout">OFFLINE CORE READY</span></div>
+    </header>
+    <section id="arenaShell" class="arena-shell">
+      <canvas id="game" tabindex="0" aria-label="Top-down tactical shooter. Move with WASD and aim with the mouse or a gamepad right stick."></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+      <section class="top-hud" aria-label="Operator status">
+        <div class="meter"><span>VITAL</span><i><b id="healthMeter"></b></i><strong id="healthReadout">100</strong></div>
+        <div class="meter"><span>ARMOR</span><i><b id="armorMeter"></b></i><strong id="armorReadout">50</strong></div>
+        <div class="meter"><span>DASH</span><i><b id="dashMeter"></b></i><strong id="dashReadout">100</strong></div>
+      </section>
+      <aside class="objective-hud">
+        <p>BREACH ORDER</p>
+        <h2 id="objectiveTitle">CAPTURE RELAYS</h2>
+        <div id="relayReadout" class="relays"></div>
+        <small id="objectiveDetail">Hold each uplink when its perimeter is clear.</small>
+      </aside>
+      <section class="weapon-hud">
+        <p>ACTIVE PLATFORM</p>
+        <h2 id="weaponReadout">VECTOR CARBINE</h2>
+        <div class="heat"><i id="heatMeter"></i></div>
+        <span><kbd>Q / E</kbd> CYCLE &nbsp; <kbd>SPACE</kbd> DASH</span>
+      </section>
+      <section class="score-hud">
+        <span>SCORE <b id="scoreReadout">000000</b></span>
+        <span>HOSTILES <b id="enemyReadout">00</b></span>
+        <span>STATE <b id="digestReadout">--------</b></span>
+      </section>
+      <div id="eventFlash" class="event-flash"></div>
+      <section id="bootLayer" class="boot-layer" aria-labelledby="bootTitle">
+        <div class="briefing">
+          <p>ONE OPERATOR // THREE RELAYS // NO EXTRACTION UNTIL CLEAN</p>
+          <h2 id="bootTitle">BREAK THE SIGNAL</h2>
+          <p class="brief">Breach a procedurally sampled communications yard. Read the lanes, use hard cover, clear relay perimeters, and extract before the response closes.</p>
+          <label for="seedInput">OPERATION SEED</label>
+          <input id="seedInput" value="NIGHT-CIRCUIT-7" maxlength="64" autocomplete="off" spellcheck="false">
+          <button id="startButton" class="primary" type="button">DEPLOY OPERATOR</button>
+          <small>WASD move · Mouse aim/fire · Space dash · Q/E weapons · Dual-stick gamepad supported</small>
+        </div>
+      </section>
+      <section id="resultLayer" class="result-layer" hidden aria-live="assertive">
+        <div><p id="resultKicker">OPERATION COMPLETE</p><h2 id="resultTitle">SIGNAL BROKEN</h2><p id="resultBody"></p><button id="againButton" class="primary" type="button">RUN NEW BREACH</button></div>
+      </section>
+      <div class="touch-controls" aria-label="Touch controls">
+        <div class="move-pad">
+          <button type="button" data-hold="UP">▲</button><button type="button" data-hold="LEFT">◀</button><button type="button" data-hold="DOWN">▼</button><button type="button" data-hold="RIGHT">▶</button>
+        </div>
+        <div><button type="button" data-hold="FIRE">FIRE</button><button type="button" data-tap="DASH">DASH</button></div>
+      </div>
+    </section>
+    <footer>
+      <span>MOVE <kbd>WASD</kbd> &nbsp; AIM / FIRE <kbd>MOUSE</kbd> &nbsp; DASH <kbd>SPACE</kbd> &nbsp; WEAPONS <kbd>Q/E</kbd></span>
+      <div><button id="audioButton" type="button" aria-pressed="false">AUDIO OFF</button><button id="restartButton" type="button" disabled>ABORT / RESEED</button><button id="fullscreenButton" type="button">FULLSCREEN</button></div>
+    </footer>
+  </main>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../vendor/galaxy-sampler/galaxy-wasm.js"></script>
+  <script src="core.js"></script>
+  <script src="sampler.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071013">
   <meta name="description" content="VECTOR ZERO is an original deterministic six-degrees-of-freedom arcade mine shooter that runs entirely offline.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>VECTOR ZERO — Deterministic 6DOF Mine Shooter</title>
+  <link rel="stylesheet" href="../shared/qsol-three.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,7 +31,7 @@
 
             <section id="bootLayer" class="boot-layer">
               <div class="boot-card">
-                <p class="eyebrow">RECOVERED NULL-SPACE PROTOTYPE // BUILD VZ01</p>
+                <p class="eyebrow">RECOVERED NULL-SPACE PROTOTYPE // BUILD VZ02</p>
                 <h2>NO HORIZON.<br>NO SAFE AXIS.</h2>
                 <p>Recover three vector cores in each mine, survive the autonomous custodians, and reach the zero gate. Every sector is reconstructed from your campaign seed.</p>
                 <div class="boot-fields">
@@ -88,7 +89,7 @@
           <div class="readout-line"><span>SEED</span><b id="seedReadout">--------</b></div>
           <div class="readout-line"><span>TICK</span><b id="tickReadout">0</b></div>
           <div class="readout-line"><span>STATE</span><b id="digestReadout">--------</b></div>
-          <div class="readout-line"><span>ENGINE</span><b>VZ01 / 60 HZ</b></div>
+          <div class="readout-line"><span>ENGINE</span><b>VZ02 / 60 HZ</b></div>
         </section>
 
         <section class="manual">
@@ -120,7 +121,7 @@
   <dialog id="replayDialog">
     <form method="dialog" class="replay-card">
       <header><div><p class="eyebrow">DETERMINISTIC LEDGER</p><h2>REPLAY RECEIPT</h2></div><button class="close" value="cancel" aria-label="Close replay dialog">×</button></header>
-      <p>Every fixed-tick control word is run-length encoded with its seed, flight contract, and checksum. Paste a VZ01 receipt to reproduce a flight.</p>
+      <p>Every fixed-tick control word is run-length encoded with its seed, flight contract, and checksum. Paste a VZ02 receipt to reproduce a flight.</p>
       <textarea id="replayText" rows="9" spellcheck="false" aria-label="Replay receipt"></textarea>
       <p id="replayMeta" class="replay-meta">No active flight.</p>
       <div class="dialog-actions">
@@ -130,6 +131,9 @@
     </form>
   </dialog>
 
+  <script src="../vendor/galaxy-sampler/galaxy-wasm.js"></script>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../shared/qsol-three-stage.js"></script>
   <script src="core.js"></script>
   <script src="app.js"></script>
 </body>

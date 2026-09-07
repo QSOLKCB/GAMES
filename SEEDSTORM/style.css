@@ -178,6 +178,7 @@ button.primary:focus-visible {
   border: 1px solid #55616a;
   background: #080a0d;
   isolation: isolate;
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.66), 0 0 34px rgba(91, 144, 139, 0.1);
 }
 
 .canvas-wrap::before {

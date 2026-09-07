@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>TERNARY DRIFT — Offline Web Edition</title>
+  <meta name="description" content="A deterministic offline Three.js space-trading and combat sandbox.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="bridge">
+    <header class="masthead">
+      <div>
+        <p>QSOL-IMC // NAVIGATION BUILD 01</p>
+        <h1>TERNARY <span>DRIFT</span></h1>
+      </div>
+      <div class="status"><i></i><span id="runtimeReadout">OFFLINE / WEBGL READY</span></div>
+    </header>
+
+    <section class="flight-deck" aria-label="Ternary Drift flight deck">
+      <div class="view-shell">
+        <div class="view-label"><span>LOCAL SYSTEM PROJECTION</span><span id="systemReadout">NO SIGNAL</span></div>
+        <div id="viewport" class="viewport">
+          <canvas id="game" tabindex="0" aria-label="Top-down space flight view. Use the keyboard controls listed beside the game."></canvas>
+          <div class="reticle" aria-hidden="true"></div>
+          <div class="vignette" aria-hidden="true"></div>
+          <section id="bootLayer" class="boot-layer" aria-labelledby="bootTitle">
+            <div class="boot-card">
+              <p>THREE-STATE NAVIGATION COMPUTER</p>
+              <h2 id="bootTitle">ENTER THE DRIFT</h2>
+              <label for="seedInput">UNIVERSE SEED</label>
+              <input id="seedInput" value="TERNARY-DRIFT-WEB" maxlength="64" autocomplete="off" spellcheck="false">
+              <button id="startButton" class="primary" type="button">INITIALISE FLIGHT</button>
+              <small>Direct-file offline build · deterministic 60 Hz simulation</small>
+            </div>
+          </section>
+          <section id="dockLayer" class="dock-layer" hidden aria-live="polite">
+            <div>
+              <p>STATION LINK / <span id="dockFaction">—</span></p>
+              <h2 id="dockTitle">DOCKED</h2>
+              <div id="marketRows" class="market"></div>
+              <div class="dock-actions">
+                <button type="button" data-action="BUY">BUY [B]</button>
+                <button type="button" data-action="SELL">SELL [S]</button>
+                <button type="button" data-action="MISSION">CONTRACT [M]</button>
+                <button type="button" data-action="UPGRADE">UPGRADE [U]</button>
+                <button type="button" data-action="REPAIR">REPAIR [R]</button>
+                <button type="button" data-action="LAUNCH" class="primary">LAUNCH [L]</button>
+              </div>
+            </div>
+          </section>
+          <div id="toast" class="toast" aria-live="polite"></div>
+        </div>
+        <div class="command-bar">
+          <button id="audioButton" type="button" aria-pressed="false">AUDIO OFF</button>
+          <button id="restartButton" type="button" disabled>RESEED</button>
+          <button id="fullscreenButton" type="button">FULLSCREEN</button>
+          <span id="assistReadout">FLIGHT ASSIST / ON</span>
+        </div>
+      </div>
+
+      <aside class="instruments" aria-label="Flight telemetry">
+        <section class="identity">
+          <p class="label">PILOT LEDGER</p>
+          <dl>
+            <div><dt>CREDITS</dt><dd id="creditsReadout">0000</dd></div>
+            <div><dt>CARGO</dt><dd id="cargoReadout">0 / 0</dd></div>
+            <div><dt>SCORE</dt><dd id="scoreReadout">000000</dd></div>
+            <div><dt>STATE</dt><dd id="digestReadout">--------</dd></div>
+          </dl>
+        </section>
+        <section>
+          <p class="label">SHIP CONDITION</p>
+          <div class="meter-row"><span>HULL</span><div><i id="hullMeter"></i></div><b id="hullReadout">100</b></div>
+          <div class="meter-row"><span>SHIELD</span><div><i id="shieldMeter"></i></div><b id="shieldReadout">60</b></div>
+          <div class="meter-row"><span>ENERGY</span><div><i id="energyMeter"></i></div><b id="energyReadout">100</b></div>
+        </section>
+        <section>
+          <p class="label">TERNARY STATE</p>
+          <div id="qutrits" class="qutrits"></div>
+        </section>
+        <section>
+          <p class="label">ACTIVE CONTRACT</p>
+          <p id="missionReadout" class="mission">No contract. Dock and press M.</p>
+        </section>
+        <section class="controls">
+          <p class="label">FLIGHT CONTROL</p>
+          <div><kbd>W/S</kbd><span>THRUST / REVERSE</span></div>
+          <div><kbd>A/D</kbd><span>STRAFE</span></div>
+          <div><kbd>←/→</kbd><span>ROTATE</span></div>
+          <div><kbd>SPACE</kbd><span>PULSE CANNON</span></div>
+          <div><kbd>E / J</kbd><span>DOCK / JUMP</span></div>
+          <div><kbd>K</kbd><span>ENGINE KILL</span></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="../../vendor/three/three.min.js"></script>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -240,8 +240,10 @@ h1 {
   background: var(--screen);
   box-shadow:
     inset 0 0 50px rgba(0, 0, 0, 0.88),
+    inset 0 0 16px rgba(219, 176, 94, 0.12),
     0 0 0 1px #4b463a,
-    0 7px 20px #000;
+    0 7px 20px #000,
+    0 0 34px rgba(111, 151, 137, 0.1);
 }
 
 canvas {
@@ -325,18 +327,21 @@ canvas {
   background: rgba(27, 31, 26, 0.88);
   text-align: left;
   cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 
 .game-grid button:hover,
 .game-grid button:focus-visible {
   border-color: var(--amber);
   outline: none;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.34);
 }
 
 .game-grid button.selected {
   border-color: #b67a43;
   background: #3a281c;
-  box-shadow: inset 3px 0 #c47a43;
+  box-shadow: inset 3px 0 #c47a43, 0 0 18px rgba(196, 122, 67, 0.14);
 }
 
 .game-grid span {

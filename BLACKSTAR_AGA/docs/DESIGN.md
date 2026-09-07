@@ -33,7 +33,7 @@ Paula-era economy. Audio never feeds back into gameplay state.
 
 ## Scope
 
-The vertical slice is a complete three-mission mini-campaign rather than a claim
+The vertical slice is a complete four-mission mini-campaign rather than a claim
 to reproduce a historical platform build. Browser-native presentation enables the
 fiction to be played and audited from local files while the source remains small,
 offline, inspectable, and portable.

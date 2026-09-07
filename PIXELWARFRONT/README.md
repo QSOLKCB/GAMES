@@ -26,7 +26,8 @@ storage is required.
 - Records only the seed and timestamped player commands. Replays contain no
   serialized battlefield, checkpoint, screenshot, or save-state snapshot.
 - Draws every unit, building, battlefield tile, projectile, health bar, impact,
-  and explosion procedurally on Canvas 2D.
+  and explosion procedurally, with stronger selection brackets, grounded unit
+  shadows, projectile trails, and a local Three.js battlefield-depth layer.
 - Synthesizes all interface, weapon, production, and ambient sounds at runtime
   through the Web Audio API.
 
@@ -87,7 +88,8 @@ See [`docs/DETERMINISM.md`](docs/DETERMINISM.md) for the normative contract.
 | File | Responsibility |
 |---|---|
 | [`core.js`](core.js) | Procedural mission generation, economy, AI, combat, fixed-tick simulation, replay codec, and state digest |
-| [`app.js`](app.js) | Selection and command controls, Canvas renderer, synthesized audio, replay UI, and frame scheduling |
+| [`app.js`](app.js) | Selection and command controls, layered Canvas renderer, synthesized audio, replay UI, and frame scheduling |
+| [`../shared/qsol-three-stage.js`](../shared/qsol-three-stage.js) | Local Three.js battlefield depth and combat pulses excluded from canonical state |
 | [`index.html`](index.html) | Offline application shell and accessible command surface |
 | [`style.css`](style.css) | Responsive industrial strategy interface |
 | [`tests/core.test.js`](tests/core.test.js) | Determinism, progression, harvesting, construction, production, combat, and replay regressions |

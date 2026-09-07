@@ -27,7 +27,7 @@ those open cells. A mine signature hashes the canonical blueprint.
 
 ## Replay receipts
 
-`VZ01` stores `[version, seed, difficulty, ticks, runs]` as JSON, base64url-encodes
+`VZ02` stores `[version, seed, difficulty, ticks, runs]` as JSON, base64url-encodes
 it, and prefixes an FNV-1a corruption checksum. Decoding verifies the header,
 checksum, metadata, run structure, tick total, and a worst-case-safe two-hour size
 bound before simulation.

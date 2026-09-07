@@ -6,8 +6,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const ENGINE_VERSION = 1;
-  const REPLAY_PREFIX = "BSA1";
+  const ENGINE_VERSION = 2;
+  const REPLAY_PREFIX = "BSA2";
   const TICK_RATE = 60;
   const FP = 1024;
   const ANGLE_MAX = 65536;
@@ -44,15 +44,17 @@
   ]);
 
   const WEAPONS = Object.freeze([
-    Object.freeze({ id: 0, name: "PULSE PISTOL", ammo: null, gap: 16, damage: 20, pellets: 1, spread: Object.freeze([0]) }),
-    Object.freeze({ id: 1, name: "BREACH GUN", ammo: "shells", gap: 38, damage: 9, pellets: 7, spread: Object.freeze([-1050, -700, -350, 0, 350, 700, 1050]) }),
-    Object.freeze({ id: 2, name: "VULCAN 68", ammo: "cells", gap: 5, damage: 12, pellets: 1, spread: Object.freeze([0]) }),
+    Object.freeze({ id: 0, name: "ARC PISTOL", ammo: null, gap: 13, damage: 22, pellets: 1, spread: Object.freeze([0]) }),
+    Object.freeze({ id: 1, name: "BREACH-9", ammo: "shells", gap: 34, damage: 8, pellets: 9, spread: Object.freeze([-1240, -930, -620, -310, 0, 310, 620, 930, 1240]) }),
+    Object.freeze({ id: 2, name: "VULCAN 68", ammo: "cells", gap: 4, damage: 10, pellets: 1, spread: Object.freeze([0]) }),
   ]);
 
   const ENEMY_TYPES = Object.freeze({
     sentry: Object.freeze({ name: "SENTRY", health: 34, speed: 15, damage: 7, cooldown: 76, range: 6, radius: 230, score: 120 }),
     trooper: Object.freeze({ name: "TROOPER", health: 54, speed: 12, damage: 11, cooldown: 92, range: 7, radius: 250, score: 220 }),
     drone: Object.freeze({ name: "CUTTER", health: 24, speed: 26, damage: 8, cooldown: 44, range: 1, radius: 190, score: 160 }),
+    specter: Object.freeze({ name: "SPECTER", health: 46, speed: 18, damage: 13, cooldown: 78, range: 8, radius: 220, score: 310 }),
+    bulwark: Object.freeze({ name: "BULWARK", health: 110, speed: 8, damage: 17, cooldown: 105, range: 5, radius: 300, score: 620 }),
     warden: Object.freeze({ name: "BLACK WARDEN", health: 330, speed: 10, damage: 16, cooldown: 52, range: 8, radius: 340, score: 4000 }),
   });
 
@@ -132,6 +134,32 @@
         "BBB.B.BBBBBBBD.B.B",
         "B..$......w......B",
         "B.BBBBBBBBBBBB.E.B",
+        "BBBBBBBBBBBBBBBBBB",
+      ]),
+    }),
+    Object.freeze({
+      name: "BLACKSTAR CITADEL",
+      code: "BC-ZERO",
+      directive: "Breach the command ring. Silence the Warden and reach the black gate.",
+      palette: "reactor",
+      layout: Object.freeze([
+        "BBBBBBBBBBBBBBBBBB",
+        "B>..m..S....B....B",
+        "B.BBB.BBBB..B.BB.B",
+        "B...B....B.....b.B",
+        "BBB.B.BB.B.BBB...B",
+        "B...B....B...B...B",
+        "B.BBBBB.BBB.B.BB.B",
+        "B.....B.....B....B",
+        "B.BBB.B.BBBBB.BB.B",
+        "B.B...D...m...B..B",
+        "B.B.BBBBB.BBB.B..B",
+        "B...B2..B...B....B",
+        "BBB.B.B.BBB.BBBB.B",
+        "B...B.B..hB......B",
+        "B.BBB.BBBBBBB.BK.B",
+        "B.$..g...w...k...B",
+        "B......c.......E.B",
         "BBBBBBBBBBBBBBBBBB",
       ]),
     }),
@@ -249,8 +277,8 @@
           const facing = { ">": 0, "v": 16384, "<": 32768, "^": 49152 }[cell];
           start = { x: x * FP + FP / 2, y: y * FP + FP / 2, angle: facing };
           tiles[y][x] = ".";
-        } else if (cell === "g" || cell === "t" || cell === "r" || cell === "w") {
-          const kind = { g: "sentry", t: "trooper", r: "drone", w: "warden" }[cell];
+        } else if (cell === "g" || cell === "t" || cell === "r" || cell === "m" || cell === "b" || cell === "w") {
+          const kind = { g: "sentry", t: "trooper", r: "drone", m: "specter", b: "bulwark", w: "warden" }[cell];
           const type = ENEMY_TYPES[kind];
           const difficulty = DIFFICULTIES[difficultyId];
           enemies.push({
@@ -417,6 +445,7 @@
       active: false,
       cooldown: 20 + enemy.phase % 80,
       pain: 0,
+      muzzle: 0,
     }));
     state.pickups = blueprint.pickups.map((pickup) => ({
       id: state.nextEntityId++,
@@ -495,7 +524,7 @@
       const suffix = state.enemies.length === 1 ? "" : "S";
       return `${state.enemies.length} ARCHIVE GUARD${suffix} REMAIN`;
     }
-    if (state.missionIndex === MISSIONS.length - 1 && state.enemies.some((enemy) => enemy.kind === "warden")) {
+    if (state.enemies.some((enemy) => enemy.kind === "warden")) {
       return "WARDEN SIGNAL STILL ACTIVE";
     }
     return null;
@@ -655,6 +684,7 @@
     for (const enemy of state.enemies) {
       if (enemy.health <= 0) continue;
       if (enemy.pain > 0) enemy.pain -= 1;
+      if (enemy.muzzle > 0) enemy.muzzle -= 1;
       if (enemy.cooldown > 0) enemy.cooldown -= 1;
       const type = ENEMY_TYPES[enemy.kind];
       const dx = p.x - enemy.x;
@@ -665,14 +695,23 @@
       if (!enemy.active || !visible) continue;
 
       const attackDistance = type.range * FP;
+      if (enemy.kind === "specter" && enemy.pain <= 0) {
+        const norm = Math.max(1, distance);
+        const retreat = distance < 4 * FP ? -1 : distance > 7 * FP ? 1 : 0;
+        const orbit = ((enemy.phase >>> 4) & 1) ? 1 : -1;
+        const moveX = Math.trunc((dx * retreat - dy * orbit) * type.speed / norm);
+        const moveY = Math.trunc((dy * retreat + dx * orbit) * type.speed / norm);
+        moveBody(state, enemy, moveX, moveY, type.radius);
+      }
       if (distance <= attackDistance) {
         if (enemy.cooldown <= 0) {
           damagePlayer(state, type.damage + (nextRandom(state) % 4), enemy.id);
           enemy.cooldown = type.cooldown + (enemy.phase % 23);
+          enemy.muzzle = 5;
           state.events.push({ type: "enemy-fire", id: enemy.id, kind: enemy.kind });
           if (state.gameOver) break;
         }
-      } else if (enemy.pain <= 0) {
+      } else if (enemy.pain <= 0 && enemy.kind !== "specter") {
         const norm = Math.max(1, distance);
         const moveX = Math.trunc(dx * type.speed / norm);
         const moveY = Math.trunc(dy * type.speed / norm);

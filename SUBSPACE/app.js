@@ -316,6 +316,9 @@
       this.feedEntries = [];
       this.attractTime = 0;
       this.resize();
+      this.threeStage = window.QsolThree
+        ? window.QsolThree.create({ host: nodes.app, source: nodes.canvas, preset: "inertia" })
+        : { render() {}, pulse() {} };
       this.buildMenu();
       this.bindUI();
       this.restoreSettings();
@@ -747,9 +750,12 @@
         ship.vy -= forwardY * acceleration * dt;
       }
 
-      const drag = Math.pow(config.drag, dt * 60);
-      ship.vx *= drag;
-      ship.vy *= drag;
+      // Hull heading and travel vector are intentionally decoupled. The tiny
+      // damping term only prevents multi-minute floating-point residue; pilots
+      // must counter-thrust to stop or change their Newtonian drift.
+      const inertialRetention = Math.pow(config.drag, dt * 60);
+      ship.vx *= inertialRetention;
+      ship.vy *= inertialRetention;
       const speed = Math.hypot(ship.vx, ship.vy);
       const maximumSpeed = config.maxSpeed * speedScale;
       if (speed > maximumSpeed) {
@@ -1222,6 +1228,7 @@
       }
       this.spawnParticles(projectile.x, projectile.y, projectile.color, Math.min(32, 12 + Math.floor(radius / 10)), 260);
       this.spawnPulse(projectile.x, projectile.y, radius, projectile.color);
+      this.threeStage.pulse("blast", Math.min(1, radius / 140));
       if (this.player && Math.hypot(this.player.x - projectile.x, this.player.y - projectile.y) < 600) {
         this.camera.shake = Math.max(this.camera.shake, Math.min(16, radius * 0.075));
         this.audio.play("explode");
@@ -1257,6 +1264,7 @@
       ship.respawnTimer = ship.isPlayer ? 2.35 : 0;
       this.spawnParticles(ship.x, ship.y, ship.team === PLAYER_TEAM ? "#e8bd68" : "#d36f62", 42, 390);
       this.spawnPulse(ship.x, ship.y, 155, ship.team === PLAYER_TEAM ? "#e8bd68" : "#d36f62");
+      this.threeStage.pulse("blast", ship.isPlayer ? 1 : 0.72);
       this.camera.shake = Math.max(this.camera.shake, ship.isPlayer ? 19 : 11);
       this.audio.play("explode");
       if (ship.isPlayer) {
@@ -1778,6 +1786,7 @@
       ctx.fillRect(0, 0, this.width, this.height);
       if (this.mode === "menu" || !this.arena) {
         this.renderMenuBackdrop(ctx);
+        this.threeStage.render({ tick: 0, speed: 0.12, activity: 0.08, heading: this.attractTime * 0.03 });
         return;
       }
 
@@ -1801,6 +1810,13 @@
       this.drawOffscreenIndicators(ctx);
       this.drawRespawnStatus(ctx);
       this.drawRadar();
+      this.threeStage.render({
+        tick: Math.round(this.simulationTime * 60),
+        speed: this.player ? Math.hypot(this.player.vx, this.player.vy) / 260 : 0,
+        danger: this.player ? 1 - this.player.energy / this.player.config.maxEnergy : 0,
+        activity: Math.min(1, 0.18 + this.projectiles.length / 45),
+        heading: this.player ? this.player.angle : 0,
+      });
     }
 
     renderMenuBackdrop(ctx) {
