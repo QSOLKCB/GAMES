@@ -856,7 +856,7 @@
       tick: state ? state.tick : 0,
       speed: state ? 1 + state.level * 0.08 : 0.25,
       danger: state ? Math.max(0, 1 - state.player.health / state.player.maxHealth) : 0,
-      activity: state ? Math.min(1, 0.24 + state.projectiles.length / 24) : 0.08,
+      activity: state ? Math.min(1, 0.24 + (state.playerBullets.length + state.enemyBullets.length) / 24) : 0.08,
       heading: 0,
     });
   }

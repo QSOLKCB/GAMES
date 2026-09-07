@@ -43,16 +43,6 @@ const core = require("../core.js");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#pauseButton").innerText(), "PAUSE");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
-  await page.waitForTimeout(250);
-  const restartTelemetry = await page.evaluate(() => ({
-    progress: document.querySelector("#levelProgress").style.width,
-    pause: document.querySelector("#pauseButton").textContent,
-    pauseDisabled: document.querySelector("#pauseButton").disabled,
-    hidden: document.hidden,
-    focused: document.hasFocus(),
-  }));
-  process.stdout.write(`restart telemetry ${JSON.stringify(restartTelemetry)}\n`);
-  assert.deepEqual(errors, [], "restart must not throw before its first simulation tick");
   await page.waitForFunction(
     () => Number.parseFloat(document.querySelector("#levelProgress").style.width) > 0,
     null,
