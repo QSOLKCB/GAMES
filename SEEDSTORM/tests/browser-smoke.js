@@ -44,15 +44,20 @@ const core = require("../core.js");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#pauseButton").innerText(), "PAUSE");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
+  await page.waitForFunction(
+    () => Number.parseFloat(document.querySelector("#levelProgress").style.width) > 0,
+    null,
+    { timeout: 20000 }
+  );
 
   await page.keyboard.down("KeyZ");
   await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(260);
   await page.keyboard.up("ArrowLeft");
   await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(1400);
+  await page.waitForTimeout(340);
   await page.keyboard.up("ArrowRight");
-  await page.waitForTimeout(1900);
+  await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(__dirname, "seedstorm-health.png"), fullPage: true });
   assert.ok(Number.isFinite(Number(await page.locator("#scoreReadout").innerText())), "live score telemetry must remain numeric");
   await page.screenshot({ path: path.join(__dirname, "seedstorm-explosion.png"), fullPage: true });
@@ -65,19 +70,26 @@ const core = require("../core.js");
 
   await page.keyboard.down("KeyZ");
   await page.waitForTimeout(120);
+  const progressBeforeRelease = await page.locator("#levelProgress").evaluate((element) => Number.parseFloat(element.style.width));
   await page.click("#replayButton");
   assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
   await page.locator("#replayText").focus();
   await page.keyboard.up("KeyZ");
   await page.click(".close-button");
   await page.waitForFunction(() => !document.querySelector("#replayDialog").open);
-  await page.waitForTimeout(240);
+  await page.waitForFunction(
+    (previous) => Number.parseFloat(document.querySelector("#levelProgress").style.width) > previous,
+    progressBeforeRelease,
+    { timeout: 20000 }
+  );
 
   await page.click("#replayButton");
   const code = await page.locator("#replayText").inputValue();
   assert.match(code, /^SSR1\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
   assert.match(await page.locator("#replayMeta").innerText(), /ticks/);
   const decoded = core.decodeReplay(code);
+  assert.ok(decoded.ticks > 0, "browser flight must advance before replay export");
+  assert.ok(decoded.runs.length > 0, "advanced replay must contain input runs");
   assert.equal(decoded.runs.at(-1)[0] & core.INPUT.FIRE, 0, "fire must release even when keyup targets the replay textarea");
 
   await page.click(".close-button");
