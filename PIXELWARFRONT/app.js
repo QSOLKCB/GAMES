@@ -7,6 +7,9 @@
   const $ = (id) => document.getElementById(id);
   const canvas = $("game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const threeStage = globalThis.QsolThree
+    ? globalThis.QsolThree.create({ host: $("canvasWrap"), source: canvas, preset: "warfront" })
+    : { render() {}, pulse() {} };
   const STEP_MS = 1000 / core.TICK_RATE;
   const palettes = [
     { ground: "#11181b", grid: "#243238", high: "#2b3739", low: "#0b1215", mineral: "#76b0ba", enemy: "#df6843" },
@@ -343,10 +346,12 @@
       if (event.type === "hit") {
         hitUntil.set(event.id, state.tick + 3);
         addEffect("impact", event);
+        threeStage.pulse("impact", 0.24);
       } else if (event.type === "destroy") {
         addEffect("explosion", event);
         shake = Math.max(shake, event.kind === "hq" ? 16 : event.entityType === "building" ? 7 : 3);
         screenFlash = Math.max(screenFlash, event.kind === "hq" ? 12 : 2);
+        threeStage.pulse("blast", event.kind === "hq" ? 1 : 0.52);
       } else if (event.type === "wave") {
         setStatus("Hostile command pulse detected: attack wave mobilised.");
       } else if (event.type === "construction-complete") {
@@ -629,6 +634,12 @@
     const radius = building.radius / core.SCALE;
     const color = teamColors(building.team);
     ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.34)";
+    ctx.beginPath();
+    ctx.ellipse(x + radius * 0.18, y + radius * 0.34, radius * 1.05, radius * 0.48, -0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
     ctx.translate(x, y);
     if (building.kind === "hq") {
       ctx.fillStyle = color.dark;
@@ -698,6 +709,12 @@
     const radius = unit.radius / core.SCALE;
     const color = teamColors(unit.team);
     ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.42)";
+    ctx.beginPath();
+    ctx.ellipse(x + 4, y + 7, radius * 0.9, radius * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
     ctx.translate(x, y);
     let angle = 0;
     const target = unit.targetId && state ? [...state.units, ...state.buildings].find((entity) => entity.id === unit.targetId) : null;
@@ -726,8 +743,16 @@
     ctx.restore();
 
     if (selectedIds.has(unit.id)) {
+      const ring = radius + 7 + (tick % 4) * 0.3;
       ctx.strokeStyle = "#e6ddc9"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(x, y, radius + 6 + (tick % 4) * 0.3, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, ring, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = "rgba(104,174,178,0.8)";
+      ctx.beginPath();
+      ctx.moveTo(x - ring - 4, y); ctx.lineTo(x - ring + 3, y);
+      ctx.moveTo(x + ring - 3, y); ctx.lineTo(x + ring + 4, y);
+      ctx.moveTo(x, y - ring - 4); ctx.lineTo(x, y - ring + 3);
+      ctx.moveTo(x, y + ring - 3); ctx.lineTo(x, y + ring + 4);
+      ctx.stroke();
     }
     if ((hitUntil.get(unit.id) || -1) >= tick) {
       ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = 0.42;
@@ -740,6 +765,13 @@
     const x = projectile.x / core.SCALE;
     const y = projectile.y / core.SCALE;
     ctx.fillStyle = projectile.team === core.PLAYER ? "#bfe7ea" : "#f07b50";
+    const velocity = Math.max(1, Math.hypot(projectile.vx, projectile.vy));
+    ctx.strokeStyle = projectile.team === core.PLAYER ? "rgba(104,188,194,0.58)" : "rgba(235,101,62,0.58)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - projectile.vx / velocity * 10, y - projectile.vy / velocity * 10);
+    ctx.stroke();
     ctx.beginPath(); ctx.arc(x, y, Math.max(2, projectile.radius / core.SCALE), 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = projectile.team === core.PLAYER ? "rgba(104,170,180,0.45)" : "rgba(234,100,62,0.45)";
     ctx.lineWidth = 3; ctx.stroke();
@@ -863,6 +895,13 @@
       ctx.fillRect(0, 0, core.WIDTH, core.HEIGHT); screenFlash -= 1;
     }
     ctx.restore();
+    threeStage.render({
+      tick: state ? state.tick : 0,
+      speed: state ? Math.min(2, state.units.length / 18) : 0,
+      danger: state && state.gameOver ? 1 : 0,
+      activity: state ? Math.min(1, 0.18 + state.projectiles.length / 20) : 0.06,
+      heading: time * 0.00005,
+    });
   }
 
   function frame(time) {

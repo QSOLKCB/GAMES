@@ -4,6 +4,9 @@
   const core = window.CartridgeZeroCore;
   const canvas = document.querySelector("#game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const threeStage = window.QsolThree
+    ? window.QsolThree.create({ host: document.querySelector(".viewport"), source: canvas, preset: "cartridge" })
+    : { render() {}, pulse() {} };
   const TICK_MS = 1000 / core.TICK_RATE;
   const MAX_FRAME_STEPS = 8;
 
@@ -304,8 +307,17 @@
   function processEvents(events) {
     audio.events(events);
     for (const event of events) {
-      if (event.type === "level") showNotice(`SIGNAL LEVEL ${event.level}`, 90);
-      else if (event.type === "life-lost") showNotice(`${event.reason} // ${event.lives} LEFT`, 90);
+      if (["shot", "brick", "target", "impact", "hit"].includes(event.type)) {
+        threeStage.pulse(event.type === "impact" || event.type === "hit" ? "impact" : "shot", 0.28);
+      }
+      if (event.type === "level") {
+        showNotice(`SIGNAL LEVEL ${event.level}`, 90);
+        threeStage.pulse("jump", 0.55);
+      }
+      else if (event.type === "life-lost") {
+        showNotice(`${event.reason} // ${event.lives} LEFT`, 90);
+        threeStage.pulse("impact", 0.8);
+      }
       else if (event.type === "fuel") showNotice("FUEL LATTICE CAPTURED", 70);
       else if (event.type === "dive") showNotice("TALON BREAKING FORMATION", 50);
       else if (event.type === "game-over" && mode !== "replay") {
@@ -667,9 +679,42 @@
     ctx.fillText("INSERTED // WAITING", 80, 119);
   }
 
+  function renderSignalFinish() {
+    const pulse = state ? 0.025 + ((state.tick >> 2) & 3) * 0.006 : 0.025;
+    const bloom = ctx.createRadialGradient(80, 96, 12, 80, 96, 116);
+    bloom.addColorStop(0, `rgba(232,196,119,${pulse})`);
+    bloom.addColorStop(0.62, "rgba(91,139,128,0.015)");
+    bloom.addColorStop(1, "rgba(0,0,0,0.35)");
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(238,220,170,0.035)";
+    const sweep = state ? state.tick % canvas.height : 0;
+    ctx.fillRect(0, sweep, canvas.width, 2);
+    if (paused && state) {
+      ctx.fillStyle = "rgba(3,7,6,0.62)";
+      ctx.fillRect(42, 84, 76, 22);
+      ctx.strokeStyle = "#caa760";
+      ctx.strokeRect(42.5, 84.5, 75, 21);
+      ctx.fillStyle = "#e2c477";
+      ctx.font = "bold 8px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("SIGNAL HELD", 80, 92);
+      ctx.font = "6px monospace";
+      ctx.fillText("PRESS P TO RESUME", 80, 100);
+    }
+  }
+
   function render() {
     if (!state) renderStandby();
     else RENDERERS[state.gameId]();
+    renderSignalFinish();
+    threeStage.render({
+      tick: state ? state.tick : 0,
+      speed: state && state.gameId === "rift-runner" ? 1.3 : 0.2,
+      danger: state && state.lives <= 1 ? 0.8 : 0,
+      activity: state ? 0.32 : 0.08,
+      heading: state ? state.tick * 0.002 : 0,
+    });
   }
 
   function updateTelemetry(force) {

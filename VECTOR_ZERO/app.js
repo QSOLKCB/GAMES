@@ -4,6 +4,9 @@
   const core = window.VectorZeroCore;
   const canvas = document.querySelector("#game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const threeStage = window.QsolThree
+    ? window.QsolThree.create({ host: document.querySelector("#viewport"), source: canvas, preset: "vector" })
+    : { render() {}, pulse() {} };
   const WIDTH = canvas.width;
   const HEIGHT = canvas.height;
   const FOCAL = 310;
@@ -350,9 +353,11 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(((state.tick + entity.phase) & 255) / 255 * Math.PI * 2);
-    ctx.fillStyle = "#0a100f";
+    ctx.fillStyle = "rgba(7,13,12,0.78)";
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(1, size * 0.07);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = Math.max(5, size * 0.38);
+    ctx.lineWidth = Math.max(1.5, size * 0.095);
     ctx.beginPath();
     if (entity.kind === "sentinel" || entity.kind === "custodian") {
       ctx.rect(-size * 0.48, -size * 0.48, size * 0.96, size * 0.96);
@@ -371,6 +376,25 @@
     ctx.stroke();
     ctx.fillStyle = entity.kind === "custodian" ? "#f0b35d" : "#d8654c";
     ctx.fillRect(-size * 0.12, -size * 0.12, size * 0.24, size * 0.24);
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = pain ? "#f8e5ae" : color;
+    ctx.lineWidth = Math.max(1, size * 0.055);
+    ctx.globalAlpha = 0.72 + Math.sin((state.tick + entity.phase) * 0.09) * 0.18;
+    const bracket = size * 1.08;
+    const corner = Math.max(3, size * 0.28);
+    ctx.beginPath();
+    ctx.moveTo(x - bracket, y - bracket + corner); ctx.lineTo(x - bracket, y - bracket); ctx.lineTo(x - bracket + corner, y - bracket);
+    ctx.moveTo(x + bracket - corner, y - bracket); ctx.lineTo(x + bracket, y - bracket); ctx.lineTo(x + bracket, y - bracket + corner);
+    ctx.moveTo(x - bracket, y + bracket - corner); ctx.lineTo(x - bracket, y + bracket); ctx.lineTo(x - bracket + corner, y + bracket);
+    ctx.moveTo(x + bracket - corner, y + bracket); ctx.lineTo(x + bracket, y + bracket); ctx.lineTo(x + bracket, y + bracket - corner);
+    ctx.stroke();
+    if (size > 6) {
+      ctx.font = "bold 7px monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = pain ? "#fff0be" : color;
+      ctx.fillText(`${core.ENEMY_TYPES[entity.kind].name} // ${Math.max(0, entity.health)}`, x, y + bracket + 9);
+    }
     ctx.restore();
     if (entity.kind === "custodian") {
       const width = Math.max(10, size * 1.4);
@@ -445,17 +469,24 @@
     }
   }
 
-  function drawCockpit(palette) {
+  function drawCockpit(palette, targetLock) {
     const player = state.player;
     const speed = core.distanceApprox(player.vx, player.vy, player.vz);
-    ctx.strokeStyle = "rgba(219,208,173,0.7)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = targetLock ? "rgba(244,184,91,0.98)" : "rgba(219,208,173,0.78)";
+    ctx.lineWidth = targetLock ? 1.6 : 1;
     ctx.beginPath();
     ctx.moveTo(WIDTH / 2 - 12, HEIGHT / 2); ctx.lineTo(WIDTH / 2 - 4, HEIGHT / 2);
     ctx.moveTo(WIDTH / 2 + 4, HEIGHT / 2); ctx.lineTo(WIDTH / 2 + 12, HEIGHT / 2);
     ctx.moveTo(WIDTH / 2, HEIGHT / 2 - 12); ctx.lineTo(WIDTH / 2, HEIGHT / 2 - 4);
     ctx.moveTo(WIDTH / 2, HEIGHT / 2 + 4); ctx.lineTo(WIDTH / 2, HEIGHT / 2 + 12);
     ctx.stroke();
+    if (targetLock) {
+      ctx.font = "bold 7px monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#efb45e";
+      ctx.fillText("FIRE SOLUTION", WIDTH / 2, HEIGHT / 2 + 23);
+      ctx.textAlign = "left";
+    }
     ctx.fillStyle = "rgba(4,8,7,0.8)";
     ctx.fillRect(0, 0, WIDTH, 16);
     ctx.fillRect(0, HEIGHT - 27, WIDTH, 27);
@@ -537,6 +568,7 @@
       ctx.fillStyle = "#52675f";
       ctx.font = "9px monospace";
       ctx.fillText("VECTOR ZERO FLIGHT COMPUTER // STANDBY", 12, 18);
+      threeStage.render({ tick: 0, speed: 0.08, activity: 0.07 });
       return;
     }
     buildMineFaces();
@@ -550,7 +582,8 @@
     }
     const enemyColors = { drone: "#8aa698", hunter: "#b98252", sentinel: "#9c6255", custodian: "#d28c55" };
     for (const enemy of state.enemies) {
-      const drawable = entityDrawable("enemy", enemy, basis, enemy.kind === "custodian" ? 430 : 270, enemyColors[enemy.kind]);
+      const radius = enemy.kind === "custodian" ? 560 : enemy.kind === "sentinel" ? 430 : 360;
+      const drawable = entityDrawable("enemy", enemy, basis, radius, enemyColors[enemy.kind]);
       if (drawable) drawables.push(drawable);
     }
     const pickupColors = { core: "#e7ad62", energy: "#74b9ad", shield: "#aec39b", missiles: "#c87955" };
@@ -577,7 +610,9 @@
       else if (drawable.type === "exit") drawExit(drawable);
       else drawProjectile(drawable);
     }
-    drawCockpit(palette);
+    const targetLock = drawables.some((drawable) => drawable.type === "enemy" &&
+      Math.hypot(drawable.x - WIDTH / 2, drawable.y - HEIGHT / 2) < Math.max(13, drawable.size * 0.72));
+    drawCockpit(palette, targetLock);
     if (automap) drawAutomap();
     ctx.restore();
     if (state.player.hurt > 0 || flash > 0) {
@@ -588,6 +623,13 @@
       ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
+    threeStage.render({
+      tick: state.tick,
+      speed: Math.hypot(state.player.vx || 0, state.player.vy || 0, state.player.vz || 0) / core.FP,
+      danger: 1 - state.player.shield / Math.max(1, state.player.maxShield || 100),
+      activity: Math.max(flash / 10, state.projectiles.length ? 0.42 : 0.16),
+      heading: state.player.yaw / core.ANGLE_MAX * Math.PI * 2,
+    });
   }
 
   function showMessage(kicker, title, body, button, action) {
@@ -645,6 +687,7 @@
       if (event.type === "shot") {
         flash = Math.max(flash, event.kind === "missile" ? 8 : 3);
         shake = Math.max(shake, event.kind === "missile" ? 3 : 1);
+        threeStage.pulse("shot", event.kind === "missile" ? 0.72 : 0.3);
       } else if (event.type === "enemy-hit") {
         notice = `${core.ENEMY_TYPES[event.kind].name} // ${event.health}`;
         noticeTicks = 35;
@@ -652,10 +695,12 @@
         notice = `${core.ENEMY_TYPES[event.kind].name} ERASED`;
         noticeTicks = 60;
         shake = Math.max(shake, event.kind === "custodian" ? 7 : 4);
+        threeStage.pulse("blast", event.kind === "custodian" ? 0.9 : 0.58);
       } else if (event.type === "player-hit") {
         notice = `SHIELD FRACTURE // -${event.amount}`;
         noticeTicks = 50;
         shake = Math.max(shake, 5);
+        threeStage.pulse("impact", 0.82);
       } else if (event.type === "pickup") {
         notice = event.kind === "core" ? `VECTOR CORE ${event.cores}/${state.coresRequired}` : `${event.kind.toUpperCase()} RECOVERED`;
         noticeTicks = 75;

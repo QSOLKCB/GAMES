@@ -11,7 +11,7 @@ sound. The recovery story is fiction; the reproducibility contract is real.
 ## Play
 
 Open [`index.html`](index.html) in a modern browser. No server, installation,
-account, network connection, ROM, emulator, external asset, or runtime dependency
+account, network connection, ROM, emulator, external asset download, or install-time dependency
 is required.
 
 1. Choose one of the seven programs.
@@ -55,14 +55,18 @@ switch position, and layout are presentation only. See
 ## Files
 
 - `core.js` — all seven canonical simulations, AI, receipts, and digests.
-- `app.js` — fixed-step host, renderers, controls, replay UI, and synthesized audio.
+- `app.js` — fixed-step host, renderers, controls, replay UI, synthesized audio,
+  and individual hit/clear/finish presentation passes for all seven programs.
+- `../shared/qsol-three-stage.js` — pinned local Three.js cabinet depth, particles,
+  and event pulses outside canonical game state.
 - `index.html` / `style.css` — offline fictional console and responsive controls.
 - `docs/MANUAL.md` — recovered-cartridge fiction and complete game instructions.
 - `docs/DESIGN.md` — architectural and originality decisions.
 - `tests/` — deterministic, AI, receipt, offline, and browser regressions.
 
-All visuals are generated from Canvas rectangles, lines, and polygons. All audio
-is opt-in and synthesized at runtime. See [`NOTICE.md`](NOTICE.md).
+All game assets are generated from Canvas/Three.js primitives. All audio is
+opt-in and synthesized at runtime; no samples or remote assets are loaded. See
+[`NOTICE.md`](NOTICE.md).
 
 ## Development checks
 

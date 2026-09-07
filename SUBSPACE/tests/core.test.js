@@ -62,6 +62,7 @@
     for (const ship of ships) {
       assert(ship.maxEnergy > ship.gunCost + ship.secondaryCost, `${ship.id} has an unusable energy budget`);
       assert(ship.maxSpeed > 0 && ship.thrust > 0 && ship.turnRate > 0, `${ship.id} has invalid flight physics`);
+      assert(ship.drag >= 0.9994 && ship.drag < 1, `${ship.id} should preserve a near-Newtonian coast`);
       assert(ship.gunCooldown > 0 && ship.secondaryCooldown > 0 && ship.specialCooldown > 0, `${ship.id} has invalid cooldowns`);
       assert(typeof ship.special === "string" && typeof ship.secondary === "string", `${ship.id} lacks weapon identity`);
     }

@@ -56,7 +56,7 @@ The canonical simulation advances at exactly 60 fixed ticks per second. It uses:
 - explicit packed six-axis input words;
 - a seeded xorshift32 stream held inside canonical state;
 - deterministic entity and collision order; and
-- checksummed `VZ01` replay receipts.
+- checksummed `VZ02` replay receipts.
 
 A receipt contains the engine version, normalized seed, difficulty, exact tick
 count, and run-length-encoded input ledger. Loading it creates a fresh campaign
@@ -72,13 +72,17 @@ layout do not feed back into simulation state. See
 - `core.js` — mine generation, fixed-point 6DOF flight, collision, combat,
   objectives, replay receipts, and state digests.
 - `app.js` — fixed-step scheduler, polygon projection and near-plane clipping,
-  vector enemies and pickups, cockpit HUD, input, telemetry, and synthesized audio.
+  high-contrast target brackets and fire-solution cues, vector enemies and
+  pickups, cockpit HUD, input, telemetry, and synthesized audio.
+- `../shared/qsol-three-stage.js` — a local Three.js depth layer that reinforces
+  mine geometry and combat pulses without entering canonical simulation state.
 - `style.css` — responsive recovered-flight-computer presentation.
 - `index.html` — local-file-compatible application with a strict offline CSP.
 - `tests/` — deterministic, offline-boundary, and Playwright browser tests.
 
 All art is code-native vector geometry. All sound is opt-in and synthesized at
-runtime. VECTOR ZERO contains no third-party game assets; see [`NOTICE.md`](NOTICE.md).
+runtime. The pinned local Three.js runtime is the only library used in play;
+VECTOR ZERO contains no third-party game assets. See [`NOTICE.md`](NOTICE.md).
 
 ## Development checks
 
@@ -94,5 +98,5 @@ Playwright is pinned for browser testing and is not a runtime dependency.
 
 ## Status
 
-Playable three-mine mini-campaign. Version 1 receipts are versioned rather than
+Playable three-mine mini-campaign. Version 2 receipts are versioned rather than
 promised compatible with future simulation revisions.

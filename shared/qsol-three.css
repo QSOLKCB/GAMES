@@ -1,0 +1,24 @@
+.qsol-three-host {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.qsol-three-layer {
+  position: absolute !important;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  pointer-events: none;
+  opacity: var(--qsol-three-opacity, 0.5);
+  mix-blend-mode: screen;
+  filter: saturate(0.78) contrast(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qsol-three-layer {
+    --qsol-three-opacity: 0.2;
+  }
+}

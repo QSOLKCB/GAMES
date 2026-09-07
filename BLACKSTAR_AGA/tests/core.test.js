@@ -170,7 +170,7 @@ test("the fixed-tick simulation matches its checked golden digest", () => {
   const state = core.createRun("GOLDEN-BLACKSTAR", 1);
   for (let tick = 0; tick < 1800 && !state.gameOver; tick += 1) core.step(state, scriptedInput(tick));
   assert.ok(state.tick > 200);
-  assert.equal(core.stateDigest(state), "DC794A9A");
+  assert.equal(core.stateDigest(state), "FC81ABD8");
 });
 
 test("replay receipt reproduces the exact final state", () => {
@@ -182,7 +182,7 @@ test("replay receipt reproduces the exact final state", () => {
     core.step(original, word);
   }
   const code = core.encodeReplay(recorder);
-  assert.match(code, /^BSA1\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
+  assert.match(code, /^BSA2\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
   const decoded = core.decodeReplay(code);
   const replayed = core.createRun(decoded.seed, decoded.difficulty);
   const cursor = core.createReplayCursor(decoded);
@@ -234,7 +234,7 @@ test("replay receipt rejects checksum tampering and malicious metadata", () => {
   const code = core.encodeReplay(recorder);
   const last = code.at(-1);
   assert.throws(() => core.decodeReplay(`${code.slice(0, -1)}${last === "A" ? "B" : "A"}`), /checksum|base64|JSON/i);
-  assert.throws(() => core.decodeReplay("BSA1.00000000.e30"), /checksum|metadata|JSON/i);
+  assert.throws(() => core.decodeReplay("BSA2.00000000.e30"), /checksum|metadata|JSON/i);
 });
 
 test("bounded replay recording stops without throwing into a frame loop", () => {
@@ -303,19 +303,15 @@ test("mission transitions preserve the marine and terminate in canonical victory
   const state = core.createRun("CAMPAIGN", 1);
   state.player.health = 60;
   state.player.owned = 7;
-  core.completeMission(state);
-  for (let tick = 0; tick < 120; tick += 1) core.step(state, 0);
-  assert.equal(state.missionIndex, 1);
-  assert.equal(state.player.health, 80);
+  for (let mission = 0; mission < core.MISSIONS.length; mission += 1) {
+    core.completeMission(state);
+    for (let tick = 0; tick < 120; tick += 1) core.step(state, 0);
+    if (mission + 1 < core.MISSIONS.length) assert.equal(state.missionIndex, mission + 1);
+  }
+  assert.equal(state.player.health, 100);
   assert.equal(state.player.owned, 7);
-  core.completeMission(state);
-  for (let tick = 0; tick < 120; tick += 1) core.step(state, 0);
-  assert.equal(state.missionIndex, 2);
-  state.enemies.length = 0;
-  core.completeMission(state);
-  for (let tick = 0; tick < 120; tick += 1) core.step(state, 0);
   assert.equal(state.victory, true);
-  assert.equal(state.stats.missions, 3);
+  assert.equal(state.stats.missions, core.MISSIONS.length);
 });
 
 test("the simulation core has no ambient randomness, clock or browser state", () => {

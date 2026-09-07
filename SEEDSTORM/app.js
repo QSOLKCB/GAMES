@@ -7,6 +7,9 @@
   const $ = (id) => document.getElementById(id);
   const canvas = $("game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const threeStage = globalThis.QsolThree
+    ? globalThis.QsolThree.create({ host: $("canvasWrap"), source: canvas, preset: "seedstorm" })
+    : { render() {}, pulse() {} };
   const STEP_MS = 1000 / core.TICK_RATE;
   const palettes = [
     { sky: "#091015", deep: "#111a20", grid: "#293943", ground: "#7d573f", accent: "#d46a43" },
@@ -207,6 +210,7 @@
     ui.intro.classList.add("is-hidden");
     hideMessage();
     enableRunControls();
+    updateHud();
     audio.ensure();
     canvas.focus({ preventScroll: true });
     setStatus(`Live flight launched from seed ${core.seedHex(seed)}.`);
@@ -238,6 +242,7 @@
     enableRunControls();
     ui.pause.disabled = false;
     ui.replay.disabled = true;
+    updateHud();
     ui.dialog.close();
     audio.ensure();
     canvas.focus({ preventScroll: true });
@@ -328,17 +333,21 @@
       if (event.type === "enemy-hit") {
         enemyHitUntil.set(event.id, state.tick + 4);
         addVisualEffect("impact", event);
+        threeStage.pulse("impact", 0.22);
       } else if (event.type === "enemy-down") {
         addVisualEffect("explosion", event);
         visualFlash = Math.max(visualFlash, 2);
         shake = Math.max(shake, 2);
+        threeStage.pulse("blast", 0.42);
       } else if (event.type === "boss-down") {
         addVisualEffect("explosion", event);
         visualFlash = Math.max(visualFlash, 14);
         shake = Math.max(shake, 18);
+        threeStage.pulse("blast", 1);
       } else if (event.type === "bomb") {
         visualFlash = Math.max(visualFlash, 18);
         shake = Math.max(shake, 12);
+        threeStage.pulse("blast", 0.9);
       } else if (event.type === "player-hit") {
         visualFlash = 12;
         shake = 16;
@@ -487,6 +496,17 @@
     const x = player.x / core.SCALE;
     const y = player.y / core.SCALE;
     ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const trail = 22 + (tick % 5) * 2;
+    const engineGradient = ctx.createLinearGradient(x, y + 8, x, y + trail + 22);
+    engineGradient.addColorStop(0, "rgba(232,159,78,0.52)");
+    engineGradient.addColorStop(1, "rgba(82,135,137,0)");
+    ctx.fillStyle = engineGradient;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y + 8); ctx.lineTo(x + 8, y + 8); ctx.lineTo(x, y + trail + 22); ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
     ctx.translate(x, y);
     pathPolygon([[0, -18], [7, -5], [18, 7], [7, 8], [4, 17], [0, 12], [-4, 17], [-7, 8], [-18, 7], [-7, -5]], "#d9e0dc", "#10171b", 2);
     pathPolygon([[0, -12], [5, 4], [0, 10], [-5, 4]], "#527b88", "#99b7bd", 1);
@@ -508,6 +528,12 @@
     const x = enemy.x / core.SCALE;
     const y = enemy.y / core.SCALE;
     const radius = enemy.radius / core.SCALE;
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.34)";
+    ctx.beginPath();
+    ctx.ellipse(x + 5, y + radius * 0.35, radius * 0.82, radius * 0.34, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
     ctx.save();
     ctx.translate(x, y);
     if (enemy.kind === "scout") {
@@ -547,6 +573,18 @@
       ctx.fillRect(-7, -7, 14, 25);
     }
     ctx.restore();
+
+    if (enemy.kind === "boss" || radius >= 19) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + Math.sin((tick + enemy.id) * 0.08) * 0.12;
+      ctx.strokeStyle = enemy.kind === "boss" ? "#e58a62" : "#b9c7c2";
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
 
     if ((enemyHitUntil.get(enemy.id) || -1) >= tick) {
       ctx.save();
@@ -814,6 +852,13 @@
       visualFlash -= 1;
     }
     ctx.restore();
+    threeStage.render({
+      tick: state ? state.tick : 0,
+      speed: state ? 1 + state.level * 0.08 : 0.25,
+      danger: state ? Math.max(0, 1 - state.player.health / state.player.maxHealth) : 0,
+      activity: state ? Math.min(1, 0.24 + (state.playerBullets.length + state.enemyBullets.length) / 24) : 0.08,
+      heading: 0,
+    });
   }
 
   function frame(time) {

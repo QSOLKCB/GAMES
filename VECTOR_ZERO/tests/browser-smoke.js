@@ -111,7 +111,7 @@ const core = require("../core.js");
   await page.click("#replayButton");
   assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), true);
   const code = await page.locator("#replayText").inputValue();
-  assert.match(code, /^VZ01\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
+  assert.match(code, /^VZ02\.[0-9A-F]{8}\.[A-Za-z0-9_-]+$/);
   const decoded = core.decodeReplay(code);
   assert.ok(decoded.ticks > 0);
   await page.click("#watchReplayButton");

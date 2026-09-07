@@ -1,5 +1,13 @@
 # Implementation status
 
+## Offline web edition
+
+`web/` now contains a separate, directly playable Three.js edition with its own
+deterministic fixed-point JavaScript core. It implements three seeded systems,
+markets, cargo, delivery contracts, upgrades, inertial/engine-kill flight,
+combat, salvage, gates, faction reputation, and all five adaptive qutrits. It is
+deliberately not replay/save compatible with the native C vertical slice.
+
 This ledger separates code that exists from the broader design target.
 
 | Area | Implemented now | Deferred target |

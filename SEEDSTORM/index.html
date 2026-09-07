@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#111418">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>SEEDSTORM — Deterministic Strike</title>
   <meta name="description" content="An original, offline, deterministic vertical shooter with procedural levels and exact input-log replays.">
+  <link rel="stylesheet" href="../shared/qsol-three.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -129,6 +130,9 @@
     </form>
   </dialog>
 
+  <script src="../vendor/galaxy-sampler/galaxy-wasm.js"></script>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../shared/qsol-three-stage.js"></script>
   <script src="core.js"></script>
   <script src="app.js"></script>
 </body>

@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - "SEEDSTORM/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/seedstorm.yml"
       - "README.md"
   pull_request:
     paths:
       - "SEEDSTORM/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/seedstorm.yml"
       - "README.md"
 

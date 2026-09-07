@@ -17,7 +17,7 @@ There is:
 - no installation;
 - no build step;
 - no Node.js runtime requirement;
-- no npm or third-party JavaScript dependency;
+- no npm installation or network-fetched JavaScript dependency;
 - no web server requirement; and
 - no network request after the files are present.
 
@@ -26,6 +26,9 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
 ## What is included
 
 - Full-screen Canvas 2D combat with inertial acceleration, rotation, reverse thrust, wall rebound, and an energy-draining afterburner.
+- Near-conservative coasting with explicit counter-thrust: turning changes the
+  hull axis but never rotates the ship's existing travel vector. Flight assist
+  now bleeds velocity slowly instead of imposing arcade-style drag.
 - One regenerating **energy bank** shared by hull integrity, guns, ordnance, boost, repel, and active systems.
 - Eight original vector hull silhouettes with classic/SVS-inspired ship identities.
 - Five honest AI tiers, from Cadet to Sovereign. Difficulty changes thinking quality—not enemy damage, speed, energy, or cooldown rules.
@@ -37,6 +40,9 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
 - Procedurally synthesized Web Audio effects with no bundled sound assets.
 - A fixed 60 Hz simulation clock separated from display refresh.
 - Direct `file://` operation using classic scripts rather than browser modules.
+- A pinned local Three.js layer adds Rust/Wasm-sampled star depth, arena
+  structure, and combat pulses while the fixed-step Canvas simulation remains
+  authoritative. The sampler follows the bounded QSOLKCB/GALAXY browser ABI.
 
 ## Controls
 

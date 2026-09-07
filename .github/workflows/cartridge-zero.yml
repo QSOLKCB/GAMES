@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - "CARTRIDGE_ZERO/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/cartridge-zero.yml"
       - "README.md"
   pull_request:
     paths:
       - "CARTRIDGE_ZERO/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/cartridge-zero.yml"
       - "README.md"
 

@@ -26,7 +26,7 @@ The core deliberately contains no calls to:
 
 ## Replay receipts
 
-The `BSA1` text format stores `[version, seed, difficulty, ticks, runs]` as JSON,
+The `BSA2` text format stores `[version, seed, difficulty, ticks, runs]` as JSON,
 base64url-encodes it, and prefixes an FNV-1a checksum. A decoder rejects unknown
 versions, malformed input runs, mismatched tick totals, payloads beyond the
 six-hour cap, and checksum changes before simulation.

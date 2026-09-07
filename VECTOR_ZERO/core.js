@@ -6,8 +6,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const ENGINE_VERSION = 1;
-  const REPLAY_PREFIX = "VZ01";
+  const ENGINE_VERSION = 2;
+  const REPLAY_PREFIX = "VZ02";
   const TICK_RATE = 60;
   const FP = 1024;
   const CELL_SIZE = 6 * FP;
@@ -518,7 +518,7 @@
       vz: Math.trunc(direction.z * speed / TRIG_SCALE) + Math.trunc((source.vz || 0) / 3),
       damage,
       lifetime,
-      radius: kind === "missile" ? 165 : 90,
+      radius: kind === "missile" ? 190 : kind === "laser" ? 140 : 96,
     });
   }
 
@@ -526,9 +526,9 @@
     const player = state.player;
     if ((actions & INPUT.FIRE) && player.weaponCooldown <= 0 && player.energy >= 14) {
       player.energy -= 14;
-      player.weaponCooldown = 8;
+      player.weaponCooldown = 7;
       state.stats.shots += 1;
-      spawnProjectile(state, "player", "laser", player, basis.forward, 155, 24, 240);
+      spawnProjectile(state, "player", "laser", player, basis.forward, 190, 26, 240);
       state.events.push({ type: "shot", kind: "laser" });
     }
     if ((actions & INPUT.MISSILE) && !(state.previousActions & INPUT.MISSILE) && player.missileCooldown <= 0 && player.missiles > 0) {

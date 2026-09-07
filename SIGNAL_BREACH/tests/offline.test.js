@@ -1,0 +1,15 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const root = path.resolve(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+assert.match(html, /connect-src 'none'/);
+assert.match(html, /wasm-unsafe-eval/);
+assert.match(html, /\.\.\/vendor\/three\/three\.min\.js/);
+assert.match(html, /\.\.\/vendor\/galaxy-sampler\/galaxy-wasm\.js/);
+assert.doesNotMatch(html, /https?:\/\//i);
+for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) assert.ok(fs.existsSync(path.resolve(root, match[1])), `missing local dependency ${match[1]}`);
+for (const file of ["app.js", "core.js", "sampler.js", "style.css"]) assert.doesNotMatch(fs.readFileSync(path.join(root, file), "utf8"), /https?:\/\//i, `${file} must not use the network`);
+assert.ok(fs.statSync(path.resolve(root, "../vendor/galaxy-sampler/galaxy_sampler.wasm")).size > 1000);
+console.log("SIGNAL BREACH offline boundary OK");

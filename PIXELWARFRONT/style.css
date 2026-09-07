@@ -144,6 +144,7 @@ button.primary {
   border: 1px solid var(--line-hot);
   background: #080c0e;
   aspect-ratio: 8 / 5;
+  box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.62), 0 0 28px rgba(93, 148, 140, 0.09);
 }
 
 canvas {

@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - "PIXELWARFRONT/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/pixelwarfront.yml"
       - "README.md"
   pull_request:
     paths:
       - "PIXELWARFRONT/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/pixelwarfront.yml"
       - "README.md"
 

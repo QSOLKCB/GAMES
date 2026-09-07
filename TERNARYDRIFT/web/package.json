@@ -1,0 +1,9 @@
+{
+  "name": "ternary-drift-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deterministic offline Three.js edition of Ternary Drift",
+  "scripts": {
+    "test": "node tests/core.test.js && node --test tests/service-spawn.test.js tests/dock-ui.test.js && node tests/offline.test.js"
+  }
+}

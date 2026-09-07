@@ -4,6 +4,9 @@
   const core = window.BlackstarCore;
   const canvas = document.querySelector("#game");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const threeStage = window.QsolThree
+    ? window.QsolThree.create({ host: document.querySelector("#viewport"), source: canvas, preset: "blackstar" })
+    : { render() {}, pulse() {} };
   const WIDTH = canvas.width;
   const HEIGHT = canvas.height;
   const VIEW_HEIGHT = 160;
@@ -121,7 +124,7 @@
       oscillator.stop(now + duration + 0.02);
     }
 
-    function noise(duration, volume) {
+    function noise(duration, volume, cutoff) {
       if (!enabled) return;
       const ac = ensure();
       if (!ac) return;
@@ -137,9 +140,13 @@
       }
       const source = ac.createBufferSource();
       const gain = ac.createGain();
+      const filter = ac.createBiquadFilter();
       source.buffer = buffer;
       gain.gain.value = volume;
-      source.connect(gain).connect(ac.destination);
+      filter.type = "lowpass";
+      filter.frequency.value = cutoff || 1400;
+      filter.Q.value = 1.8;
+      source.connect(filter).connect(gain).connect(ac.destination);
       source.start();
     }
 
@@ -173,12 +180,22 @@
       events(events) {
         for (const event of events) {
           if (event.type === "shot") {
-            if (event.weapon === 0) tone(150, 0.07, "square", 0.035, -80);
-            else if (event.weapon === 1) noise(0.14, 0.12);
-            else tone(95, 0.04, "sawtooth", 0.025, 80);
+            if (event.weapon === 0) {
+              tone(178, 0.065, "square", 0.032, -96);
+              tone(356, 0.045, "sine", 0.012, -160);
+            } else if (event.weapon === 1) {
+              noise(0.17, 0.13, 780);
+              tone(52, 0.21, "sawtooth", 0.045, -22);
+            } else {
+              tone(88, 0.035, "sawtooth", 0.024, 95);
+              noise(0.025, 0.018, 2400);
+            }
+          } else if (event.type === "enemy-fire") {
+            const heavy = event.kind === "bulwark" || event.kind === "warden";
+            tone(heavy ? 62 : 118, heavy ? 0.16 : 0.08, "sawtooth", heavy ? 0.035 : 0.018, heavy ? -18 : 45);
           } else if (event.type === "enemy-hit") tone(92, 0.04, "square", 0.018, 20);
-          else if (event.type === "enemy-down") { noise(0.18, 0.1); tone(64, 0.2, "sawtooth", 0.04, -25); }
-          else if (event.type === "player-hit") { noise(0.12, 0.07); tone(48, 0.18, "square", 0.04, -16); }
+          else if (event.type === "enemy-down") { noise(0.22, 0.11, 920); tone(64, 0.24, "sawtooth", 0.04, -25); }
+          else if (event.type === "player-hit") { noise(0.14, 0.075, 680); tone(48, 0.2, "square", 0.04, -16); }
           else if (event.type === "pickup") tone(event.kind === "key" ? 880 : 620, 0.11, "square", 0.03, 180);
           else if (event.type === "door" || event.type === "unlock") tone(72, 0.24, "square", 0.025, 35);
           else if (event.type === "denied") tone(110, 0.12, "square", 0.03, -25);
@@ -284,6 +301,7 @@
       if (event.type === "shot") {
         flash = Math.max(flash, event.weapon === 1 ? 7 : 4);
         shake = Math.max(shake, event.weapon === 1 ? 3 : 1);
+        threeStage.pulse("shot", event.weapon === 1 ? 0.7 : 0.35);
       } else if (event.type === "enemy-hit") {
         notice = `${core.ENEMY_TYPES[event.kind].name} // ${event.health}`;
         noticeTicks = 30;
@@ -291,11 +309,13 @@
         notice = `${core.ENEMY_TYPES[event.kind].name} ERASED`;
         noticeTicks = 55;
         shake = Math.max(shake, event.kind === "warden" ? 8 : 4);
+        threeStage.pulse("blast", event.kind === "warden" ? 1 : 0.65);
       } else if (event.type === "player-hit") {
         flash = Math.max(flash, 12);
         shake = Math.max(shake, 6);
         notice = `SUIT BREACH // -${event.amount}`;
         noticeTicks = 45;
+        threeStage.pulse("impact", 0.85);
       } else if (event.type === "pickup") {
         notice = `RECOVERED // ${event.kind.toUpperCase()}`;
         noticeTicks = 70;
@@ -467,7 +487,7 @@
     if (depth > zBuffer[centerColumn] + 140) return;
     const type = enemy.kind;
     const pain = enemy.pain > 0;
-    const base = pain ? "#f4d8a1" : type === "warden" ? "#893c38" : type === "drone" ? "#5b978c" : type === "trooper" ? "#9b6542" : "#677c6e";
+    const base = pain ? "#f4d8a1" : type === "warden" ? "#893c38" : type === "bulwark" ? "#80604b" : type === "specter" ? "#567e78" : type === "drone" ? "#5b978c" : type === "trooper" ? "#9b6542" : "#677c6e";
     const dark = pain ? "#9d443b" : "#1a2522";
     const eye = type === "warden" ? "#ffd269" : "#dd6a4c";
     pixelRect(left + size * 0.28, top + size * 0.08, size * 0.44, size * 0.26, dark);
@@ -482,12 +502,27 @@
       pixelRect(left + size * 0.03, top + size * 0.38, size * 0.94, size * 0.1, base);
       pixelRect(left + size * 0.43, top + size * 0.1, size * 0.14, size * 0.7, dark);
     }
+    if (type === "specter") {
+      pixelRect(left + size * 0.12, top + size * 0.2, size * 0.76, size * 0.1, "#2c3d3b");
+      pixelRect(left + size * 0.2, top + size * 0.62, size * 0.18, size * 0.28, dark);
+      pixelRect(left + size * 0.62, top + size * 0.62, size * 0.18, size * 0.28, dark);
+      pixelRect(left + size * 0.72, top + size * 0.06, size * 0.08, size * 0.48, "#a6c8b4");
+    }
+    if (type === "bulwark") {
+      pixelRect(left + size * 0.02, top + size * 0.2, size * 0.28, size * 0.62, "#49372e");
+      pixelRect(left + size * 0.7, top + size * 0.2, size * 0.28, size * 0.62, "#49372e");
+      pixelRect(left + size * 0.18, top + size * 0.4, size * 0.64, size * 0.16, "#bc8352");
+    }
     if (type === "warden") {
       pixelRect(left + size * 0.06, top + size * 0.2, size * 0.18, size * 0.6, "#512b2c");
       pixelRect(left + size * 0.76, top + size * 0.2, size * 0.18, size * 0.6, "#512b2c");
       const healthWidth = Math.max(1, Math.floor(size * enemy.health / enemy.maxHealth));
       pixelRect(left, top - 4, size, 2, "#301313");
       pixelRect(left, top - 4, healthWidth, 2, "#e09a57");
+    }
+    if (enemy.muzzle > 0) {
+      const flare = Math.max(2, size * 0.16);
+      pixelRect(left + size * 0.5 - flare / 2, top + size * 0.08, flare, flare * 0.45, "#ffd477");
     }
   }
 
@@ -565,9 +600,15 @@
       pixelRect(center - 21, bottom - 43, 17, 18, "#3b2d25");
       pixelRect(center + 4, bottom - 43, 17, 18, "#3b2d25");
     } else if (p.weapon === 2) {
-      pixelRect(center - 13, bottom - 48, 6, 19, "#273631");
-      pixelRect(center - 3, bottom - 50, 6, 21, "#273631");
-      pixelRect(center + 7, bottom - 48, 6, 19, "#273631");
+      const spin = state.tick & 3;
+      pixelRect(center - 15 + spin, bottom - 49, 6, 20, "#273631");
+      pixelRect(center - 3, bottom - 52 + spin, 6, 23, "#273631");
+      pixelRect(center + 9 - spin, bottom - 49, 6, 20, "#273631");
+      pixelRect(center - 25, bottom - 30, 8, 11, "#9a7147");
+    } else {
+      pixelRect(center - 13, bottom - 40, 7, 12, "#8ca493");
+      pixelRect(center + 6, bottom - 40, 7, 12, "#8ca493");
+      pixelRect(center - 3, bottom - 54, 6, 14, "#c99855");
     }
     if (state.tick - state.lastShotTick < 3) {
       pixelRect(center - 8, bottom - 57, 16, 10, "#f5d27a");
@@ -685,6 +726,7 @@
   function render() {
     if (!state) {
       drawStandby();
+      threeStage.render({ tick: 0, activity: 0.08 });
       return;
     }
     const offsetX = shake > 0 ? ((state.tick * 13) % (shake * 2 + 1)) - shake : 0;
@@ -712,6 +754,13 @@
       ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
+    threeStage.render({
+      tick: state.tick,
+      speed: Math.hypot(state.player.vx || 0, state.player.vy || 0) / core.FP,
+      danger: 1 - state.player.health / 100,
+      activity: Math.max(flash / 12, state.enemies.length ? 0.28 : 0.08),
+      heading: state.player.angle / core.ANGLE_MAX * TAU,
+    });
   }
 
   function updateTelemetry(force) {

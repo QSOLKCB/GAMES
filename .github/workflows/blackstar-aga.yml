@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - "BLACKSTAR_AGA/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/blackstar-aga.yml"
       - "README.md"
   pull_request:
     paths:
       - "BLACKSTAR_AGA/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/blackstar-aga.yml"
       - "README.md"
 

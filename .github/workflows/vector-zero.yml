@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - "VECTOR_ZERO/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/vector-zero.yml"
       - "README.md"
   pull_request:
     paths:
       - "VECTOR_ZERO/**"
+      - "shared/**"
+      - "vendor/three/**"
+      - "vendor/galaxy-sampler/**"
       - ".github/workflows/vector-zero.yml"
       - "README.md"
 
