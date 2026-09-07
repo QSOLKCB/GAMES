@@ -240,6 +240,11 @@
     const attributes = { alpha: true, antialias: false, depth: true, stencil: false, premultipliedAlpha: true };
     const context = layer.getContext("webgl2", attributes) || layer.getContext("webgl", attributes);
     if (!context) return NOOP;
+    // SwiftShader/llvmpipe can make a decorative layer starve the authoritative
+    // fixed-step Canvas simulation. Prefer the existing 2D game on software GL.
+    const debugInfo = context.getExtension("WEBGL_debug_renderer_info");
+    const rendererName = debugInfo ? String(context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || "") : "";
+    if (/swiftshader|llvmpipe|software raster/i.test(rendererName)) return NOOP;
 
     let renderer;
     try {
@@ -255,7 +260,7 @@
     source.insertAdjacentElement("afterend", layer);
 
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(1.5, root.devicePixelRatio || 1));
+    renderer.setPixelRatio(Math.min(1, root.devicePixelRatio || 1));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 80);
