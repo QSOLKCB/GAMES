@@ -1,14 +1,42 @@
 # Ternary Drift
 
-**Ternary Drift** is a native C99/Win32 2D space-trading and combat sandbox built under a hard floppy-sized distribution constraint. Its economy, missions, combat, replay stream, and adaptive tracker score all derive from a declared 64-bit universe seed.
+**Ternary Drift** is a seeded space-trading and combat sandbox with two playable
+editions: an offline **Three.js / HTML / CSS / JavaScript web game** and a native
+**C99/Win32** game built under a hard floppy-sized distribution constraint.
+
+| Edition | Start here |
+|---|---|
+| [Offline web edition](web/README.md) | Open [`web/index.html`](web/index.html) from a downloaded copy of the repository in a modern desktop browser with WebGL enabled. |
+| Native Windows edition | Follow the [build instructions](#build) to create and run `TERNARY.EXE`. |
 
 This directory contains the first native vertical slice of the larger design and
 a separate offline browser edition. Neither claims that the complete long-form
 design is finished.
 
-## Current vertical slice
+## Play the offline web edition
 
-The implementation currently provides:
+1. On the [repository page](https://github.com/QSOLKCB/GAMES), choose
+   **Code → Download ZIP**, or [download the source ZIP](https://github.com/QSOLKCB/GAMES/archive/refs/heads/main.zip).
+2. Extract the whole ZIP and keep the folder layout intact, including `vendor`.
+3. Open **`GAMES-main/TERNARYDRIFT/web/index.html`** in a desktop browser with WebGL enabled.
+   If it opens in an editor, right-click and choose **Open With** your browser.
+4. Click **INITIALISE FLIGHT**, then press **L** or click **LAUNCH** to leave the
+   starting station. Click **AUDIO OFF** to enable sound.
+
+No server, build step, or internet connection is required after downloading.
+Opening the HTML link on GitHub shows the source; open the extracted file to play.
+
+The web flight deck includes fixed-tick seeded systems, inertial flight and
+engine kill, markets, cargo, contracts, upgrades, combat, salvage, gates,
+synthesized sound, and all five adaptive qutrits. See the
+[web edition guide](web/README.md) for controls and development checks.
+It has its own JavaScript fixed-point simulation and is not replay/save
+compatible with the native C build.
+
+## Native vertical slice
+
+The native edition's economy, missions, combat, replay stream, and adaptive
+tracker score all derive from a declared 64-bit universe seed. It currently provides:
 
 - a 64-bit Windows executable using the Win32 API, a 480×270 software framebuffer, integer nearest-neighbour scaling, and `waveOut` audio;
 - a 60 Hz fixed-timestep authoritative simulation using Q16.16 fixed-point flight and no gameplay floating point;
@@ -25,21 +53,6 @@ The implementation currently provides:
 The native executable uses no web technology, SDL, Electron, external game
 runtime, downloaded content, recorded soundtrack, MP3, OGG, WAV music, or large
 raster asset.
-
-## Offline Three.js edition
-
-Open [`web/index.html`](web/index.html) directly in a modern browser. This new
-edition translates the vertical slice into a responsive local Three.js flight
-deck with fixed-tick seeded systems, inertial flight and engine kill, markets,
-cargo, contracts, upgrades, combat, salvage, gates, synthesized sound, and all
-five adaptive qutrits. It has its own JavaScript fixed-point simulation and is
-not replay/save compatible with the native C build.
-
-Run its deterministic and offline checks with:
-
-```sh
-npm --prefix web test
-```
 
 ## Build
 

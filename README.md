@@ -15,12 +15,45 @@ Every project is designed for local, offline play with no account or telemetry. 
 | [PIXEL WARFRONT: Deterministic Command](PIXELWARFRONT/) | Offline Canvas + Three.js | Polished deterministic RTS | Open [`PIXELWARFRONT/index.html`](PIXELWARFRONT/index.html) |
 | [SEEDSTORM: Deterministic Strike](SEEDSTORM/) | Offline Canvas + Three.js | Polished deterministic vertical shooter | Open [`SEEDSTORM/index.html`](SEEDSTORM/index.html) |
 | [INERTIA ZERO](SUBSPACE/) | Offline Canvas + Three.js | Retuned near-Newtonian arena combat | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
-| [TERNARY DRIFT](TERNARYDRIFT/) | Native C99/Win32 + offline Three.js edition | Two playable vertical slices | Open [`TERNARYDRIFT/web/index.html`](TERNARYDRIFT/web/index.html) or build `TERNARY.EXE` |
+| [TERNARY DRIFT — Web Edition](TERNARYDRIFT/web/) | Offline Three.js / HTML / CSS / JavaScript | Playable space-trading and combat sandbox | Open [`TERNARYDRIFT/web/index.html`](TERNARYDRIFT/web/index.html) locally |
+| [TERNARY DRIFT — Native Edition](TERNARYDRIFT/) | C99 / Win32 | Playable floppy-sized vertical slice | [Build and run `TERNARY.EXE`](TERNARYDRIFT/README.md#build) |
 
 ## Running locally
 
-- Browser projects: open the project's `index.html` directly in a modern desktop browser. No server is required. Three.js is pinned under [`vendor/three/`](vendor/three/) so local play never reaches a CDN.
-- Native projects: follow the build and run instructions in the project's own README. The `TERNARY.EXE` target intentionally uses Win32, a software framebuffer, and `waveOut`; its native payload contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
+### Download and play the browser games
+
+1. On the repository page, click the green **Code** button, then **Download ZIP**.
+   You can also [download the source ZIP directly](https://github.com/QSOLKCB/GAMES/archive/refs/heads/main.zip).
+2. Extract the **entire ZIP**. This normally creates a folder named `GAMES-main`.
+   Keep its folders together, including `vendor` and `shared`; the games load
+   local files from them. Do not open the HTML from inside the ZIP or copy it out alone.
+3. In the extracted folder, open the game's `index.html` listed in the table above
+   with a modern desktop browser. If it opens in a text editor, right-click it
+   and choose **Open With** your browser.
+4. Use the game's start button and its displayed controls. After downloading,
+   the browser games need no installation, compilation, server, or internet connection.
+
+The HTML links on GitHub display source; launch the extracted local file to play.
+Three.js is included under [`vendor/three/`](vendor/three/) so play never needs a CDN.
+
+### Ternary Drift web edition
+
+After extracting the ZIP, open **`GAMES-main/TERNARYDRIFT/web/index.html`** in a
+desktop browser with WebGL enabled. Enter a universe seed or keep the default,
+then click **INITIALISE FLIGHT**. You start docked: trade or accept a contract,
+then press **L** or click **LAUNCH** to leave the station. Click **AUDIO OFF** to
+enable sound.
+
+The web edition includes seeded systems, inertial flight, trading, cargo,
+contracts, upgrades, combat, salvage, jump gates, and synthesized sound.
+See the [web edition guide and controls](TERNARYDRIFT/web/README.md).
+
+### Native Windows edition
+
+The source ZIP also includes the native Ternary Drift source. Follow its
+[build instructions](TERNARYDRIFT/README.md#build) to create `TERNARY.EXE`.
+That target uses Win32, a software framebuffer, and `waveOut`; its native payload
+contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
 
 ## Shared rendering boundary
 
