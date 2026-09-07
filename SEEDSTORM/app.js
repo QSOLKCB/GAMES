@@ -210,6 +210,7 @@
     ui.intro.classList.add("is-hidden");
     hideMessage();
     enableRunControls();
+    updateHud();
     audio.ensure();
     canvas.focus({ preventScroll: true });
     setStatus(`Live flight launched from seed ${core.seedHex(seed)}.`);
@@ -241,6 +242,7 @@
     enableRunControls();
     ui.pause.disabled = false;
     ui.replay.disabled = true;
+    updateHud();
     ui.dialog.close();
     audio.ensure();
     canvas.focus({ preventScroll: true });
