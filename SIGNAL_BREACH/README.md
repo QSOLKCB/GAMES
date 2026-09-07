@@ -14,7 +14,7 @@ Open `index.html` directly in a modern desktop browser. Everything needed to pla
 
 - **Vector Carbine:** accurate sustained fire.
 - **Arc Scatter:** wide close-range breach pattern.
-- **Null Lance:** slow, high-damage penetrating line shot.
+- **Null Lance:** slow, high-damage penetrating line shot; damages each crossed enemy once, and stops at hard cover or its lifetime limit.
 - **Wraith:** fast lateral pressure; **Lancer:** ranged fire support; **Bulwark:** slow armored denial unit.
 
 ## GALAXY Rust/WebAssembly lineage
@@ -25,4 +25,4 @@ The copied GALAXY object and notices are retained under `../vendor/galaxy-sample
 
 ## Development
 
-Run `npm test` for deterministic simulation, arena, WebAssembly parity, syntax, and offline-boundary checks. With Rust and the `wasm32-unknown-unknown` target installed, run `./scripts/build-wasm.sh` to replace the shipped sampler with the smaller game-specific compatible build.
+Run `npm test` for deterministic simulation, combat regressions, arena, WebAssembly parity, syntax, and offline-boundary checks. Pointer-release tests execute the real app and Three.js scene objects with a controlled clock and test doubles for the DOM and GPU renderer; they are not browser/GPU rendering tests. With Rust and the `wasm32-unknown-unknown` target installed, run `./scripts/build-wasm.sh` to replace the shipped sampler with the smaller game-specific compatible build.

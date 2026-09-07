@@ -113,14 +113,14 @@
     for (let i = 0; i < 64; i += 1) { const dot = dx * DIRECTIONS[i][0] + dy * DIRECTIONS[i][1]; if (dot > score) { score = dot; best = i; } }
     return best;
   }
-  function addVelocity(body, direction, amount) { body.vx += Math.trunc(DIRECTIONS[direction][0] * amount / FP); body.vy += Math.trunc(DIRECTIONS[direction][1] * amount / FP); }
+  function addVelocity(body, direction, amount) { const vector = DIRECTIONS[direction & 63]; body.vx += Math.trunc(vector[0] * amount / FP); body.vy += Math.trunc(vector[1] * amount / FP); }
   function capVelocity(body, maximum) { const speed = Math.hypot(body.vx, body.vy); if (speed > maximum) { body.vx = Math.trunc(body.vx * maximum / speed); body.vy = Math.trunc(body.vy * maximum / speed); } }
   function fire(state, owner, source, aim, weaponIndex, damageScale) {
     const weapon = WEAPONS[weaponIndex];
     for (let shot = 0; shot < weapon.shots; shot += 1) {
       const offset = weapon.shots === 1 ? 0 : (shot - (weapon.shots - 1) / 2) * weapon.spread;
       const direction = (aim + Math.round(offset) + 64) & 63; const vector = DIRECTIONS[direction];
-      state.bullets.push({ id: state.nextId++, owner, hostile: owner !== "player", x: source.x + vector[0] * 21, y: source.y + vector[1] * 21, vx: vector[0] * weapon.speed, vy: vector[1] * weapon.speed, damage: Math.round(weapon.damage * (damageScale || 1)), life: weaponIndex === 2 ? 72 : 58, color: weapon.color, lance: weaponIndex === 2 });
+      state.bullets.push({ id: state.nextId++, owner, hostile: owner !== "player", x: source.x + vector[0] * 21, y: source.y + vector[1] * 21, vx: vector[0] * weapon.speed, vy: vector[1] * weapon.speed, damage: Math.round(weapon.damage * (damageScale || 1)), life: weaponIndex === 2 ? 72 : 58, color: weapon.color, lance: weaponIndex === 2, hitTargets: [] });
     }
     state.events.push({ type: EVENTS.SHOT, owner, weapon: weaponIndex });
   }
@@ -176,7 +176,13 @@
         for (const enemy of state.enemies) {
           const radius = enemy.kind === "bulwark" ? 27 : 20;
           if (enemy.health <= 0 || distanceSq(bullet, enemy) > radius * radius) continue;
-          enemy.health -= bullet.damage; bullet.life = 0; state.events.push({ type: EVENTS.HIT, target: enemy.id, amount: bullet.damage });
+          // A lance remains live after impact, but cannot damage the same body
+          // again while crossing its collision radius on subsequent ticks.
+          if (bullet.lance && bullet.hitTargets.includes(enemy.id)) continue;
+          enemy.health -= bullet.damage;
+          if (bullet.lance) bullet.hitTargets.push(enemy.id);
+          else bullet.life = 0;
+          state.events.push({ type: EVENTS.HIT, target: enemy.id, amount: bullet.damage });
           if (enemy.health <= 0) { state.score += enemy.maxHealth * 12; state.events.push({ type: EVENTS.ENEMY_DOWN, id: enemy.id, kind: enemy.kind }); }
           if (!bullet.lance) break;
         }
@@ -187,6 +193,9 @@
   }
 
   function stepObjectives(state) {
+    // Combat resolves first: lethal damage cannot be superseded by extraction
+    // or award a relay capture during the same tick.
+    if (state.status !== "active" || state.player.health <= 0) return;
     for (const relay of state.arena.relays) {
       if (relay.captured) continue;
       const playerNear = distanceSq(state.player, { x: relay.x * FP, y: relay.y * FP }) < 76 * 76;

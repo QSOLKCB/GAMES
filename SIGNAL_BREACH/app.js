@@ -204,7 +204,10 @@
     if (!state || !view) return; const rect = canvas.getBoundingClientRect(); const mouse = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -((event.clientY - rect.top) / rect.height * 2 - 1)); const ray = new THREE.Raycaster(); ray.setFromCamera(mouse, view.camera); const point = new THREE.Vector3(); ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), point); aim = (Math.round(Math.atan2(point.z - state.player.y / core.FP, point.x - state.player.x / core.FP) / (Math.PI * 2) * 64) + 64) & 63;
   });
   canvas.addEventListener("pointerdown", (event) => { if (event.button === 0) { held |= core.INPUT.FIRE; canvas.setPointerCapture(event.pointerId); } else if (event.button === 2) tapped |= core.INPUT.DASH; });
-  canvas.addEventListener("pointerup", (event) => { if (event.button === 0) held &= ~core.INPUT.FIRE; });
+  function releaseCanvasFire() { held &= ~core.INPUT.FIRE; }
+  canvas.addEventListener("pointerup", (event) => { if (event.button === 0) releaseCanvasFire(); });
+  canvas.addEventListener("pointercancel", releaseCanvasFire);
+  canvas.addEventListener("lostpointercapture", releaseCanvasFire);
   canvas.addEventListener("contextmenu", (event) => event.preventDefault());
   document.querySelectorAll("[data-hold]").forEach((button) => { const bit = core.INPUT[button.dataset.hold]; const down = (event) => { event.preventDefault(); held |= bit; }; const up = (event) => { event.preventDefault(); held &= ~bit; }; button.addEventListener("pointerdown", down); button.addEventListener("pointerup", up); button.addEventListener("pointercancel", up); });
   document.querySelectorAll("[data-tap]").forEach((button) => button.addEventListener("click", () => { tapped |= core.INPUT[button.dataset.tap]; }));

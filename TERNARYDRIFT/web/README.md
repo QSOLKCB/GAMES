@@ -9,4 +9,6 @@ This edition preserves the native vertical slice's central systems—fixed-tick 
 - Flight: `W` / `S` thrust and reverse; `A` / `D` strafe; arrow keys rotate; `Space` fires; `E` docks or tractors salvage; `J` uses a gate; `K` toggles flight assist.
 - Docked: arrow keys select a commodity; `B` buys; `S` sells; `M` accepts a contract; `U` cycles upgrades; `R` repairs; `L` launches.
 
+Station repairs cost 3 credits per missing hull point plus 1 credit per missing shield point. Shield-only damage can be repaired; the full repair price must be affordable before either meter is restored.
+
 Run `npm test` to verify deterministic replay behavior and the direct-file offline boundary.

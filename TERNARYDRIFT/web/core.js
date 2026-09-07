@@ -129,13 +129,20 @@
 
   function spawnEnemy(state) {
     if (state.enemies.length >= 3 || state.player.docked) return;
-    const lane = nextRandom(state) & 31;
+    let lane = nextRandom(state) & 31;
     const direction = DIRECTIONS[lane];
     const distance = randomRange(state, 380, 620) * FP;
+    let dx = Math.trunc(direction[0] * distance / FP);
+    let dy = Math.trunc(direction[1] * distance / FP);
+    // Reflect an outward component about the player, not about the boundary.
+    // The maximum radius is smaller than either world half-extent, so its
+    // opposite sign always fits. This preserves radius and RNG consumption.
+    if (Math.abs(state.player.x + dx) > WORLD_X) { dx = -dx; lane = (16 - lane) & 31; }
+    if (Math.abs(state.player.y + dy) > WORLD_Y) { dy = -dy; lane = (-lane) & 31; }
     state.enemies.push({
       id: state.nextId++, kind: state.tick > 4800 ? "corsair" : state.tick > 1800 ? "raider" : "skiff",
-      x: clamp(state.player.x + Math.trunc(direction[0] * distance / 1024), -WORLD_X, WORLD_X),
-      y: clamp(state.player.y + Math.trunc(direction[1] * distance / 1024), -WORLD_Y, WORLD_Y),
+      x: state.player.x + dx,
+      y: state.player.y + dy,
       vx: 0, vy: 0, heading: (lane + 16) & 31, hull: state.tick > 4800 ? 82 : state.tick > 1800 ? 58 : 38,
       maxHull: state.tick > 4800 ? 82 : state.tick > 1800 ? 58 : 38, shield: 22, cooldown: 45 + nextRandom(state) % 70,
       phase: nextRandom(state),
@@ -258,9 +265,10 @@
       state.upgradeCursor = (state.upgradeCursor + 1) % 3;
     }
     if (pressed & INPUT.REPAIR) {
-      const missing = player.hullMax - player.hull;
-      const cost = missing * 3;
-      if (missing > 0 && player.credits >= cost) {
+      const missingHull = player.hullMax - player.hull;
+      const missingShield = player.shieldMax - player.shield;
+      const cost = missingHull * 3 + missingShield;
+      if (cost > 0 && player.credits >= cost) {
         player.credits -= cost; player.hull = player.hullMax; player.shield = player.shieldMax;
         state.events.push({ type: EVENTS.REPAIRED, cost });
       }
