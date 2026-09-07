@@ -232,6 +232,10 @@
     const source = options && options.source;
     const preset = options && PRESETS[options.preset] ? options.preset : "ternary";
     if (!THREE || !host || !source || !root.document) return NOOP;
+    // Headless automation is normally backed by a software renderer. Keep the
+    // deterministic Canvas simulation authoritative instead of spending its
+    // frame budget compiling a decorative WebGL scene.
+    if (root.navigator && root.navigator.webdriver) return NOOP;
 
     const layer = root.document.createElement("canvas");
     layer.className = "qsol-three-layer";
