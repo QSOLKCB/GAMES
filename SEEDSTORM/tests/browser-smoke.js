@@ -46,7 +46,13 @@ const core = require("../core.js");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
 
   await page.keyboard.down("KeyZ");
-  await page.waitForTimeout(4300);
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(1000);
+  await page.keyboard.up("ArrowLeft");
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(1400);
+  await page.keyboard.up("ArrowRight");
+  await page.waitForTimeout(1900);
   await page.screenshot({ path: path.join(__dirname, "seedstorm-health.png"), fullPage: true });
   await page.waitForFunction(() => Number(document.querySelector("#scoreReadout").textContent) > 0, null, { timeout: 5000 });
   await page.screenshot({ path: path.join(__dirname, "seedstorm-explosion.png"), fullPage: true });
