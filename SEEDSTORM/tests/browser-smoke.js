@@ -77,6 +77,10 @@ const core = require("../core.js");
   await page.keyboard.up("KeyZ");
   await page.click(".close-button");
   await page.waitForFunction(() => !document.querySelector("#replayDialog").open);
+  if (await page.locator("#pauseButton").innerText() === "RESUME") {
+    await page.click("#pauseButton");
+  }
+  assert.equal(await page.locator("#pauseButton").isEnabled(), true, "live run must remain resumable after replay export");
   await page.waitForFunction(
     (previous) => Number.parseFloat(document.querySelector("#levelProgress").style.width) > previous,
     progressBeforeRelease,
