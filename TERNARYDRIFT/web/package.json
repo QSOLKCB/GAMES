@@ -4,6 +4,6 @@
   "private": true,
   "description": "Deterministic offline Three.js edition of Ternary Drift",
   "scripts": {
-    "test": "node tests/core.test.js && node --test tests/service-spawn.test.js && node tests/offline.test.js"
+    "test": "node tests/core.test.js && node --test tests/service-spawn.test.js tests/dock-ui.test.js && node tests/offline.test.js"
   }
 }

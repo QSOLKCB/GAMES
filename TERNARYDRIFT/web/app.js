@@ -29,6 +29,7 @@
   let accumulator = 0;
   let toastTicks = 0;
   let audio = null;
+  let lastMarketSnapshot = null;
 
   function makeShip(color, scale) {
     const group = new THREE.Group();
@@ -190,9 +191,9 @@
 
   function eventMessage(event) {
     const commodity = event.commodity == null ? "" : core.COMMODITIES[event.commodity];
+    if (event.type === core.EVENTS.TRADE) return `${event.side.toUpperCase()} ${commodity} / ${event.price} CR`;
     return {
       [core.EVENTS.DOCKED]: "STATION LINK ESTABLISHED", [core.EVENTS.LAUNCHED]: "LAUNCH CLEAR",
-      [core.EVENTS.TRADE]: `${event.side.toUpperCase()} ${commodity} / ${event.price} CR`,
       [core.EVENTS.NO_CREDITS]: "TRANSACTION DENIED", [core.EVENTS.CARGO_FULL]: "CARGO HOLD FULL",
       [core.EVENTS.MISSION_ACCEPTED]: "DELIVERY CONTRACT ACCEPTED", [core.EVENTS.MISSION_COMPLETED]: `CONTRACT PAID / ${event.reward} CR`,
       [core.EVENTS.UPGRADED]: "SHIP SYSTEM UPGRADED", [core.EVENTS.REPAIRED]: `HULL RESTORED / ${event.cost} CR`,
@@ -211,11 +212,24 @@
 
   function renderMarket() {
     if (!state || !state.player.docked) return;
-    const market = state.systems[state.player.system].market;
+    const player = state.player;
+    const system = state.systems[player.system];
+    const market = system.market;
+    const prices = core.COMMODITIES.map((_, index) => core.marketPrice(state, player.system, index, true));
+    // The dock is a live region. Keep its DOM stable between visible changes,
+    // including production and reputation-driven prices that change without input.
+    const snapshot = JSON.stringify([player.system, system.name, market.faction,
+      state.selectedCommodity, market.inventory, prices, player.cargo]);
+    if (snapshot === lastMarketSnapshot) return;
+    lastMarketSnapshot = snapshot;
+    const faction = core.FACTIONS[market.faction];
+    const title = `DOCKED AT ${system.name}`;
+    if (reads.dockFaction.textContent !== faction) reads.dockFaction.textContent = faction;
+    if (reads.dockTitle.textContent !== title) reads.dockTitle.textContent = title;
     marketRows.textContent = "";
     core.COMMODITIES.forEach((name, index) => {
       const row = document.createElement("div"); row.className = `market-row${index === state.selectedCommodity ? " selected" : ""}`;
-      row.innerHTML = `<span>${index === state.selectedCommodity ? "›" : ""}</span><strong>${name}</strong><span>${market.inventory[index]} stk</span><b>${core.marketPrice(state, state.player.system, index, true)}</b><span>${state.player.cargo[index]} hold</span>`;
+      row.innerHTML = `<span>${index === state.selectedCommodity ? "›" : ""}</span><strong>${name}</strong><span>${market.inventory[index]} stk</span><b>${prices[index]}</b><span>${player.cargo[index]} hold</span>`;
       marketRows.append(row);
     });
   }
@@ -233,9 +247,7 @@
       meters[name].style.width = `${player[name] / player[`${name}Max`] * 100}%`;
     }
     reads.assist.textContent = `FLIGHT ASSIST / ${player.engineKill ? "OFF" : "ON"}`;
-    reads.dockFaction.textContent = core.FACTIONS[system.market.faction];
-    reads.dockTitle.textContent = `DOCKED AT ${system.name}`;
-    dockLayer.hidden = !player.docked;
+    if (dockLayer.hidden !== !player.docked) dockLayer.hidden = !player.docked;
     if (player.docked) renderMarket();
     qutrits.textContent = "";
     for (const [key, value] of Object.entries(state.qutrits)) {

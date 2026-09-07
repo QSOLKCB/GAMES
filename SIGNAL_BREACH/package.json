@@ -4,6 +4,6 @@
   "private": true,
   "description": "Offline deterministic Three.js twin-stick shooter with a Rust/WebAssembly arena sampler",
   "scripts": {
-    "test": "node --check core.js && node --check sampler.js && node --check app.js && node tests/core.test.js && node --test tests/combat-regressions.test.js tests/input.test.js && node tests/wasm.test.js && node tests/offline.test.js"
+    "test": "node --check core.js && node --check sampler.js && node --check app.js && node tests/core.test.js && node --test tests/arena.test.js tests/combat-regressions.test.js tests/input.test.js && node tests/wasm.test.js && node tests/offline.test.js"
   }
 }

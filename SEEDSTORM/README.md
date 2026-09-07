@@ -93,6 +93,11 @@ npx playwright install chromium
 npm run test:browser
 ```
 
+The browser test advances the animation clock explicitly while sending real
+keyboard input. It requires projectile hits and kills, then checks the visible
+score and exported live-state digest against the recorded flight's deterministic
+replay. This avoids depending on CI rendering speed to reach combat.
+
 GitHub Actions runs both groups for changes under `SEEDSTORM/`.
 
 ## Independent implementation notice

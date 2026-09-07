@@ -11,4 +11,6 @@ This edition preserves the native vertical slice's central systems—fixed-tick 
 
 Station repairs cost 3 credits per missing hull point plus 1 credit per missing shield point. Shield-only damage can be repaired; the full repair price must be affordable before either meter is restored.
 
-Run `npm test` to verify deterministic replay behavior and the direct-file offline boundary.
+The dock market updates when its stock, prices, cargo, station, or selection changes. Unchanged animation frames leave its live region untouched.
+
+Run `npm test` to verify deterministic replay behavior, station services and spawns, dock controls and display updates, and the direct-file offline boundary. The dock UI tests run the real app and simulation with DOM and animation-clock test doubles; they do not test GPU rendering or screen-reader announcements.

@@ -46,6 +46,29 @@
     return cover.some((block) => Math.abs(x - block.x) < block.w / 2 + margin && Math.abs(y - block.y) < block.h / 2 + margin);
   }
 
+  function clearRelay(cover, relay) {
+    const margin = 75;
+    if (!pointBlocked(cover, relay.x, relay.y, margin)) return;
+    // Keep the 46-unit marker inside the arena. The x boundaries are also
+    // guaranteed clear: generated cover plus its margin never reaches +/-650.
+    const limitX = WORLD.width / 2 - 50; const limitY = WORLD.height / 2 - 50;
+    const xs = [relay.x, -limitX, limitX]; const ys = [relay.y, -limitY, limitY];
+    for (const block of cover) {
+      xs.push(Math.floor(block.x - block.w / 2 - margin), Math.ceil(block.x + block.w / 2 + margin));
+      ys.push(Math.floor(block.y - block.h / 2 - margin), Math.ceil(block.y + block.h / 2 + margin));
+    }
+    // A nearest clear point lies on an expanded cover edge or keeps an original
+    // coordinate. Check every candidate against all blocks, with stable ties.
+    let best = null; let bestDistance = Infinity;
+    for (const x of xs) for (const y of ys) {
+      if (Math.abs(x) > limitX || Math.abs(y) > limitY) continue;
+      const distance = (x - relay.x) ** 2 + (y - relay.y) ** 2;
+      if (distance >= bestDistance || pointBlocked(cover, x, y, margin)) continue;
+      best = { x, y }; bestDistance = distance;
+    }
+    relay.x = best.x; relay.y = best.y;
+  }
+
   function buildArena(seed, supplied) {
     const samples = supplied && supplied.length >= 256 ? supplied : fallbackSamples(seed, 64);
     const cover = [];
@@ -63,7 +86,7 @@
       { id: 2, x: 35 + Math.round(value(samples, 31, 0) * 100), y: 170 + Math.round(value(samples, 31, 1) * 80), progress: 0, captured: false },
       { id: 3, x: 360 + Math.round(value(samples, 32, 0) * 90), y: -150 + Math.round(value(samples, 32, 1) * 90), progress: 0, captured: false },
     ];
-    for (const relay of relays) if (pointBlocked(cover, relay.x, relay.y, 75)) relay.y = relay.y > 0 ? 305 : -305;
+    for (const relay of relays) clearRelay(cover, relay);
     return { cover, relays, extraction: { x: 602, y: 315, open: false }, sampleCount: samples.length / 8 };
   }
 
