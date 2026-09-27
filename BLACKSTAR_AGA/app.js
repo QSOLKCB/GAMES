@@ -391,7 +391,27 @@
   }
 
   function render() {
-    presentation.render(state, { automap, paused, notice: noticeTicks > 0 ? notice : "", palette: state ? PALETTES[state.blueprint.palette] || PALETTES.copper : PALETTES.copper });
+    const shakeX =
+        state && shake > 0
+          ? ((state.tick * 13) % (shake * 2 + 1)) - shake
+          : 0,
+      shakeY =
+        state && shake > 0
+          ? ((state.tick * 7) % (Math.max(1, shake) + 1)) -
+            Math.floor(shake / 2)
+          : 0;
+    presentation.render(state, {
+      automap,
+      paused,
+      notice: noticeTicks > 0 ? notice : "",
+      palette: state
+        ? PALETTES[state.blueprint.palette] || PALETTES.copper
+        : PALETTES.copper,
+      flash,
+      shakeX,
+      shakeY,
+      hurt: state?.player?.hurt || 0,
+    });
   }
 
   function updateTelemetry(force) {
