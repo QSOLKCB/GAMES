@@ -36,7 +36,7 @@ flash, and a compact health bar after an enemy has been wounded.
 
 Destruction emits a final snapshot before the entity is removed. The renderer
 uses it to continue a procedural debris burst at the correct position, including
-a longer multi-ring sequence for command craft. These Canvas effects and their
+a longer multi-ring sequence for command craft. These native WebGL effects and their
 audio cues never feed back into simulation state, so a replay produces the same
 collisions, health, score, and digest regardless of display frame rate.
 

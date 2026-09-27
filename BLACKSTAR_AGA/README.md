@@ -4,7 +4,7 @@
 micro-release, rebuilt as an original deterministic offline browser FPS.**
 
 BLACKSTAR AGA is a compact grid-and-sector-flavoured first-person shooter with a
-320×200 software framebuffer, chunky procedural pixel art, four-voice-inspired
+native Three.js rooms, faceted enemies and a chunky AGA-inspired palette, four-voice-inspired
 layered Web Audio effects, four linked missions, and replay receipts that reproduce the
 fixed-tick simulation from its campaign seed and input ledger.
 
@@ -70,15 +70,15 @@ tick. The telemetry panel publishes the current canonical state digest. See
 ## Architecture
 
 - `core.js` — pure deterministic simulation, campaign parsing, combat, replay and digest.
-- `app.js` — fixed-step scheduler, raycaster, differentiated enemy/weapon sprites,
-  layered procedural sound effects, UI, and input.
-- `../shared/qsol-three-stage.js` — optional local Three.js depth, particles, and
-  impact pulses behind the authoritative 320×200 software view.
+- `app.js` — fixed-step scheduler, procedural sound effects, UI, and input.
+- `renderer.js` — perspective rooms, collision-grid doors, faceted enemies, pickups,
+  exit console and camera-relative weapon geometry.
+- `../shared/qsol-native.js` — the sole gameplay WebGL renderer and GPU lifecycle.
 - `style.css` — responsive recovered-hardware shell with no fetched fonts or images.
 - `index.html` — local-file-compatible application and strict offline CSP.
 - `tests/` — Node determinism/offline tests and a Playwright end-to-end smoke test.
 
-The raycaster and all art/audio are original. The only runtime library is the
+The scene geometry and all art/audio are original. The only runtime library is the
 repository's pinned local Three.js distribution; no network or third-party game
 assets, ROMs, WADs, maps, textures, sprites, or samples are used. See
 [`NOTICE.md`](NOTICE.md).
@@ -101,3 +101,5 @@ the game runtime.
 Playable vertical slice / complete four-mission mini-campaign. Version 2 replay
 receipts are intentionally versioned rather than promised compatible with future
 simulation revisions.
+
+Native renderer architecture and verification: [migration audit](../docs/NATIVE_RENDERING.md).

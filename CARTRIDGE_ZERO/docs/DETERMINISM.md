@@ -1,7 +1,7 @@
 # Determinism contract
 
 CARTRIDGE ZERO separates canonical arcade state from browser presentation.
-`core.js` is the contract surface. Canvas, CSS, animation frames, monitor refresh,
+`core.js` is the contract surface. Three.js, CSS, animation frames, monitor refresh,
 Web Audio, fullscreen state, touch event timing, and the color switch are not
 canonical.
 

@@ -8,8 +8,8 @@ const core = require("../core.js");
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.SEEDSTORM_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.SEEDSTORM_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
@@ -21,7 +21,7 @@ const core = require("../core.js");
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = `file://${path.join(__dirname, "..", "index.html")}`;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/SEEDSTORM/index.html` : `file://${path.join(__dirname, "..", "index.html")}`;
   await page.goto(url, { waitUntil: "load" });
   await page.clock.pauseAt(new Date("2026-01-01T01:00:00Z"));
   assert.equal(await page.title(), "SEEDSTORM — Deterministic Strike");
@@ -45,6 +45,56 @@ const core = require("../core.js");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#pauseButton").innerText(), "PAUSE");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
+
+  await page.keyboard.down("KeyX");
+  const feedbackFrames = [];
+  for (let frame = 0; frame < 6; frame += 1) {
+    await page.clock.runFor(17);
+    feedbackFrames.push(
+      await page.evaluate(() => {
+        const stage = document.querySelector("#game").nativeStage,
+          flash = stage.scene.getObjectByName("combat-flash");
+        return {
+          flash: flash.material.opacity,
+          visible: flash.visible,
+          cameraX: stage.camera.position.x,
+          cameraY: stage.camera.position.y,
+        };
+      }),
+    );
+  }
+  await page.keyboard.up("KeyX");
+  assert.ok(
+    feedbackFrames.some((frame) => frame.visible && frame.flash > 0),
+    "bomb input must produce a native combat flash",
+  );
+  assert.ok(
+    feedbackFrames.some(
+      (frame) => Math.abs(frame.cameraX) > 0.001 || Math.abs(frame.cameraY) > 0.001,
+    ),
+    "bomb input must produce native camera shake",
+  );
+  await page.clock.runFor(400);
+  const settledFeedback = await page.evaluate(() => {
+    const stage = document.querySelector("#game").nativeStage,
+      flash = stage.scene.getObjectByName("combat-flash");
+    return {
+      flash: flash.material.opacity,
+      visible: flash.visible,
+      cameraX: stage.camera.position.x,
+      cameraY: stage.camera.position.y,
+    };
+  });
+  assert.equal(settledFeedback.visible, false, "combat flash must decay away");
+  assert.equal(settledFeedback.flash, 0, "combat flash opacity must decay to zero");
+  assert.ok(
+    Math.abs(settledFeedback.cameraX) < 0.001 &&
+      Math.abs(settledFeedback.cameraY) < 0.001,
+    "camera shake must decay back to the neutral view",
+  );
+  await page.click("#restartButton");
+  await page.focus("#game");
+
   // Keep browser input and the real frame loop, but advance every animation frame
   // explicitly so slow CI rendering cannot shorten the combat sequence.
   await page.keyboard.down("KeyZ");
@@ -116,7 +166,7 @@ const core = require("../core.js");
   assert.ok(mobileLayout.content <= mobileLayout.viewport + 1, `mobile layout overflows by ${mobileLayout.content - mobileLayout.viewport}px`);
   await page.screenshot({ path: path.join(__dirname, "seedstorm-mobile.png"), fullPage: true });
 
-  const externalRequests = requests.filter((requestUrl) => !requestUrl.startsWith("file://"));
+  const externalRequests = requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://")));
   assert.deepEqual(externalRequests, []);
   assert.deepEqual(errors, []);
 

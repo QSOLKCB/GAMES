@@ -9,8 +9,8 @@ const core = require("../core.js");
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.BLACKSTAR_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.BLACKSTAR_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const errors = [];
@@ -19,7 +19,7 @@ const core = require("../core.js");
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = pathToFileURL(path.join(__dirname, "..", "index.html")).href;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/BLACKSTAR_AGA/index.html` : pathToFileURL(path.join(__dirname, "..", "index.html")).href;
   await page.goto(url, { waitUntil: "load" });
   assert.equal(await page.title(), "BLACKSTAR AGA — The Lost Amiga FPS");
   assert.equal(await page.locator("#bootLayer").isVisible(), true);
@@ -34,6 +34,16 @@ const core = require("../core.js");
   assert.equal(await page.locator("#modeReadout").innerText(), "LIVE INPUT");
   assert.match(await page.locator("#seedReadout").innerText(), /^[0-9A-F]{8}$/);
   assert.match(await page.locator("#digestReadout").innerText(), /^[0-9A-F]{8}$/);
+
+  const automap = page.locator(".native-map");
+  assert.equal(await automap.isVisible(), false);
+  await page.keyboard.down("Tab");
+  await automap.waitFor({ state: "visible" });
+  assert.notEqual(await automap.evaluate((element) => getComputedStyle(element).display), "none");
+  assert.equal(await automap.locator('[data-marker="exit"]').count(), 1);
+  assert.equal(await automap.locator('[data-marker="heading"]').count(), 1);
+  await page.keyboard.up("Tab");
+  await automap.waitFor({ state: "hidden" });
 
   const before = await page.evaluate(() => ({ tick: blackstarAGA.state.tick, x: blackstarAGA.state.player.x }));
   await page.keyboard.down("KeyW");
@@ -151,7 +161,7 @@ const core = require("../core.js");
   assert.ok(mobile.launch.top >= mobile.gameView.top - 1, "mobile boot button must remain visible");
   await page.screenshot({ path: path.join(__dirname, "blackstar-mobile.png"), fullPage: true });
 
-  assert.deepEqual(requests.filter((requestUrl) => !requestUrl.startsWith("file://")), []);
+  assert.deepEqual(requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://"))), []);
   assert.deepEqual(errors, []);
   await browser.close();
   process.stdout.write("ok - boot, fixed-step FPS input, pause, terminal replay drain, telemetry, camera depth, offline boundary, and mobile layout\n");

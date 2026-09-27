@@ -25,7 +25,8 @@ storage is required.
 - Records only the seed and run-length-encoded input masks. Replays do not contain
   serialized world state, checkpoints, screenshots, or save-state snapshots.
 - Synthesizes its sound effects and sparse score at runtime with the Web Audio API.
-  All visual assets are drawn procedurally on the Canvas 2D surface.
+  Aircraft silhouettes are extruded Three.js geometry; projectiles, pickups,
+  health bars, impacts and industrial terrain are native WebGL objects.
 
 ## Controls
 
@@ -64,8 +65,9 @@ limitations.
 | File | Responsibility |
 |---|---|
 | [`core.js`](core.js) | Pure deterministic level generation, fixed-tick simulation, replay codec, and state digest |
-| [`app.js`](app.js) | Browser controls, layered Canvas 2D renderer, synthesized audio, replay UI, and frame scheduling |
-| [`../shared/qsol-three-stage.js`](../shared/qsol-three-stage.js) | Local Three.js star-depth and event pulses outside canonical simulation state |
+| [`app.js`](app.js) | Browser controls, scene synchronization, synthesized audio, replay UI, and frame scheduling |
+| [`renderer.js`](renderer.js) | Native aircraft, enemies, bullets, pickups, world indicators and layered terrain |
+| [`../shared/qsol-native.js`](../shared/qsol-native.js) | Sole gameplay WebGL renderer, batching and lifecycle |
 | [`index.html`](index.html) | Offline application shell and accessibility structure |
 | [`style.css`](style.css) | Responsive industrial arcade interface |
 | [`tests/core.test.js`](tests/core.test.js) | Golden digest, determinism, collision events, progression, replay, and input regressions |
@@ -109,3 +111,5 @@ third-party trademark; this project is not affiliated with or endorsed by its
 owners.
 
 Code is licensed under the repository's [MIT License](../LICENSE).
+
+Native renderer architecture and verification: [migration audit](../docs/NATIVE_RENDERING.md).

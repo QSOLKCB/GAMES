@@ -19,7 +19,8 @@ historical disk was actually recovered.
 
 ## Engine shape
 
-The renderer is an original stepped raycaster over fixed-cell maps. Moving doors,
+The renderer builds native Three.js rooms from fixed-cell maps. A perspective
+camera and GPU depth buffer replace the original stepped Canvas raycaster. Doors,
 locked amber-cipher doors, hidden sectors, enemies and pickups add sector-shooter
 flavour while keeping collision and visibility deterministic. Enemies activate on
 line of sight or weapon noise, move through the same collision grid as the player,

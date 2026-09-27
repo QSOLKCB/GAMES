@@ -21,9 +21,6 @@ assert.match(app, /core\.decodeReplay/);
 assert.match(app, /core\.tryRecordCommands/);
 assert.match(app, /paused \|\| state\.missionWon \|\| state\.gameOver/);
 assert.match(app, /const commandLocked = mode !== "live" \|\| state\.missionWon \|\| state\.gameOver/);
-assert.match(app, /function drawBuilding/);
-assert.match(app, /function drawUnit/);
-assert.match(app, /function drawExplosion/);
 assert.match(app, /function isInteractiveTarget/);
 
 for (const relative of ["core.js", "app.js", "style.css"]) {
@@ -31,3 +28,8 @@ for (const relative of ["core.js", "app.js", "style.css"]) {
 }
 
 process.stdout.write("ok - offline RTS shell has no remote runtime dependency\n");
+
+const renderer = fs.readFileSync(path.join(root, "renderer.js"), "utf8");
+assert.doesNotMatch(app + renderer, /getContext\s*\(\s*["']2d["']/);
+assert.match(renderer, /QsolNative\.Stage/);
+assert.match(renderer, /s\.finish\(\)/);

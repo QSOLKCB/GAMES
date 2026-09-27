@@ -1,7 +1,7 @@
 # Determinism contract
 
 BLACKSTAR AGA separates its gameplay simulation from its browser presentation.
-`core.js` is the contract surface. `app.js`, Canvas, Web Audio, CSS, animation
+`core.js` is the contract surface. `app.js`, Three.js, Web Audio, CSS, animation
 frames, pointer lock, and monitor refresh rate are outside canonical state.
 
 ## Canonical inputs

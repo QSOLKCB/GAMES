@@ -9,8 +9,8 @@ const core = require("../core.js");
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.VECTOR_ZERO_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.VECTOR_ZERO_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const errors = [];
@@ -19,7 +19,7 @@ const core = require("../core.js");
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = pathToFileURL(path.join(__dirname, "..", "index.html")).href;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/VECTOR_ZERO/index.html` : pathToFileURL(path.join(__dirname, "..", "index.html")).href;
   await page.goto(url, { waitUntil: "load" });
   assert.equal(await page.title(), "VECTOR ZERO — Deterministic 6DOF Mine Shooter");
   assert.equal(await page.locator("#bootLayer").isVisible(), true);
@@ -166,7 +166,7 @@ const core = require("../core.js");
   assert.ok(mobile.launch.top >= mobile.gameView.top - 1, "mobile launch button must remain visible");
   await page.screenshot({ path: path.join(__dirname, "vector-zero-mobile.png"), fullPage: true });
 
-  assert.deepEqual(requests.filter((requestUrl) => !requestUrl.startsWith("file://")), []);
+  assert.deepEqual(requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://"))), []);
   assert.deepEqual(errors, []);
   await browser.close();
   process.stdout.write("ok - boot, six-axis flight, combat, projection, pause, terminal replay drain, telemetry, offline boundary, and mobile layout\n");

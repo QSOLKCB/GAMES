@@ -6,10 +6,7 @@
 
   const $ = (id) => document.getElementById(id);
   const canvas = $("game");
-  const ctx = canvas.getContext("2d", { alpha: false });
-  const threeStage = globalThis.QsolThree
-    ? globalThis.QsolThree.create({ host: $("canvasWrap"), source: canvas, preset: "warfront" })
-    : { render() {}, pulse() {} };
+  const presentation = new window.WarfrontRenderer(canvas, core);
   const STEP_MS = 1000 / core.TICK_RATE;
   const palettes = [
     { ground: "#11181b", grid: "#243238", high: "#2b3739", low: "#0b1215", mineral: "#76b0ba", enemy: "#df6843" },
@@ -346,12 +343,10 @@
       if (event.type === "hit") {
         hitUntil.set(event.id, state.tick + 3);
         addEffect("impact", event);
-        threeStage.pulse("impact", 0.24);
       } else if (event.type === "destroy") {
         addEffect("explosion", event);
         shake = Math.max(shake, event.kind === "hq" ? 16 : event.entityType === "building" ? 7 : 3);
         screenFlash = Math.max(screenFlash, event.kind === "hq" ? 12 : 2);
-        threeStage.pulse("blast", event.kind === "hq" ? 1 : 0.52);
       } else if (event.type === "wave") {
         setStatus("Hostile command pulse detected: attack wave mobilised.");
       } else if (event.type === "construction-complete") {
@@ -544,364 +539,32 @@
     if (!explicitRightClick && commandMode !== "move") setCommandMode("move");
   }
 
-  function drawBackground(gameState, time) {
-    const seed = gameState ? gameState.seed : core.normalizeSeed("PIXEL-WARFRONT-ATTRACT");
-    const blueprint = gameState ? gameState.blueprint : core.makeMissionBlueprint(seed, 1);
-    const palette = palettes[blueprint.biomeIndex % palettes.length];
-    ctx.fillStyle = palette.ground;
-    ctx.fillRect(0, 0, core.WIDTH, core.HEIGHT);
-    const terrain = blueprint.terrain;
-    for (let row = 0; row < core.GRID_ROWS; row += 1) {
-      for (let column = 0; column < core.GRID_COLUMNS; column += 1) {
-        const tile = terrain[row * core.GRID_COLUMNS + column];
-        const x = column * core.CELL_SIZE;
-        const y = row * core.CELL_SIZE + 12;
-        const hash = visualHash(seed, blueprint.levelSeed, row * 61 + column);
-        if (tile === 1) ctx.fillStyle = palette.high;
-        else if (tile === 2) ctx.fillStyle = palette.low;
-        else if (tile === 3) ctx.fillStyle = "#352922";
-        else ctx.fillStyle = palette.ground;
-        ctx.globalAlpha = tile === 0 ? 0.22 : 0.55;
-        ctx.fillRect(x, y, core.CELL_SIZE, core.CELL_SIZE);
-        if (tile > 0 && (hash & 3) === 0) {
-          ctx.fillStyle = tile === 3 ? palette.enemy : palette.grid;
-          ctx.globalAlpha = 0.28;
-          ctx.fillRect(x + 5 + (hash % 9), y + 6 + ((hash >>> 8) % 9), 4 + ((hash >>> 16) % 11), 3);
-        }
-      }
-    }
-    ctx.globalAlpha = 0.42;
-    ctx.strokeStyle = palette.grid;
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= core.WIDTH; x += core.CELL_SIZE) {
-      ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, core.HEIGHT); ctx.stroke();
-    }
-    for (let y = 12; y <= core.HEIGHT; y += core.CELL_SIZE) {
-      ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(core.WIDTH, y + 0.5); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    const vignette = ctx.createRadialGradient(core.WIDTH / 2, core.HEIGHT / 2, 170, core.WIDTH / 2, core.HEIGHT / 2, 620);
-    vignette.addColorStop(0, "rgba(0,0,0,0)");
-    vignette.addColorStop(1, "rgba(0,0,0,0.5)");
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, core.WIDTH, core.HEIGHT);
-  }
-
-  function healthBar(entity, x, y, width) {
-    if (entity.health >= entity.maxHealth || entity.maxHealth <= 0) return;
-    const ratio = Math.max(0, entity.health / entity.maxHealth);
-    ctx.fillStyle = "rgba(2,4,5,0.87)";
-    ctx.fillRect(x - width / 2 - 1, y, width + 2, 5);
-    ctx.fillStyle = entity.team === core.PLAYER ? "#78a9b3" : "#e06945";
-    ctx.fillRect(x - width / 2, y + 1, width * ratio, 3);
-  }
-
-  function drawResource(resource, tick, palette) {
-    const x = resource.x / core.SCALE;
-    const y = resource.y / core.SCALE;
-    const ratio = resource.maxAmount ? resource.amount / resource.maxAmount : 0;
-    const pulse = 0.7 + ((tick + resource.phase) % 24) / 80;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.globalAlpha = 0.3 + ratio * 0.7;
-    ctx.fillStyle = palette.mineral;
-    for (let index = 0; index < 6; index += 1) {
-      const hash = visualHash(resource.id, resource.phase, index);
-      const angle = (hash % 6283) / 1000;
-      const distance = 5 + ((hash >>> 12) % 17);
-      const size = 5 + ((hash >>> 21) % 7);
-      ctx.save();
-      ctx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance);
-      ctx.rotate(angle);
-      ctx.fillRect(-size / 2, -size / 2, size, size * pulse);
-      ctx.restore();
-    }
-    ctx.globalAlpha = 0.24 * ratio;
-    ctx.fillStyle = "#dff8f4";
-    ctx.beginPath(); ctx.arc(0, 0, 25 + ((tick + resource.phase) % 9), 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-
-  function teamColors(team) {
-    return team === core.PLAYER
-      ? { body: "#526f77", edge: "#a4c2c7", glow: "#65a3af", dark: "#142127" }
-      : { body: "#7d3c31", edge: "#e58a69", glow: "#e06844", dark: "#271411" };
-  }
-
-  function drawBuilding(building, tick) {
-    const x = building.x / core.SCALE;
-    const y = building.y / core.SCALE;
-    const radius = building.radius / core.SCALE;
-    const color = teamColors(building.team);
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.34)";
-    ctx.beginPath();
-    ctx.ellipse(x + radius * 0.18, y + radius * 0.34, radius * 1.05, radius * 0.48, -0.12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(x, y);
-    if (building.kind === "hq") {
-      ctx.fillStyle = color.dark;
-      ctx.fillRect(-radius, -radius * 0.65, radius * 2, radius * 1.3);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 3;
-      ctx.strokeRect(-radius + 2, -radius * 0.65 + 2, radius * 2 - 4, radius * 1.3 - 4);
-      ctx.fillStyle = color.body;
-      ctx.fillRect(-radius * 0.56, -radius * 0.92, radius * 1.12, radius * 1.84);
-      ctx.fillStyle = color.glow;
-      ctx.fillRect(-5, -radius * 0.72, 10, radius * 1.44);
-    } else if (building.kind === "relay") {
-      ctx.fillStyle = color.dark; ctx.fillRect(-19, -19, 38, 38);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 2; ctx.strokeRect(-18, -18, 36, 36);
-      ctx.strokeStyle = color.glow; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(0, -27); ctx.stroke();
-      ctx.globalAlpha = 0.35 + (tick % 20) / 60;
-      ctx.beginPath(); ctx.arc(0, -26, 7 + tick % 5, 0, Math.PI * 2); ctx.stroke();
-    } else if (building.kind === "refinery") {
-      ctx.fillStyle = color.dark; ctx.fillRect(-28, -22, 56, 44);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 2; ctx.strokeRect(-27, -21, 54, 42);
-      ctx.fillStyle = color.body; ctx.fillRect(-21, -14, 22, 28); ctx.fillRect(7, -18, 13, 36);
-      ctx.fillStyle = "#73adb6"; ctx.fillRect(-15, -7, 10, 14);
-    } else if (building.kind === "factory") {
-      ctx.fillStyle = color.dark; ctx.fillRect(-33, -26, 66, 52);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 2; ctx.strokeRect(-32, -25, 64, 50);
-      ctx.fillStyle = color.body; ctx.fillRect(-24, -17, 48, 17); ctx.fillRect(-28, 8, 56, 11);
-      ctx.fillStyle = "#060809"; ctx.fillRect(-15, 0, 30, 25);
-      ctx.fillStyle = color.glow; ctx.fillRect(-10, 4, 20, 3);
-    } else if (building.kind === "turret") {
-      ctx.rotate((building.targetId || tick * 0.15) * 0.02);
-      ctx.fillStyle = color.dark; ctx.fillRect(-17, -17, 34, 34);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 2; ctx.strokeRect(-16, -16, 32, 32);
-      ctx.fillStyle = color.body; ctx.fillRect(-8, -8, 16, 16);
-      ctx.fillStyle = color.glow; ctx.fillRect(-3, -30, 6, 27);
-    }
-
-    if (building.construction > 0) {
-      const ratio = 1 - building.construction / Math.max(1, building.constructionTotal);
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = "#080b0d";
-      ctx.fillRect(-radius, -radius, radius * 2, radius * 2 * (1 - ratio));
-      ctx.globalAlpha = 0.8;
-      ctx.strokeStyle = "#d6a261";
-      ctx.setLineDash([5, 4]);
-      ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
-      ctx.setLineDash([]);
-    }
-    ctx.restore();
-
-    if ((hitUntil.get(building.id) || -1) >= tick) {
-      ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = 0.35;
-      ctx.fillStyle = "#fff1cf"; ctx.beginPath(); ctx.arc(x, y, radius + 5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    }
-    healthBar(building, x, y - radius - 9, Math.max(32, radius * 1.65));
-    if (building.queue.length) {
-      const queued = building.queue[0];
-      const total = core.UNIT_TYPES[queued.kind].trainTicks;
-      const ratio = Math.max(0, 1 - queued.remaining / total);
-      ctx.fillStyle = "rgba(2,4,5,0.86)"; ctx.fillRect(x - 24, y + radius + 5, 48, 5);
-      ctx.fillStyle = "#d6a261"; ctx.fillRect(x - 23, y + radius + 6, 46 * ratio, 3);
-    }
-  }
-
-  function drawUnit(unit, tick) {
-    const x = unit.x / core.SCALE;
-    const y = unit.y / core.SCALE;
-    const radius = unit.radius / core.SCALE;
-    const color = teamColors(unit.team);
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
-    ctx.beginPath();
-    ctx.ellipse(x + 4, y + 7, radius * 0.9, radius * 0.42, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(x, y);
-    let angle = 0;
-    const target = unit.targetId && state ? [...state.units, ...state.buildings].find((entity) => entity.id === unit.targetId) : null;
-    if (target) angle = Math.atan2(target.y - unit.y, target.x - unit.x) + Math.PI / 2;
-    else if (unit.order === "move") angle = Math.atan2(unit.targetY - unit.y, unit.targetX - unit.x) + Math.PI / 2;
-    ctx.rotate(angle);
-    if (unit.kind === "drone") {
-      ctx.fillStyle = color.body;
-      ctx.fillRect(-7, -7, 14, 14);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 1; ctx.strokeRect(-7.5, -7.5, 15, 15);
-      ctx.fillStyle = unit.carry > 0 ? "#75b4bd" : color.glow;
-      ctx.fillRect(-3, -3, 6, 6);
-      ctx.fillStyle = color.dark; ctx.fillRect(-11, -3, 4, 6); ctx.fillRect(7, -3, 4, 6);
-    } else if (unit.kind === "ranger") {
-      ctx.fillStyle = color.body;
-      ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(9, 9); ctx.lineTo(0, 6); ctx.lineTo(-9, 9); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = color.glow; ctx.fillRect(-2, -9, 4, 11);
-    } else {
-      ctx.fillStyle = color.dark; ctx.fillRect(-15, -12, 30, 24);
-      ctx.strokeStyle = color.edge; ctx.lineWidth = 2; ctx.strokeRect(-14, -11, 28, 22);
-      ctx.fillStyle = color.body; ctx.fillRect(-9, -9, 18, 18);
-      ctx.fillStyle = color.glow; ctx.fillRect(-3, -23, 6, 23);
-      ctx.fillStyle = "#090b0c"; ctx.fillRect(-18, -11, 5, 22); ctx.fillRect(13, -11, 5, 22);
-    }
-    ctx.restore();
-
-    if (selectedIds.has(unit.id)) {
-      const ring = radius + 7 + (tick % 4) * 0.3;
-      ctx.strokeStyle = "#e6ddc9"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(x, y, ring, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = "rgba(104,174,178,0.8)";
-      ctx.beginPath();
-      ctx.moveTo(x - ring - 4, y); ctx.lineTo(x - ring + 3, y);
-      ctx.moveTo(x + ring - 3, y); ctx.lineTo(x + ring + 4, y);
-      ctx.moveTo(x, y - ring - 4); ctx.lineTo(x, y - ring + 3);
-      ctx.moveTo(x, y + ring - 3); ctx.lineTo(x, y + ring + 4);
-      ctx.stroke();
-    }
-    if ((hitUntil.get(unit.id) || -1) >= tick) {
-      ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = 0.42;
-      ctx.fillStyle = "#fff1cf"; ctx.beginPath(); ctx.arc(x, y, radius + 5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    }
-    healthBar(unit, x, y - radius - 7, 24);
-  }
-
-  function drawProjectile(projectile) {
-    const x = projectile.x / core.SCALE;
-    const y = projectile.y / core.SCALE;
-    ctx.fillStyle = projectile.team === core.PLAYER ? "#bfe7ea" : "#f07b50";
-    const velocity = Math.max(1, Math.hypot(projectile.vx, projectile.vy));
-    ctx.strokeStyle = projectile.team === core.PLAYER ? "rgba(104,188,194,0.58)" : "rgba(235,101,62,0.58)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x - projectile.vx / velocity * 10, y - projectile.vy / velocity * 10);
-    ctx.stroke();
-    ctx.beginPath(); ctx.arc(x, y, Math.max(2, projectile.radius / core.SCALE), 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = projectile.team === core.PLAYER ? "rgba(104,170,180,0.45)" : "rgba(234,100,62,0.45)";
-    ctx.lineWidth = 3; ctx.stroke();
-  }
-
-  function drawImpact(effect, age) {
-    const progress = age / effect.duration;
-    const alpha = Math.max(0, 1 - progress);
-    ctx.save(); ctx.translate(effect.x, effect.y); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = alpha;
-    ctx.strokeStyle = "#fff0cc"; ctx.lineWidth = 1.5;
-    for (let index = 0; index < 5; index += 1) {
-      const hash = visualHash(effect.seed, index, 0x1a2b);
-      const angle = (hash % 6283) / 1000;
-      const distance = 2 + age * (0.7 + ((hash >>> 11) % 80) / 100);
-      ctx.beginPath(); ctx.moveTo(Math.cos(angle) * distance, Math.sin(angle) * distance);
-      ctx.lineTo(Math.cos(angle) * (distance + 5), Math.sin(angle) * (distance + 5)); ctx.stroke();
-    }
-    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 3 * alpha, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-  }
-
-  function drawExplosion(effect, age) {
-    const progress = age / effect.duration;
-    const alpha = Math.max(0, 1 - progress);
-    const scale = effect.major ? 2.1 : Math.max(0.75, effect.radius / 25);
-    ctx.save(); ctx.translate(effect.x, effect.y); ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = alpha * 0.8; ctx.strokeStyle = "#f47b4e"; ctx.lineWidth = Math.max(1, 5 * (1 - progress));
-    ctx.beginPath(); ctx.arc(0, 0, (4 + progress * (effect.major ? 68 : 32)) * scale, 0, Math.PI * 2); ctx.stroke();
-    const count = effect.major ? 30 : 14;
-    for (let index = 0; index < count; index += 1) {
-      const hash = visualHash(effect.seed, index, 0xe710);
-      const angle = (hash % 6283) / 1000;
-      const distance = age * (0.6 + ((hash >>> 11) % 120) / 100) * scale;
-      const size = (2 + ((hash >>> 24) % 5)) * Math.max(0.45, alpha);
-      ctx.save(); ctx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance + age * age * 0.01);
-      ctx.rotate(angle + age * (((hash >>> 8) & 1) ? 0.08 : -0.08));
-      ctx.globalAlpha = alpha * 0.8; ctx.fillStyle = index % 3 === 0 ? "#e8dfc8" : index % 3 === 1 ? "#ed7348" : "#73a3aa";
-      ctx.fillRect(-size / 2, -size / 2, size * 1.8, size); ctx.restore();
-    }
-    ctx.restore();
-  }
-
-  function drawEffects(gameState) {
-    for (const effect of effects) {
-      const age = gameState.tick - effect.startTick;
-      if (age < 0 || age > effect.duration) continue;
-      if (effect.type === "impact") drawImpact(effect, age);
-      else drawExplosion(effect, age);
-    }
-  }
-
-  function drawOrders(gameState) {
-    ctx.save(); ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
-    for (const unit of gameState.units) {
-      if (!selectedIds.has(unit.id)) continue;
-      if (unit.order === "move") {
-        ctx.strokeStyle = "rgba(214,220,210,0.34)";
-        ctx.beginPath(); ctx.moveTo(unit.x / core.SCALE, unit.y / core.SCALE); ctx.lineTo(unit.targetX / core.SCALE, unit.targetY / core.SCALE); ctx.stroke();
-      }
-    }
-    ctx.setLineDash([]); ctx.restore();
-  }
-
-  function drawSelectionBox() {
-    if (!pointerDown || !dragStart || !dragCurrent) return;
-    const left = Math.min(dragStart.x, dragCurrent.x);
-    const top = Math.min(dragStart.y, dragCurrent.y);
-    const width = Math.abs(dragCurrent.x - dragStart.x);
-    const height = Math.abs(dragCurrent.y - dragStart.y);
-    if (width < 3 && height < 3) return;
-    ctx.fillStyle = "rgba(101,163,175,0.09)"; ctx.fillRect(left, top, width, height);
-    ctx.strokeStyle = "#9fc4c9"; ctx.lineWidth = 1; ctx.strokeRect(left + 0.5, top + 0.5, width, height);
-  }
-
-  function drawOverlay(gameState) {
-    ctx.fillStyle = "rgba(4,7,8,0.74)"; ctx.fillRect(0, 0, core.WIDTH, 31);
-    ctx.fillStyle = "#d9d4c7"; ctx.font = "700 12px monospace"; ctx.textAlign = "left";
-    ctx.fillText(`MISSION ${String(gameState.level).padStart(2, "0")} // ${gameState.blueprint.biome.code}`, 12, 19);
-    ctx.fillStyle = "#82949c"; ctx.font = "10px monospace"; ctx.textAlign = "center";
-    ctx.fillText(`SEED ${core.seedHex(gameState.seed)} // SIG ${gameState.blueprint.signature}`, core.WIDTH / 2, 19);
-    ctx.textAlign = "right"; ctx.fillStyle = "#e2764d"; ctx.font = "700 12px monospace";
-    ctx.fillText(`FLUX ${state.credits} // SCORE ${String(state.score).padStart(6, "0")}`, core.WIDTH - 12, 19);
-
-    if (gameState.levelTick < 70) {
-      const alpha = Math.min(1, gameState.levelTick / 12, (70 - gameState.levelTick) / 16);
-      ctx.globalAlpha = Math.max(0, alpha);
-      ctx.fillStyle = "rgba(8,11,13,0.84)"; ctx.fillRect(285, 230, 390, 116);
-      ctx.strokeStyle = "#df6b44"; ctx.strokeRect(285.5, 230.5, 389, 115);
-      ctx.fillStyle = "#8e9aa0"; ctx.font = "11px monospace"; ctx.textAlign = "center";
-      ctx.fillText(`PROCEDURAL THEATRE ${String(gameState.level).padStart(2, "0")}`, core.WIDTH / 2, 260);
-      ctx.fillStyle = "#e8e1d4"; ctx.font = "700 24px monospace"; ctx.fillText(gameState.blueprint.biome.name, core.WIDTH / 2, 294);
-      ctx.fillStyle = "#df6b44"; ctx.font = "10px monospace";
-      ctx.fillText(`ENEMY RANK ${gameState.blueprint.difficulty.rank} // ${gameState.blueprint.signature}`, core.WIDTH / 2, 320);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  function render(time) {
-    ctx.save();
-    if (shake > 0) {
-      const x = ((visualHash(state ? state.tick : 0, shake, 1) % 9) - 4) * Math.min(1, shake / 8);
-      const y = ((visualHash(state ? state.tick : 0, shake, 2) % 9) - 4) * Math.min(1, shake / 8);
-      ctx.translate(x, y); shake -= 1;
-    }
-    drawBackground(state, time);
-    if (state) {
-      const palette = palettes[state.blueprint.biomeIndex % palettes.length];
-      for (const resource of state.resources) if (resource.amount > 0) drawResource(resource, state.tick, palette);
-      drawOrders(state);
-      for (const building of state.buildings) drawBuilding(building, state.tick);
-      for (const unit of state.units) drawUnit(unit, state.tick);
-      for (const projectile of state.projectiles) drawProjectile(projectile);
-      drawEffects(state);
-      drawSelectionBox();
-      drawOverlay(state);
-    } else {
-      ctx.fillStyle = "rgba(233,227,213,0.03)"; ctx.font = "900 120px sans-serif"; ctx.textAlign = "center";
-      ctx.fillText("PW", core.WIDTH / 2, core.HEIGHT / 2 + 42);
-    }
-    if (screenFlash > 0) {
-      ctx.fillStyle = `rgba(239,224,200,${Math.min(0.25, screenFlash / 65)})`;
-      ctx.fillRect(0, 0, core.WIDTH, core.HEIGHT); screenFlash -= 1;
-    }
-    ctx.restore();
-    threeStage.render({
-      tick: state ? state.tick : 0,
-      speed: state ? Math.min(2, state.units.length / 18) : 0,
-      danger: state && state.gameOver ? 1 : 0,
-      activity: state ? Math.min(1, 0.18 + state.projectiles.length / 20) : 0.06,
-      heading: time * 0.00005,
+  function render() {
+    const shakeX =
+        state && shake > 0
+          ? ((visualHash(state.tick, shake, 1) % 9) - 4) *
+            Math.min(1, shake / 8)
+          : 0,
+      shakeY =
+        state && shake > 0
+          ? ((visualHash(state.tick, shake, 2) % 9) - 4) *
+            Math.min(1, shake / 8)
+          : 0;
+    presentation.render(state, {
+      palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0],
+      selectedIds,
+      effects,
+      hitUntil,
+      pointerDown,
+      dragStart,
+      dragCurrent,
+      paused,
+      screenFlash,
+      shakeX,
+      shakeY,
     });
+    if (shake > 0) shake -= 1;
+    if (screenFlash > 0) screenFlash -= 1;
   }
 
   function frame(time) {

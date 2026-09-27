@@ -16,8 +16,8 @@ function allNumbersAreFiniteIntegers(value) {
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.CARTRIDGE_ZERO_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.CARTRIDGE_ZERO_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1100 }, deviceScaleFactor: 1 });
   const errors = [];
@@ -26,7 +26,7 @@ function allNumbersAreFiniteIntegers(value) {
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = pathToFileURL(path.join(__dirname, "..", "index.html")).href;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/CARTRIDGE_ZERO/index.html` : pathToFileURL(path.join(__dirname, "..", "index.html")).href;
   await page.goto(url, { waitUntil: "load" });
   assert.equal(await page.title(), "CARTRIDGE ZERO — Seven Deterministic Signals");
   assert.equal(await page.locator("#bootLayer").isVisible(), true);
@@ -67,7 +67,11 @@ function allNumbersAreFiniteIntegers(value) {
     ), game.id);
     renderMetrics[game.id] = await page.evaluate(() => {
       const canvas = document.querySelector("#game");
-      const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      const stage = canvas.nativeStage;
+      stage.renderer.render(stage.scene, stage.camera);
+      const gl = stage.renderer.getContext();
+      const data = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+      gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, data);
       const colors = new Set();
       let opaque = 0;
       for (let index = 0; index < data.length; index += 4) {
@@ -121,7 +125,7 @@ function allNumbersAreFiniteIntegers(value) {
   await page.click("#colorButton");
   assert.equal(await page.evaluate(() => document.activeElement.id), "game");
   await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(180);
+  await page.waitForFunction((beforeX) => cartridgeZero.state.game.paddleX < beforeX, beforeSwitchInput);
   await page.keyboard.up("ArrowLeft");
   assert.ok(await page.evaluate((beforeX) => cartridgeZero.state.game.paddleX < beforeX, beforeSwitchInput), "keyboard control must resume immediately after a console switch");
   await page.click("#replayButton");
@@ -192,7 +196,7 @@ function allNumbersAreFiniteIntegers(value) {
   assert.ok(mobile.launch.bottom <= mobile.gameView.bottom + 1, "mobile launch control must fit without scrolling the boot layer");
   await page.screenshot({ path: path.join(__dirname, "cartridge-zero-mobile.png"), fullPage: true });
 
-  assert.deepEqual(requests.filter((requestUrl) => !requestUrl.startsWith("file://")), []);
+  assert.deepEqual(requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://"))), []);
   assert.deepEqual(errors, []);
   await browser.close();
   process.stdout.write("ok - seven-program boot, rendering, controls, pause, exact receipt playback, terminal ledger drain, offline boundary, and mobile console\n");

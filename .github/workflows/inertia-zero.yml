@@ -33,4 +33,4 @@ jobs:
         run: |
           node SUBSPACE/tests/core.test.js
           node SUBSPACE/tests/runtime-smoke.js
-          node --check shared/qsol-three-stage.js
+          node --check shared/qsol-native.js

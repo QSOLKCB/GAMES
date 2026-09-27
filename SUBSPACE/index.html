@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#071013">
   <meta name="description" content="QSOL INERTIA ZERO is an offline, single-player inertia arena shooter with advanced AI and seeded procedural sectors.">
   <title>QSOL INERTIA ZERO — Offline Arena</title>
-  <link rel="stylesheet" href="../shared/qsol-three.css">
+  <link rel="stylesheet" href="../shared/qsol-native.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -46,7 +46,7 @@
           <span>FPS <b id="hud-fps">60</b></span>
           <span>PING <b class="zero-ping">0 ms</b></span>
         </div>
-        <canvas id="radar-canvas" width="208" height="144" aria-label="Tactical radar"></canvas>
+        <svg id="radar-canvas" width="208" height="144" role="img" aria-label="Tactical radar"></svg>
       </div>
 
       <div id="combat-feed" class="combat-feed" aria-live="polite"></div>
@@ -238,9 +238,9 @@
   </main>
 
   <noscript>QSOL INERTIA ZERO requires JavaScript. No network connection is required.</noscript>
-  <script src="../vendor/galaxy-sampler/galaxy-wasm.js"></script>
   <script src="../vendor/three/three.min.js"></script>
-  <script src="../shared/qsol-three-stage.js"></script>
+  <script src="../shared/qsol-native.js"></script>
+  <script src="renderer.js"></script>
   <script src="core.js"></script>
   <script src="app.js"></script>
 </body>
