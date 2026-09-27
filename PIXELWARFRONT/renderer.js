@@ -341,7 +341,7 @@
           [b.x, b.y, a.x, b.y],
           [a.x, b.y, a.x, a.y],
         ])
-          s.line("selection", x1, y1, x2, y2, 55, "#9fc4c9", 1);
+          s.line("selection", x1, y1, x2, y2, 0, "#9fc4c9", 1);
       }
       s.text(
         `MISSION ${state.level} // ${state.blueprint.biome.name} // ${state.blueprint.signature}`,
