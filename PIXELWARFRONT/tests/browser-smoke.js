@@ -23,6 +23,13 @@ const core = require("../core.js");
   assert.equal(await page.title(), "PIXEL WARFRONT — Deterministic Command");
   assert.equal(await page.locator("#introLayer").isVisible(), true);
   assert.equal(await page.locator("#startButton").isEnabled(), true);
+  const overlayStack = await page.evaluate(() => ({
+    intro: Number.parseInt(getComputedStyle(document.querySelector("#introLayer")).zIndex, 10),
+    message: Number.parseInt(getComputedStyle(document.querySelector("#messageLayer")).zIndex, 10),
+    hud: Number.parseInt(getComputedStyle(document.querySelector(".native-hud")).zIndex, 10),
+  }));
+  assert.ok(overlayStack.intro > overlayStack.hud, "intro overlay must cover the native HUD");
+  assert.ok(overlayStack.message > overlayStack.hud, "message overlay must cover the native HUD");
   await page.screenshot({ path: path.join(__dirname, "pixelwarfront-intro.png"), fullPage: true });
 
   await page.fill("#seedInput", "BROWSER-WARFRONT");
