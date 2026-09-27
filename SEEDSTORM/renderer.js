@@ -1,5 +1,16 @@
 (function (root) {
   "use strict";
+  const T = root.THREE;
+
+  function visualHash(a, b, c) {
+    let x = (a ^ Math.imul(b, 0x9e3779b1) ^ Math.imul(c, 0x85ebca6b)) >>> 0;
+    x ^= x >>> 16;
+    x = Math.imul(x, 0x7feb352d);
+    x ^= x >>> 15;
+    x = Math.imul(x, 0x846ca68b);
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+
   class SeedstormRenderer {
     constructor(canvas, core) {
       this.core = core;
@@ -61,10 +72,44 @@
       };
       for (const [name, points] of Object.entries(shapes))
         this.stage.shape(name, points);
+      this.flash = new T.Mesh(
+        new T.PlaneGeometry(core.WIDTH, core.HEIGHT),
+        new T.MeshBasicMaterial({
+          color: 0xefe0c8,
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          depthWrite: false,
+          toneMapped: false,
+        }),
+      );
+      this.flash.name = "combat-flash";
+      this.flash.frustumCulled = false;
+      this.flash.renderOrder = 10000;
+      this.flash.visible = false;
+      this.flash.userData.ownedGeometry = true;
+      this.stage.scene.add(this.flash);
     }
     render(state, ui) {
       const s = this.stage,
-        c = this.core;
+        c = this.core,
+        shake = Math.max(0, Number(ui.shake) || 0),
+        flash = Math.max(0, Number(ui.flash) || 0);
+      let shakeX = 0,
+        shakeY = 0;
+      if (state && shake > 0 && !s.reducedMotion) {
+        const amount = Math.min(1, shake / 8);
+        shakeX = ((visualHash(state.tick, shake, 1) % 7) - 3) * amount;
+        shakeY = ((visualHash(state.tick, shake, 2) % 7) - 3) * amount;
+      }
+      s.camera.position.set(-shakeX, shakeY, 2000);
+      this.flash.material.opacity = Math.min(0.28, flash / 70);
+      this.flash.visible = this.flash.material.opacity > 0;
+      this.flash.position.set(
+        s.camera.position.x + c.WIDTH / 2,
+        s.camera.position.y - c.HEIGHT / 2,
+        s.camera.position.z - 1,
+      );
       s.begin("#0c1519");
       if (!state) {
         s.text("SEEDSTORM // STRIKE SYSTEM READY");
