@@ -270,7 +270,13 @@
         const age = tick - e.startTick,
           life = 1 - age / e.duration;
         if (life <= 0 || age < 0) continue;
-        const r = (e.major || e.boss ? 65 : 24) * (1 - life) + 3;
+        const major = Boolean(e.major || e.boss),
+          eventRadius = Number.isFinite(e.radius) ? Math.max(0, e.radius) : 24,
+          scale =
+            major || e.type === "impact"
+              ? 1
+              : Math.max(0.75, eventRadius / 24),
+          r = (major ? 65 : 24 * scale) * (1 - life) + 3 * scale;
         this.ring("effects", e.x, e.y, 25, r, "#d89459");
         if (!this.reducedMotion)
           for (let i = 0; i < 10; i++) {
