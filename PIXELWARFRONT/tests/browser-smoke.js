@@ -8,8 +8,8 @@ const core = require("../core.js");
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.PIXELWARFRONT_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.PIXELWARFRONT_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const errors = [];
@@ -18,7 +18,7 @@ const core = require("../core.js");
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = `file://${path.join(__dirname, "..", "index.html")}`;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/PIXELWARFRONT/index.html` : `file://${path.join(__dirname, "..", "index.html")}`;
   await page.goto(url, { waitUntil: "load" });
   assert.equal(await page.title(), "PIXEL WARFRONT — Deterministic Command");
   assert.equal(await page.locator("#introLayer").isVisible(), true);
@@ -44,8 +44,9 @@ const core = require("../core.js");
   const box = await page.locator("#game").boundingBox();
   assert.ok(box, "battlefield canvas must be visible");
   const world = (x, y) => ({ x: box.x + x / core.WIDTH * box.width, y: box.y + y / core.HEIGHT * box.height });
-  const selectStart = world(142, 250);
-  const selectEnd = world(220, 348);
+  // Include drones that have already begun their autonomous gather route.
+  const selectStart = world(100, 170);
+  const selectEnd = world(310, 455);
   await page.mouse.move(selectStart.x, selectStart.y);
   await page.mouse.down();
   await page.mouse.move(selectEnd.x, selectEnd.y, { steps: 8 });
@@ -79,7 +80,7 @@ const core = require("../core.js");
   await page.click("#watchReplayButton");
   await page.waitForFunction(() => document.querySelector("#runMode").textContent.startsWith("REPLAY"));
   assert.equal(await page.locator("#replayDialog").evaluate((element) => element.open), false);
-  await page.waitForFunction(() => document.querySelector("#messageTitle").textContent === "REPLAY COMPLETE", null, { timeout: 8000 });
+  await page.waitForFunction(() => document.querySelector("#messageTitle").textContent === "REPLAY COMPLETE", null, { timeout: Math.max(15000, decoded.ticks / core.TICK_RATE * 2000 + 5000) });
   await page.locator("#messageLayer").waitFor({ state: "visible" });
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -93,7 +94,7 @@ const core = require("../core.js");
   assert.ok(mobile.content <= mobile.viewport + 1, `mobile layout overflows by ${mobile.content - mobile.viewport}px`);
   await page.screenshot({ path: path.join(__dirname, "pixelwarfront-mobile.png"), fullPage: true });
 
-  const externalRequests = requests.filter((requestUrl) => !requestUrl.startsWith("file://"));
+  const externalRequests = requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://")));
   assert.deepEqual(externalRequests, []);
   assert.deepEqual(errors, []);
   await browser.close();

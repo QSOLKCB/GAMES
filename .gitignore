@@ -1,3 +1,5 @@
 **/node_modules/
 TERNARYDRIFT/build/
 SIGNAL_BREACH/rust/target/
+test-results/
+*/tests/*.png

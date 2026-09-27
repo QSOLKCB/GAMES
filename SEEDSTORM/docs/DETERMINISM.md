@@ -92,7 +92,7 @@ security primitives.
 
 ## Deliberately outside the contract
 
-- Canvas pixels, CSS layout, scanline overlay, animation interpolation, and screen
+- WebGL pixels, CSS layout, scanline overlay, animation interpolation, and screen
   shake, health-bar styling, impact sparks, and explosion particles;
 - the transient `state.events` presentation queue and its payload shape. Enemy hit
   and destruction records are derived from authoritative collision state, but the

@@ -1,8 +1,8 @@
 "use strict";
 
-// Lightweight DOM/canvas smoke harness for environments without an installed browser.
+// Simulation-only DOM harness. Real rendering is tested in tests/native-renderers.browser.js.
 // It executes the real app bootstrap, launches a sector, advances the fixed-step
-// simulation, exercises player input, AI, weapons, HUD updates, and rendering.
+// simulation, exercises player input, AI, weapons, and HUD updates.
 
 const fs = require("fs");
 const path = require("path");
@@ -72,24 +72,6 @@ class FakeElement {
     const index = this.parentElement.children.indexOf(this);
     if (index >= 0) this.parentElement.children.splice(index, 1);
   }
-  getContext() { return this._context || createCanvasContext(); }
-}
-
-function createCanvasContext() {
-  const gradient = { addColorStop() {} };
-  const target = {
-    createRadialGradient: () => gradient,
-    createLinearGradient: () => gradient,
-    measureText: () => ({ width: 10 }),
-    setLineDash() {}
-  };
-  return new Proxy(target, {
-    get(object, property) {
-      if (property in object) return object[property];
-      return () => undefined;
-    },
-    set(object, property, value) { object[property] = value; return true; }
-  });
 }
 
 const ids = [
@@ -110,19 +92,6 @@ elements.get("game-canvas").width = 0;
 elements.get("game-canvas").height = 0;
 elements.get("radar-canvas").width = 208;
 elements.get("radar-canvas").height = 144;
-let gameBackingCanvas = null;
-if (process.env.INERTIA_ZERO_RENDER_PATH) {
-  try {
-    const { createCanvas } = require("@napi-rs/canvas");
-    gameBackingCanvas = createCanvas(1440, 900);
-    const radarBackingCanvas = createCanvas(208, 144);
-    elements.get("game-canvas")._context = gameBackingCanvas.getContext("2d");
-    elements.get("radar-canvas")._context = radarBackingCanvas.getContext("2d");
-  } catch (error) {
-    throw new Error("INERTIA_ZERO_RENDER_PATH requires the optional @napi-rs/canvas development package");
-  }
-}
-
 const documentListeners = new Map();
 const document = {
   querySelector(selector) { return selector.startsWith("#") ? elements.get(selector.slice(1)) || null : null; },
@@ -133,6 +102,8 @@ const windowListeners = new Map();
 const localValues = new Map();
 const fakeWindow = {
   InertiaZeroCore: Core,
+  // Explicit injected presentation seam: this harness makes no rendering claims.
+  InertiaRenderer: class { constructor() { this.stage = { resize() {} }; } render() {} },
   innerWidth: 1440,
   innerHeight: 900,
   devicePixelRatio: 1,
@@ -180,9 +151,7 @@ game.input.keys.delete("KeyW");
 game.input.keys.delete("Space");
 for (let tick = 0; tick < 420; tick += 1) game.update(1 / 60);
 game.render(0.5);
-if (process.env.INERTIA_ZERO_RENDER_PATH && gameBackingCanvas) {
-  fs.writeFileSync(process.env.INERTIA_ZERO_RENDER_PATH, gameBackingCanvas.toBuffer("image/png"));
-}
+
 
 const allFinite = game.ships.every((ship) => [ship.x, ship.y, ship.vx, ship.vy, ship.energy].every(Number.isFinite))
   && game.projectiles.every((projectile) => [projectile.x, projectile.y, projectile.vx, projectile.vy, projectile.life].every(Number.isFinite));
@@ -324,7 +293,7 @@ if (game.mode !== "menu" || elements.get("menu").hidden) throw new Error("Hangar
 
 console.log("PASS real app bootstrap and eight-hull menu");
 console.log("PASS seeded fortress sector launch");
-console.log("PASS 600-tick player, AI, weapon, HUD, and render smoke run");
+console.log("PASS 600-tick player, AI, weapon, HUD simulation smoke run");
 console.log("PASS finite entity invariants under live combat");
 console.log("PASS all eight primary, ordnance, special, and repel system paths");
 console.log("PASS terminal-step freeze and zero-hull restart protection");

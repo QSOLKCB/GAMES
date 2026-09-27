@@ -19,10 +19,6 @@ assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
 assert.match(app, /core\.tryRecordInput/);
 assert.match(app, /function isInteractiveTarget/);
-assert.match(app, /function drawEnemyHealth/);
-assert.match(app, /function drawImpact/);
-assert.match(app, /function drawExplosion/);
-assert.match(app, /function drawVisualEffects/);
 assert.match(app, /resetRun\(\) \{\s*this\.lastShotTick = -100;\s*this\.lastHitTick = -100;\s*\}/);
 assert.equal((app.match(/audio\.resetRun\(\);/g) || []).length, 2);
 assert.match(app, /event\.type === "bomb"[\s\S]*?visualFlash = Math\.max\(visualFlash, 18\);\s*shake = Math\.max\(shake, 12\);/);
@@ -32,3 +28,8 @@ for (const relative of ["core.js", "app.js", "style.css"]) {
 }
 
 process.stdout.write("ok - offline browser shell has no remote runtime dependency\n");
+
+const renderer = fs.readFileSync(path.join(root, "renderer.js"), "utf8");
+assert.doesNotMatch(app + renderer, /getContext\s*\(\s*["']2d["']/);
+assert.match(renderer, /QsolNative\.Stage/);
+assert.match(renderer, /s\.finish\(\)/);

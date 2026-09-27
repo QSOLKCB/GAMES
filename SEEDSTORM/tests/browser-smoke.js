@@ -8,8 +8,8 @@ const core = require("../core.js");
 (async () => {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.SEEDSTORM_CHROMIUM || chromium.executablePath(),
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.GAMES_CHROMIUM || process.env.SEEDSTORM_CHROMIUM || chromium.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
@@ -21,7 +21,7 @@ const core = require("../core.js");
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
 
-  const url = `file://${path.join(__dirname, "..", "index.html")}`;
+  const url = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/SEEDSTORM/index.html` : `file://${path.join(__dirname, "..", "index.html")}`;
   await page.goto(url, { waitUntil: "load" });
   await page.clock.pauseAt(new Date("2026-01-01T01:00:00Z"));
   assert.equal(await page.title(), "SEEDSTORM — Deterministic Strike");
@@ -116,7 +116,7 @@ const core = require("../core.js");
   assert.ok(mobileLayout.content <= mobileLayout.viewport + 1, `mobile layout overflows by ${mobileLayout.content - mobileLayout.viewport}px`);
   await page.screenshot({ path: path.join(__dirname, "seedstorm-mobile.png"), fullPage: true });
 
-  const externalRequests = requests.filter((requestUrl) => !requestUrl.startsWith("file://"));
+  const externalRequests = requests.filter((requestUrl) => !(process.env.GAMES_TEST_ORIGIN ? new URL(requestUrl).origin === process.env.GAMES_TEST_ORIGIN : requestUrl.startsWith("file://")));
   assert.deepEqual(externalRequests, []);
   assert.deepEqual(errors, []);
 

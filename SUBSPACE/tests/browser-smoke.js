@@ -7,7 +7,7 @@ const { chromium } = require("playwright");
 (async () => {
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, executablePath: process.env.GAMES_CHROMIUM || chromium.executablePath(), args: ["--no-sandbox", "--enable-unsafe-swiftshader"] });
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     const errors = [];
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
 
-  const gameUrl = pathToFileURL(path.resolve(__dirname, "../index.html")).href;
+  const gameUrl = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/SUBSPACE/index.html` : pathToFileURL(path.resolve(__dirname, "../index.html")).href;
   await page.goto(gameUrl, { waitUntil: "load" });
   await page.waitForFunction(() => Boolean(window.inertiaZero));
   await page.screenshot({ path: "/tmp/inertia-zero-menu.png", fullPage: true });
@@ -80,7 +80,7 @@ const { chromium } = require("playwright");
   await page.click("#resume-button");
   await page.waitForFunction(() => window.inertiaZero.mode === "playing");
 
-  const testsUrl = pathToFileURL(path.resolve(__dirname, "index.html")).href;
+  const testsUrl = process.env.GAMES_TEST_ORIGIN ? `${process.env.GAMES_TEST_ORIGIN}/SUBSPACE/tests/index.html` : pathToFileURL(path.resolve(__dirname, "index.html")).href;
   await page.goto(testsUrl, { waitUntil: "load" });
   await page.waitForFunction(() => document.querySelectorAll("#results article").length > 0);
   const browserTests = await page.locator("#summary").textContent();

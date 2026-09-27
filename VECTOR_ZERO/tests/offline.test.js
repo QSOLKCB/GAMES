@@ -19,9 +19,7 @@ assert.match(app, /requestAnimationFrame\(frame\)/);
 assert.match(app, /core\.tryRecordInput/);
 assert.match(app, /core\.encodeReplay/);
 assert.match(app, /core\.decodeReplay/);
-assert.match(app, /function clipNear/);
 assert.match(app, /function buildMineFaces/);
-assert.match(app, /function drawEnemy/);
 assert.match(app, /function createAudio/);
 assert.match(notice, /independently implemented/i);
 assert.match(notice, /No source code/i);
@@ -31,3 +29,8 @@ for (const relative of ["core.js", "app.js", "style.css", "index.html", "README.
 }
 
 process.stdout.write("ok - VECTOR ZERO is a self-contained offline 6DOF browser game\n");
+
+const renderer = fs.readFileSync(path.join(root, "renderer.js"), "utf8");
+assert.doesNotMatch(app + renderer, /getContext\s*\(\s*["']2d["']/);
+assert.match(renderer, /QsolNative\.Stage/);
+assert.match(renderer, /s\.finish\(\)/);

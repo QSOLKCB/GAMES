@@ -25,7 +25,7 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
 
 ## What is included
 
-- Full-screen Canvas 2D combat with inertial acceleration, rotation, reverse thrust, wall rebound, and an energy-draining afterburner.
+- Full-screen native Three.js/WebGL combat with inertial acceleration, rotation, reverse thrust, wall rebound, and an energy-draining afterburner.
 - Near-conservative coasting with explicit counter-thrust: turning changes the
   hull axis but never rotates the ship's existing travel vector. Flight assist
   now bleeds velocity slowly instead of imposing arcade-style drag.
@@ -40,9 +40,9 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
 - Procedurally synthesized Web Audio effects with no bundled sound assets.
 - A fixed 60 Hz simulation clock separated from display refresh.
 - Direct `file://` operation using classic scripts rather than browser modules.
-- A pinned local Three.js layer adds Rust/Wasm-sampled star depth, arena
-  structure, and combat pulses while the fixed-step Canvas simulation remains
-  authoritative. The sampler follows the bounded QSOLKCB/GALAXY browser ABI.
+- A native Three.js scene owns all eight ship hulls, obstacles, objectives,
+  ordnance, pickups and combat effects. The fixed-step simulation remains
+  authoritative. Tactical radar uses SVG; there is no Canvas 2D renderer.
 
 ## Controls
 
@@ -136,7 +136,7 @@ SUBSPACE/
 └── tests/
     ├── index.html          # Browser-openable core verification page
     ├── core.test.js        # Determinism, geometry, pathfinding, and generation tests
-    ├── runtime-smoke.js    # Headless DOM/canvas simulation smoke harness
+    ├── runtime-smoke.js    # Headless DOM simulation smoke harness
     └── browser-smoke.js    # Optional Playwright end-to-end browser smoke test
 ```
 
@@ -164,7 +164,11 @@ The core suite checks:
 - A* navigation; and
 - spawn/objective clearance across 750 generated arenas.
 
-The dependency-free runtime smoke harness boots the real app against a lightweight DOM and Canvas API stub, launches live combat, advances 600 simulation ticks, exercises weapons and AI, renders a full frame, verifies finite entity state, checks every hull's weapon/system command paths, covers all four objective transitions and survival reinforcement, checks the live core blocker and reachable pickup placement, and covers terminal/pause/resume/hangar transitions. Developers with the optional `@napi-rs/canvas` package can also set `INERTIA_ZERO_RENDER_PATH=/tmp/inertia-zero.png` to write a native PNG during the same run.
+The dependency-free runtime harness tests the real simulation against a lightweight
+DOM and an explicitly stubbed presentation boundary. It covers 600 combat ticks,
+all hull systems, AI, objectives, finite state, pause/resume and terminal paths.
+It makes no rendering claim. Actual WebGL rendering is exercised by
+`../tests/native-renderers.browser.js` and this game's Playwright smoke suite.
 
 ## Independent implementation and trademark notice
 
@@ -185,3 +189,5 @@ These references are documentation only and are not runtime dependencies.
 Copyright © 2026 QSOL-IMC / Trent Slade.
 
 Released under the repository's [MIT License](../LICENSE).
+
+Native renderer architecture and verification: [migration audit](../docs/NATIVE_RENDERING.md).

@@ -63,7 +63,7 @@ count, and run-length-encoded input ledger. Loading it creates a fresh campaign
 and applies every input word, including ledger entries after a terminal event.
 The interface displays a canonical state digest during live flight and replay.
 
-Rendering, animation-frame timing, Canvas, CSS, pointer lock, audio, and browser
+Rendering, animation-frame timing, Three.js, CSS, pointer lock, audio, and browser
 layout do not feed back into simulation state. See
 [`docs/DETERMINISM.md`](docs/DETERMINISM.md).
 
@@ -71,11 +71,11 @@ layout do not feed back into simulation state. See
 
 - `core.js` — mine generation, fixed-point 6DOF flight, collision, combat,
   objectives, replay receipts, and state digests.
-- `app.js` — fixed-step scheduler, polygon projection and near-plane clipping,
-  high-contrast target brackets and fire-solution cues, vector enemies and
-  pickups, cockpit HUD, input, telemetry, and synthesized audio.
-- `../shared/qsol-three-stage.js` — a local Three.js depth layer that reinforces
-  mine geometry and combat pulses without entering canonical simulation state.
+- `app.js` — fixed-step scheduler, mine surface extraction, controls, telemetry
+  and synthesized audio.
+- `renderer.js` — real perspective mine surfaces, depth-buffered enemies and
+  pickups, projectiles, exit lattice and six-axis camera/cockpit.
+- `../shared/qsol-native.js` — shared native WebGL batching and lifecycle.
 - `style.css` — responsive recovered-flight-computer presentation.
 - `index.html` — local-file-compatible application with a strict offline CSP.
 - `tests/` — deterministic, offline-boundary, and Playwright browser tests.
@@ -100,3 +100,5 @@ Playwright is pinned for browser testing and is not a runtime dependency.
 
 Playable three-mine mini-campaign. Version 2 receipts are versioned rather than
 promised compatible with future simulation revisions.
+
+Native renderer architecture and verification: [migration audit](../docs/NATIVE_RENDERING.md).

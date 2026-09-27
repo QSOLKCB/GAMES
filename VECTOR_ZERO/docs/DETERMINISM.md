@@ -1,7 +1,7 @@
 # Determinism contract
 
 VECTOR ZERO separates its canonical gameplay simulation from browser
-presentation. `core.js` is the contract surface; Canvas, CSS, Web Audio, pointer
+presentation. `core.js` is the contract surface; Three.js, CSS, Web Audio, pointer
 lock, animation frames, and monitor refresh rate are non-canonical.
 
 ## Canonical inputs and update

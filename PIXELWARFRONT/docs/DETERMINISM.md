@@ -79,7 +79,7 @@ enforces the same ceiling as the decoder.
 
 ## Deliberately outside the contract
 
-- Canvas pixels, CSS layout, selection-box styling, animation, interpolation,
+- WebGL pixels, CSS layout, selection-box styling, animation, interpolation,
   impact sparks, explosions, and screen shake;
 - the transient `state.events` presentation queue and payload shape;
 - Web Audio timing, speaker output, and mute state;

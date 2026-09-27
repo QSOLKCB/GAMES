@@ -27,7 +27,7 @@ storage is required.
   serialized battlefield, checkpoint, screenshot, or save-state snapshot.
 - Draws every unit, building, battlefield tile, projectile, health bar, impact,
   and explosion procedurally, with stronger selection brackets, grounded unit
-  shadows, projectile trails, and a local Three.js battlefield-depth layer.
+  shadows, projectile trails, and native Three.js terrain, structures and units.
 - Synthesizes all interface, weapon, production, and ambient sounds at runtime
   through the Web Audio API.
 
@@ -88,8 +88,9 @@ See [`docs/DETERMINISM.md`](docs/DETERMINISM.md) for the normative contract.
 | File | Responsibility |
 |---|---|
 | [`core.js`](core.js) | Procedural mission generation, economy, AI, combat, fixed-tick simulation, replay codec, and state digest |
-| [`app.js`](app.js) | Selection and command controls, layered Canvas renderer, synthesized audio, replay UI, and frame scheduling |
-| [`../shared/qsol-three-stage.js`](../shared/qsol-three-stage.js) | Local Three.js battlefield depth and combat pulses excluded from canonical state |
+| [`app.js`](app.js) | Selection and command controls, scene synchronization, synthesized audio, replay UI, and frame scheduling |
+| [`renderer.js`](renderer.js) | Native Three.js terrain, facilities, units, resources, projectiles and command indicators |
+| [`../shared/qsol-native.js`](../shared/qsol-native.js) | Sole gameplay WebGL renderer, batching and lifecycle |
 | [`index.html`](index.html) | Offline application shell and accessible command surface |
 | [`style.css`](style.css) | Responsive industrial strategy interface |
 | [`tests/core.test.js`](tests/core.test.js) | Determinism, progression, harvesting, construction, production, combat, and replay regressions |
@@ -120,3 +121,5 @@ game. Those titles are third-party trademarks; this project is not affiliated
 with or endorsed by their owners.
 
 Code is licensed under the repository's [MIT License](../LICENSE).
+
+Native renderer architecture and verification: [migration audit](../docs/NATIVE_RENDERING.md).

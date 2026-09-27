@@ -1,0 +1,47 @@
+/* Text-only conventional HUD; the sole gameplay canvas is opaque WebGL. */
+.native-hud {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: 2%;
+  z-index: 2;
+  pointer-events: none;
+  white-space: pre-line;
+  color: #e5d5b0;
+  font: 600 clamp(10px, 1.1vw, 15px)/1.55 monospace;
+  text-shadow: 0 2px 3px #000;
+  background: rgba(5, 10, 11, 0.78);
+  padding: 0.45em 0.7em;
+  border-left: 2px solid #b58c51;
+}
+.native-hud:empty {
+  display: none;
+}
+.native-error {
+  position: absolute;
+  inset: 25% 10%;
+  z-index: 20;
+  background: #141b1d;
+  color: #e5d5b0;
+  padding: 2em;
+}
+.native-map {
+  position: absolute;
+  inset: 12% 25%;
+  width: 50%;
+  height: 65%;
+  z-index: 3;
+  pointer-events: none;
+  background: #081211ed;
+}
+.native-reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #dbc89b;
+  font: 22px monospace;
+  pointer-events: none;
+  z-index: 2;
+  text-shadow: 0 1px 3px #000;
+}
