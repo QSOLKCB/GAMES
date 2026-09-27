@@ -57,6 +57,23 @@ const core = require("../core.js");
   await page.mouse.move(selectStart.x, selectStart.y);
   await page.mouse.down();
   await page.mouse.move(selectEnd.x, selectEnd.y, { steps: 8 });
+  await page.waitForFunction(() => {
+    const stage = document.querySelector("#game").nativeStage;
+    const batch = stage && stage.batches.get("selection/box/glow");
+    return batch && batch.used === 4;
+  });
+  const selectionDepths = await page.evaluate(() => {
+    const stage = document.querySelector("#game").nativeStage;
+    const batch = stage.batches.get("selection/box/glow");
+    const matrix = new THREE.Matrix4();
+    const depths = [];
+    for (let i = 0; i < batch.used; i += 1) {
+      batch.mesh.getMatrixAt(i, matrix);
+      depths.push(matrix.elements[14]);
+    }
+    return depths;
+  });
+  assert.deepEqual(selectionDepths, [0, 0, 0, 0], "drag box must stay on the z=0 input plane");
   await page.mouse.up();
   await page.waitForFunction(() => !document.querySelector("#selectionName").textContent.startsWith("NO"));
 
