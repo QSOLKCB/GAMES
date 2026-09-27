@@ -248,7 +248,12 @@ const titles = [
         const s = __presentation.stage,
           r = s.canvas.getBoundingClientRect();
         return s.camera.isPerspectiveCamera
-          ? { actual: s.camera.aspect, expected: r.width / r.height }
+          ? {
+              actual: s.camera.aspect,
+              expected:
+                Math.max(1, Math.round(r.width)) /
+                Math.max(1, Math.round(r.height)),
+            }
           : null;
       });
       if (perspectiveProjection)
