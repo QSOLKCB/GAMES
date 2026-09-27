@@ -82,6 +82,10 @@
       this.glow = new T.MeshBasicMaterial({ toneMapped: false });
       this.wire = new T.MeshBasicMaterial({ wireframe: true });
       this.ownedNodes = [];
+      this.flashLayer = document.createElement("div");
+      this.flashLayer.className = "native-flash";
+      canvas.parentElement.appendChild(this.flashLayer);
+      this.ownedNodes.push(this.flashLayer);
       this.hud = document.createElement("div");
       this.hud.className = "native-hud";
       canvas.parentElement.appendChild(this.hud);
@@ -296,6 +300,39 @@
             );
           }
       }
+    }
+    screenFlash(color, opacity) {
+      const amount = Math.max(0, Math.min(1, Number(opacity) || 0));
+      this.flashLayer.style.background = color || "#efe0c8";
+      this.flashLayer.style.opacity = String(amount);
+      this.flashLayer.style.display = amount > 0 ? "block" : "none";
+    }
+    shakeView(x = 0, y = 0) {
+      this.resize();
+      const sx = this.reducedMotion ? 0 : Number(x) || 0,
+        sy = this.reducedMotion ? 0 : Number(y) || 0,
+        w = this.cssWidth || this.width,
+        h = this.cssHeight || this.height,
+        scaleX = w / Math.max(1, this.width),
+        scaleY = h / Math.max(1, this.height);
+      if ((sx || sy) && this.camera.setViewOffset) {
+        this.camera.setViewOffset(
+          w,
+          h,
+          -sx * scaleX,
+          -sy * scaleY,
+          w,
+          h,
+        );
+      } else if (
+        this.camera.clearViewOffset &&
+        this.camera.view &&
+        this.camera.view.enabled
+      ) {
+        this.camera.clearViewOffset();
+      }
+      this.camera.userData.nativeShake = { x: sx, y: sy };
+      this.projectCamera();
     }
     text(value) {
       if (!this.lost && this.hud.textContent !== value)
