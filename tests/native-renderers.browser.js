@@ -231,6 +231,98 @@ const titles = [
         return false;
       }, game);
       assert.ok(aligned, `${game}: simulation-to-instance coordinates`);
+      if (
+        game === "BLACKSTAR_AGA" ||
+        game === "VECTOR_ZERO" ||
+        game === "PIXELWARFRONT" ||
+        game === "SUBSPACE"
+      ) {
+        const feedback = await page.evaluate((game) => {
+          const p = __presentation,
+            s = p.stage,
+            state = __renderState,
+            originalArgs = __renderArgs.slice();
+          let opacity = 0,
+            shake = { x: 0, y: 0 },
+            vectorContacts = null;
+          if (game === "BLACKSTAR_AGA") {
+            p.render(state, {
+              ...originalArgs[0],
+              flash: 8,
+              hurt: 0,
+              shakeX: 3,
+              shakeY: -2,
+            });
+          } else if (game === "VECTOR_ZERO") {
+            p.render(state, originalArgs[0], {
+              ...originalArgs[1],
+              flash: 8,
+              hurt: 0,
+              shakeX: 3,
+              shakeY: -2,
+            });
+            const clone = structuredClone(state),
+              pickup = clone.pickups.find((item) => item.kind !== "core"),
+              enemy = clone.enemies[0];
+            if (pickup && enemy) {
+              pickup.y = clone.player.y;
+              enemy.y = clone.player.y;
+              p.render(clone, originalArgs[0], {
+                ...originalArgs[1],
+                automap: true,
+                flash: 0,
+                shakeX: 0,
+                shakeY: 0,
+              });
+              const map = p.map,
+                supply = map.querySelector('[data-contact^="pickup-"]:not([data-contact="pickup-core"])'),
+                hostile = map.querySelector('[data-contact="enemy"]');
+              vectorContacts = {
+                supply: supply && supply.getAttribute("fill"),
+                hostile: hostile && hostile.getAttribute("fill"),
+              };
+            }
+          } else if (game === "PIXELWARFRONT") {
+            p.render(state, {
+              ...originalArgs[0],
+              screenFlash: 12,
+              shakeX: 3,
+              shakeY: -2,
+            });
+          } else {
+            const oldShake = state.camera.shake,
+              oldTime = state.attractTime;
+            state.camera.shake = 12;
+            state.attractTime = 0.137;
+            p.render(state, ...originalArgs);
+            state.camera.shake = oldShake;
+            state.attractTime = oldTime;
+          }
+          opacity = Number.parseFloat(s.flashLayer.style.opacity || "0");
+          shake = { ...(s.camera.userData.nativeShake || { x: 0, y: 0 }) };
+          p.render(state, ...originalArgs);
+          return { opacity, shake, vectorContacts };
+        }, game);
+        assert.ok(
+          Math.abs(feedback.shake.x) > 0.01 ||
+            Math.abs(feedback.shake.y) > 0.01,
+          `${game}: combat feedback must displace the native view`,
+        );
+        if (game !== "SUBSPACE")
+          assert.ok(
+            feedback.opacity > 0,
+            `${game}: combat feedback must flash the native view`,
+          );
+        if (game === "VECTOR_ZERO") {
+          assert.ok(feedback.vectorContacts?.supply);
+          assert.equal(feedback.vectorContacts.hostile, "#be7153");
+          assert.notEqual(
+            feedback.vectorContacts.supply,
+            feedback.vectorContacts.hostile,
+            "VECTOR ZERO supplies must not look hostile on the automap",
+          );
+        }
+      }
       if (game === "SEEDSTORM") {
         const effectRadii = await page.evaluate(() => {
           const s = __presentation.stage,
