@@ -307,6 +307,10 @@
         this.dpr = dpr;
         this.renderer.setPixelRatio(dpr);
         this.renderer.setSize(w, h, false);
+        if (this.camera.isPerspectiveCamera) {
+          this.camera.aspect = w / h;
+          this.camera.updateProjectionMatrix();
+        }
       }
     }
     oblique(x, y) {
