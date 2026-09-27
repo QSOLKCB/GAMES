@@ -231,6 +231,33 @@ const titles = [
         return false;
       }, game);
       assert.ok(aligned, `${game}: simulation-to-instance coordinates`);
+      if (game === "SEEDSTORM") {
+        const bossEffectRadius = await page.evaluate(() => {
+          const s = __presentation.stage,
+            matrix = new THREE.Matrix4();
+          s.begin();
+          s.effects(
+            [
+              {
+                x: 0,
+                y: 0,
+                startTick: 0,
+                duration: 10,
+                seed: 1,
+                boss: true,
+              },
+            ],
+            1,
+          );
+          const batch = s.batches.get("effects/ring/glow");
+          batch.mesh.getMatrixAt(0, matrix);
+          return new THREE.Vector3().setFromMatrixScale(matrix).x;
+        });
+        assert.ok(
+          bossEffectRadius > 9,
+          `${game}: boss marker must select the major shared effect radius`,
+        );
+      }
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.waitForFunction(() => __presentation.stage.reducedMotion);
       await page.emulateMedia({ reducedMotion: "no-preference" });
