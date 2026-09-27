@@ -14,12 +14,19 @@
         c = this.core;
       s.begin(ui.palette?.ground || "#11181b");
       if (!state) {
+        s.shakeView(0, 0);
+        s.screenFlash("#efe0c8", 0);
         s.text("PIXEL WARFRONT // COMMAND THEATRE READY");
         s.finish();
         return;
       }
       const p = ui.palette,
         scale = c.SCALE;
+      s.shakeView(ui.shakeX, ui.shakeY);
+      s.screenFlash(
+        "#efe0c8",
+        Math.min(0.25, Math.max(0, Number(ui.screenFlash) || 0) / 65),
+      );
       for (let row = 0; row < c.GRID_ROWS; row++)
         for (let col = 0; col < c.GRID_COLUMNS; col++) {
           const tile = state.blueprint.terrain[row * c.GRID_COLUMNS + col],
