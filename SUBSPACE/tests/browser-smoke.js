@@ -53,6 +53,20 @@ const { chromium } = require("playwright");
     throw new Error(`Unexpected launch state: ${JSON.stringify(before)}`);
   }
 
+  await page.evaluate(() => {
+    window.inertiaZero.camera.shake = 12;
+    window.inertiaZero.attractTime = 0.137;
+  });
+  await page.waitForFunction(() => {
+    const shake = document.querySelector("#game").nativeStage.camera.userData.nativeShake;
+    return shake && (Math.abs(shake.x) > 0.01 || Math.abs(shake.y) > 0.01);
+  });
+  await page.evaluate(() => { window.inertiaZero.camera.shake = 0; });
+  await page.waitForFunction(() => {
+    const shake = document.querySelector("#game").nativeStage.camera.userData.nativeShake;
+    return shake && Math.abs(shake.x) < 0.001 && Math.abs(shake.y) < 0.001;
+  });
+
   await page.keyboard.down("KeyW");
   await page.keyboard.down("Space");
   await page.waitForTimeout(550);
