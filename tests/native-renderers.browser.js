@@ -261,6 +261,25 @@ const titles = [
               shakeX: 3,
               shakeY: -2,
             });
+          } else if (game === "PIXELWARFRONT") {
+            p.render(state, {
+              ...originalArgs[0],
+              screenFlash: 12,
+              shakeX: 3,
+              shakeY: -2,
+            });
+          } else {
+            const oldShake = state.camera.shake,
+              oldTime = state.attractTime;
+            state.camera.shake = 12;
+            state.attractTime = 0.137;
+            p.render(state, ...originalArgs);
+            state.camera.shake = oldShake;
+            state.attractTime = oldTime;
+          }
+          opacity = Number.parseFloat(s.flashLayer.style.opacity || "0");
+          shake = { ...(s.camera.userData.nativeShake || { x: 0, y: 0 }) };
+          if (game === "VECTOR_ZERO") {
             const clone = structuredClone(state),
               pickup = clone.pickups.find((item) => item.kind !== "core"),
               enemy = clone.enemies[0];
@@ -282,24 +301,7 @@ const titles = [
                 hostile: hostile && hostile.getAttribute("fill"),
               };
             }
-          } else if (game === "PIXELWARFRONT") {
-            p.render(state, {
-              ...originalArgs[0],
-              screenFlash: 12,
-              shakeX: 3,
-              shakeY: -2,
-            });
-          } else {
-            const oldShake = state.camera.shake,
-              oldTime = state.attractTime;
-            state.camera.shake = 12;
-            state.attractTime = 0.137;
-            p.render(state, ...originalArgs);
-            state.camera.shake = oldShake;
-            state.attractTime = oldTime;
           }
-          opacity = Number.parseFloat(s.flashLayer.style.opacity || "0");
-          shake = { ...(s.camera.userData.nativeShake || { x: 0, y: 0 }) };
           p.render(state, ...originalArgs);
           return { opacity, shake, vectorContacts };
         }, game);
