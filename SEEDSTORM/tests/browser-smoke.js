@@ -45,6 +45,55 @@ const core = require("../core.js");
   await page.locator("#messageLayer").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#pauseButton").innerText(), "PAUSE");
   assert.equal(await page.locator("#runMode").innerText(), "LIVE INPUT");
+
+  await page.keyboard.down("KeyX");
+  const feedbackFrames = [];
+  for (let frame = 0; frame < 6; frame += 1) {
+    await page.clock.runFor(17);
+    feedbackFrames.push(
+      await page.evaluate(() => {
+        const stage = document.querySelector("#game").nativeStage,
+          flash = stage.scene.getObjectByName("combat-flash");
+        return {
+          flash: flash.material.opacity,
+          visible: flash.visible,
+          cameraX: stage.camera.position.x,
+          cameraY: stage.camera.position.y,
+        };
+      }),
+    );
+  }
+  await page.keyboard.up("KeyX");
+  assert.ok(
+    feedbackFrames.some((frame) => frame.visible && frame.flash > 0),
+    "bomb input must produce a native combat flash",
+  );
+  assert.ok(
+    feedbackFrames.some(
+      (frame) => Math.abs(frame.cameraX) > 0.001 || Math.abs(frame.cameraY) > 0.001,
+    ),
+    "bomb input must produce native camera shake",
+  );
+  await page.clock.runFor(400);
+  const settledFeedback = await page.evaluate(() => {
+    const stage = document.querySelector("#game").nativeStage,
+      flash = stage.scene.getObjectByName("combat-flash");
+    return {
+      flash: flash.material.opacity,
+      visible: flash.visible,
+      cameraX: stage.camera.position.x,
+      cameraY: stage.camera.position.y,
+    };
+  });
+  assert.equal(settledFeedback.visible, false, "combat flash must decay away");
+  assert.equal(settledFeedback.flash, 0, "combat flash opacity must decay to zero");
+  assert.ok(
+    Math.abs(settledFeedback.cameraX) < 0.001 &&
+      Math.abs(settledFeedback.cameraY) < 0.001,
+    "camera shake must decay back to the neutral view",
+  );
+  await page.click("#restartButton");
+
   // Keep browser input and the real frame loop, but advance every animation frame
   // explicitly so slow CI rendering cannot shorten the combat sequence.
   await page.keyboard.down("KeyZ");
