@@ -29,7 +29,7 @@
       const s = this.stage,
         c = this.core;
       s.begin();
-      this.map.hidden = !(ui.automap && state);
+      this.map.style.display = ui.automap && state ? "block" : "none";
       if (!state) {
         s.text("BLACKSTAR RECOVERY MONITOR // READY");
         s.finish();
