@@ -285,7 +285,24 @@
 
   function render() {
     buildMineFaces();
-    presentation.render(state, mineFaces, { automap, paused, notice: noticeTicks > 0 ? notice : "", palette: state ? PALETTES[state.sector - 1] || PALETTES[0] : PALETTES[0] });
+    const shakeX =
+        state && shake > 0
+          ? ((state.tick * 17) % (shake * 2 + 1)) - shake
+          : 0,
+      shakeY =
+        state && shake > 0
+          ? ((state.tick * 11) % (shake * 2 + 1)) - shake
+          : 0;
+    presentation.render(state, mineFaces, {
+      automap,
+      paused,
+      notice: noticeTicks > 0 ? notice : "",
+      palette: state ? PALETTES[state.sector - 1] || PALETTES[0] : PALETTES[0],
+      flash,
+      shakeX,
+      shakeY,
+      hurt: state?.player?.hurt || 0,
+    });
   }
 
   function showMessage(kicker, title, body, button, action) {
