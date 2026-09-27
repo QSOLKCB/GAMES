@@ -31,6 +31,8 @@
       s.begin();
       this.map.style.display = ui.automap && state ? "block" : "none";
       if (!state) {
+        s.shakeView(0, 0);
+        s.screenFlash("#ffe08e", 0);
         s.text("BLACKSTAR RECOVERY MONITOR // READY");
         s.finish();
         return;
@@ -53,7 +55,14 @@
       }
       const palette = ui.palette,
         p = state.player,
-        angle = (p.angle / c.ANGLE_MAX) * Math.PI * 2;
+        angle = (p.angle / c.ANGLE_MAX) * Math.PI * 2,
+        hurt = Math.max(0, Number(ui.hurt) || 0),
+        flash = Math.max(0, Number(ui.flash) || 0);
+      s.shakeView(ui.shakeX, ui.shakeY);
+      s.screenFlash(
+        hurt > 0 ? "#961e19" : "#ffe08e",
+        hurt > 0 ? Math.max(hurt / 42, flash / 30) : flash / 30,
+      );
       s.scene.background.set(palette.sky);
       s.scene.fog.color.set(palette.sky);
       s.camera.position.set(p.x / c.FP, 0.5, p.y / c.FP);
@@ -433,7 +442,14 @@
               markup += `<rect x="${x}" y="${y}" width=".9" height=".9" fill="#687c6c"/>`;
         for (const e of state.enemies)
           markup += `<circle cx="${e.x / c.FP}" cy="${e.y / c.FP}" r=".18" fill="#d96f52"/>`;
-        markup += `<circle cx="${p.x / c.FP}" cy="${p.y / c.FP}" r=".23" fill="#f2d286"/>`;
+        const exit = state.blueprint.exit,
+          px = p.x / c.FP,
+          py = p.y / c.FP,
+          dx = c.cosAngle(p.angle) / c.TRIG_SCALE,
+          dy = c.sinAngle(p.angle) / c.TRIG_SCALE;
+        markup += `<rect data-marker="exit" x="${exit.x + 0.25}" y="${exit.y + 0.25}" width=".5" height=".5" fill="#65b29c"/>`;
+        markup += `<circle data-marker="player" cx="${px}" cy="${py}" r=".23" fill="#f2d286"/>`;
+        markup += `<line data-marker="heading" x1="${px}" y1="${py}" x2="${px + dx * 1.2}" y2="${py + dy * 1.2}" stroke="#f2d286" stroke-width=".08"/>`;
         this.map.innerHTML = markup;
       }
       s.finish();
