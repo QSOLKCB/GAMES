@@ -17,7 +17,6 @@
       this.bursts = [];
       this.map = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       this.map.classList.add("native-map");
-      this.map.hidden = true;
       canvas.parentElement.appendChild(this.map);
       this.stage.ownedNodes.push(this.map);
       const reticle = document.createElement("span");
@@ -30,7 +29,7 @@
       const s = this.stage,
         c = this.core;
       s.begin();
-      this.map.style.display = ui.automap && state ? "block" : "none";
+      this.map.hidden = !(ui.automap && state);
       if (!state) {
         s.text("BLACKSTAR RECOVERY MONITOR // READY");
         s.finish();
