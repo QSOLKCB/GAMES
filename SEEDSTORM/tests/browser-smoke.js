@@ -93,6 +93,7 @@ const core = require("../core.js");
     "camera shake must decay back to the neutral view",
   );
   await page.click("#restartButton");
+  await page.focus("#game");
 
   // Keep browser input and the real frame loop, but advance every animation frame
   // explicitly so slow CI rendering cannot shorten the combat sequence.
