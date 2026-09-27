@@ -40,6 +40,47 @@ for (const game of games) {
     `${game}: simulation must drive its scene adapter`,
   );
 }
+const feedbackContracts = {
+  BLACKSTAR_AGA: [/flash,/, /shakeX,/, /shakeY,/, /hurt:/],
+  VECTOR_ZERO: [/flash,/, /shakeX,/, /shakeY,/, /hurt:/],
+  PIXELWARFRONT: [
+    /screenFlash,/,
+    /shakeX,/,
+    /shakeY,/,
+    /if \(shake > 0\) shake -= 1;/,
+    /if \(screenFlash > 0\) screenFlash -= 1;/,
+  ],
+};
+for (const [game, patterns] of Object.entries(feedbackContracts)) {
+  const app = fs.readFileSync(path.join(root, game, "app.js"), "utf8");
+  for (const pattern of patterns)
+    assert.match(app, pattern, `${game}: native combat feedback contract`);
+}
+const sharedNative = fs.readFileSync(
+  path.join(root, "shared/qsol-native.js"),
+  "utf8",
+);
+assert.match(sharedNative, /screenFlash\(color, opacity\)/);
+assert.match(sharedNative, /shakeView\(x = 0, y = 0\)/);
+const blackstarRenderer = fs.readFileSync(
+  path.join(root, "BLACKSTAR_AGA", "renderer.js"),
+  "utf8",
+);
+assert.match(blackstarRenderer, /data-marker="exit"/);
+assert.match(blackstarRenderer, /data-marker="heading"/);
+const vectorRenderer = fs.readFileSync(
+  path.join(root, "VECTOR_ZERO", "renderer.js"),
+  "utf8",
+);
+assert.match(vectorRenderer, /data-contact="pickup-\$\{e\.kind\}"/);
+assert.match(vectorRenderer, /data-contact="enemy"/);
+const inertiaRenderer = fs.readFileSync(
+  path.join(root, "SUBSPACE", "renderer.js"),
+  "utf8",
+);
+assert.match(inertiaRenderer, /game\.camera\.shake/);
+assert.match(inertiaRenderer, /s\.shakeView\(shakeX, shakeY\)/);
+
 assert.equal(
   fs.existsSync(path.join(root, "shared/qsol-three-stage.js")),
   false,
