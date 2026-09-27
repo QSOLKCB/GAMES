@@ -244,6 +244,20 @@ const titles = [
           2
         );
       });
+      const perspectiveProjection = await page.evaluate(() => {
+        const s = __presentation.stage,
+          r = s.canvas.getBoundingClientRect();
+        return s.camera.isPerspectiveCamera
+          ? { actual: s.camera.aspect, expected: r.width / r.height }
+          : null;
+      });
+      if (perspectiveProjection)
+        assert.ok(
+          Math.abs(
+            perspectiveProjection.actual - perspectiveProjection.expected,
+          ) < 1e-6,
+          `${game}: perspective projection follows resized canvas aspect`,
+        );
       const tickBefore = await page.evaluate(
         () => __renderState.tick || __renderState.simulationTime,
       );
