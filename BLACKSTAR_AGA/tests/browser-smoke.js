@@ -40,6 +40,8 @@ const core = require("../core.js");
   await page.keyboard.down("Tab");
   await automap.waitFor({ state: "visible" });
   assert.notEqual(await automap.evaluate((element) => getComputedStyle(element).display), "none");
+  assert.equal(await automap.locator('[data-marker="exit"]').count(), 1);
+  assert.equal(await automap.locator('[data-marker="heading"]').count(), 1);
   await page.keyboard.up("Tab");
   await automap.waitFor({ state: "hidden" });
 
