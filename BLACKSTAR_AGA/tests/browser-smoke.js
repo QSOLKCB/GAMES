@@ -39,7 +39,7 @@ const core = require("../core.js");
   assert.equal(await automap.isVisible(), false);
   await page.keyboard.down("Tab");
   await automap.waitFor({ state: "visible" });
-  assert.equal(await automap.evaluate((element) => element.hidden), false);
+  assert.notEqual(await automap.evaluate((element) => getComputedStyle(element).display), "none");
   await page.keyboard.up("Tab");
   await automap.waitFor({ state: "hidden" });
 
