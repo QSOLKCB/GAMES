@@ -159,6 +159,7 @@ canvas {
 .screen-layer {
   position: absolute;
   inset: 0;
+  z-index: 3;
   display: grid;
   place-items: center;
   padding: 1rem;
