@@ -35,6 +35,14 @@ const core = require("../core.js");
   assert.match(await page.locator("#seedReadout").innerText(), /^[0-9A-F]{8}$/);
   assert.match(await page.locator("#digestReadout").innerText(), /^[0-9A-F]{8}$/);
 
+  const automap = page.locator(".native-map");
+  assert.equal(await automap.isVisible(), false);
+  await page.keyboard.down("Tab");
+  await automap.waitFor({ state: "visible" });
+  assert.equal(await automap.evaluate((element) => element.hidden), false);
+  await page.keyboard.up("Tab");
+  await automap.waitFor({ state: "hidden" });
+
   const before = await page.evaluate(() => ({ tick: blackstarAGA.state.tick, x: blackstarAGA.state.player.x }));
   await page.keyboard.down("KeyW");
   await page.waitForTimeout(260);
