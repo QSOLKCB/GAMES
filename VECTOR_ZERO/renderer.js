@@ -81,6 +81,8 @@
       s.begin();
       this.map.style.display = ui.automap && state ? "block" : "none";
       if (!state) {
+        s.shakeView(0, 0);
+        s.screenFlash("#972d21", 0);
         s.text("VECTOR ZERO FLIGHT COMPUTER // READY");
         s.finish();
         return;
@@ -88,7 +90,11 @@
       this.build(state, faces, ui.palette);
       const p = state.player,
         b = c.getBasis(p.yaw, p.pitch, p.roll),
-        fp = c.FP;
+        fp = c.FP,
+        hurt = Math.max(0, Number(ui.hurt) || 0),
+        flash = Math.max(0, Number(ui.flash) || 0);
+      s.shakeView(ui.shakeX, ui.shakeY);
+      s.screenFlash("#972d21", Math.max(hurt / 50, flash / 30));
       s.camera.position.set(p.x / fp, p.y / fp, p.z / fp);
       s.camera.up.set(b.up.x, b.up.y, b.up.z).normalize();
       this.target
@@ -260,10 +266,21 @@
         for (const cell of bp.cells)
           if (cell.y === current.y)
             html += `<rect x="${cell.x}" y="${cell.z}" width=".9" height=".9" fill="#34574b"/>`;
-        for (const e of [...state.pickups, ...state.enemies]) {
+        const pickupColors = {
+          core: "#e7ad62",
+          energy: "#74b9ad",
+          shield: "#aec39b",
+          missiles: "#c87955",
+        };
+        for (const e of state.pickups) {
           const cell = c.worldCell(e);
           if (cell.y === current.y)
-            html += `<circle cx="${cell.x + 0.5}" cy="${cell.z + 0.5}" r=".15" fill="${e.kind === "core" ? "#e7ad62" : "#be7153"}"/>`;
+            html += `<circle data-contact="pickup-${e.kind}" cx="${cell.x + 0.5}" cy="${cell.z + 0.5}" r=".15" fill="${pickupColors[e.kind] || "#9fbca9"}"/>`;
+        }
+        for (const e of state.enemies) {
+          const cell = c.worldCell(e);
+          if (cell.y === current.y)
+            html += `<circle data-contact="enemy" cx="${cell.x + 0.5}" cy="${cell.z + 0.5}" r=".15" fill="#be7153"/>`;
         }
         html += `<circle cx="${current.x + 0.5}" cy="${current.z + 0.5}" r=".22" fill="#e7ead2"/>`;
         this.map.innerHTML = html;
