@@ -232,29 +232,58 @@ const titles = [
       }, game);
       assert.ok(aligned, `${game}: simulation-to-instance coordinates`);
       if (game === "SEEDSTORM") {
-        const bossEffectRadius = await page.evaluate(() => {
+        const effectRadii = await page.evaluate(() => {
           const s = __presentation.stage,
-            matrix = new THREE.Matrix4();
+            matrix = new THREE.Matrix4(),
+            scale = new THREE.Vector3();
           s.begin();
           s.effects(
             [
               {
+                type: "explosion",
                 x: 0,
                 y: 0,
+                radius: 4,
                 startTick: 0,
                 duration: 10,
                 seed: 1,
+              },
+              {
+                type: "explosion",
+                x: 0,
+                y: 0,
+                radius: 60,
+                startTick: 0,
+                duration: 10,
+                seed: 2,
+              },
+              {
+                type: "explosion",
+                x: 0,
+                y: 0,
+                radius: 4,
+                startTick: 0,
+                duration: 10,
+                seed: 3,
                 boss: true,
               },
             ],
-            1,
+            5,
           );
-          const batch = s.batches.get("effects/ring/glow");
-          batch.mesh.getMatrixAt(0, matrix);
-          return new THREE.Vector3().setFromMatrixScale(matrix).x;
+          const batch = s.batches.get("effects/ring/glow"),
+            radii = [];
+          for (let i = 0; i < 3; i++) {
+            batch.mesh.getMatrixAt(i, matrix);
+            radii.push(scale.setFromMatrixScale(matrix).x);
+          }
+          return radii;
         });
         assert.ok(
-          bossEffectRadius > 9,
+          effectRadii[1] > effectRadii[0] * 2,
+          `${game}: ordinary explosion radius must scale with entity radius`,
+        );
+        assert.ok(
+          effectRadii[2] > effectRadii[0],
           `${game}: boss marker must select the major shared effect radius`,
         );
       }
