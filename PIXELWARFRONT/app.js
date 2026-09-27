@@ -540,7 +540,31 @@
   }
 
   function render() {
-    presentation.render(state, { palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0], selectedIds, effects, hitUntil, pointerDown, dragStart, dragCurrent, paused });
+    const shakeX =
+        state && shake > 0
+          ? ((visualHash(state.tick, shake, 1) % 9) - 4) *
+            Math.min(1, shake / 8)
+          : 0,
+      shakeY =
+        state && shake > 0
+          ? ((visualHash(state.tick, shake, 2) % 9) - 4) *
+            Math.min(1, shake / 8)
+          : 0;
+    presentation.render(state, {
+      palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0],
+      selectedIds,
+      effects,
+      hitUntil,
+      pointerDown,
+      dragStart,
+      dragCurrent,
+      paused,
+      screenFlash,
+      shakeX,
+      shakeY,
+    });
+    if (shake > 0) shake -= 1;
+    if (screenFlash > 0) screenFlash -= 1;
   }
 
   function frame(time) {
