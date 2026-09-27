@@ -410,7 +410,17 @@
   }
 
   function render() {
-    presentation.render(state, { palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0], heldInput, effects: visualEffects, enemyHitUntil, paused });
+    presentation.render(state, {
+      palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0],
+      heldInput,
+      effects: visualEffects,
+      enemyHitUntil,
+      paused,
+      flash: visualFlash,
+      shake,
+    });
+    if (visualFlash > 0) visualFlash -= 1;
+    if (shake > 0) shake -= 1;
   }
 
   function frame(time) {
