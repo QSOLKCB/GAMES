@@ -19,8 +19,17 @@
         menu = game.mode === "menu" || !game.arena;
       s.begin("#03090b");
       const left = menu ? 0 : game.camera.x - game.width / 2,
-        top = menu ? 0 : game.camera.y - game.height / 2;
+        top = menu ? 0 : game.camera.y - game.height / 2,
+        shakeX =
+          menu || s.reducedMotion
+            ? 0
+            : Math.sin(game.attractTime * 47.3) * game.camera.shake,
+        shakeY =
+          menu || s.reducedMotion
+            ? 0
+            : Math.cos(game.attractTime * 39.7) * game.camera.shake * 0.72;
       s.view(game.width, game.height, left, top);
+      s.shakeView(shakeX, shakeY);
       for (const star of arena.stars) {
         const parallax = s.reducedMotion ? 0 : star.layer;
         const x =
