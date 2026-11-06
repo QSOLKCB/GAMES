@@ -1,0 +1,7 @@
+; SOVEREIGN LATTICE -- SYSTEMNAMES.TXT
+; Syllables for generated star names. A name joins two or three syllables.
+
+[NAMES]
+First  = Ka, Vor, El, Dra, Sen, Tu, Mir, Ox, Quel, Ra, Zen, Ith, Lo, Bar, Neth, Cy, Pha, Dun, Aur, Vel, Thu, Ise, Mo, Gal
+Middle = a, e, i, o, u, an, or, el, is, ar
+Last   = ra, th, x, n, dor, lis, mon, ka, vos, tia, rion, nus, phe, tan, lae, qua, ris, bek

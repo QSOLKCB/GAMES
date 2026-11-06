@@ -1,0 +1,72 @@
+; SOVEREIGN LATTICE -- EMPIRES.TXT
+; Empires and the peoples who run them. Edit freely: the game validates this
+; file at start-up and reports the first problem it finds.
+;
+; Format: one [EMPIRE] block per empire. "Key = Value". Lists use commas.
+; Lines that start with ';' are comments. Blank lines are ignored.
+;
+;   Name         Full empire name shown in the interface.
+;   Race         Name of the people (plural).
+;   Adjective    Used in messages: "Meridian fleet sighted".
+;   Leader       Title of the empire's head of state.
+;   Color        Hex colour for territory, fleets and messages.
+;   Homeworld    Native planet type: terran, ocean, tundra, volcanic, arid.
+;   Personality  AI temperament: balanced, aggressive, expansionist,
+;                technologist or defensive.
+;   ShipNames    Names given to new ships, in order, then numbered.
+;   Description  One line of lore for the empire screen.
+
+[EMPIRE]
+Name        = Meridian Compact
+Race        = Meridians
+Adjective   = Meridian
+Leader      = First Comptroller
+Color       = #e8bd68
+Homeworld   = terran
+Personality = balanced
+ShipNames   = Ledger, Fair Wind, Solvent, Long Account, Dividend, Clearwater, Covenant, Tally, Honest Measure, Arbiter, Counterweight, Equinox, Due Diligence, Open Hand
+Description = Merchant-citizens who settle every war the way they settle a debt: in full, with interest.
+
+[EMPIRE]
+Name        = Ashen Choir
+Race        = Cindervox
+Adjective   = Ashen
+Leader      = High Cantor
+Color       = #d36f62
+Homeworld   = volcanic
+Personality = aggressive
+ShipNames   = Hymn of Embers, Last Chorus, Cantor, Slag Psalm, Red Refrain, Requiem, Kindling, Ash Litany, Cadence, Fourth Verse, Smoulder, Basalt Canticle
+Description = Silicate singers from molten worlds who believe the galaxy is a song that must end on their note.
+
+[EMPIRE]
+Name        = Velk Hegemony
+Race        = Velk
+Adjective   = Velk
+Leader      = Tide Regent
+Color       = #75c3ae
+Homeworld   = ocean
+Personality = expansionist
+ShipNames   = Deep Mandate, Tidecaller, Undertow, Brine Edict, Pressure Front, Kelp Throne, Riptide, Abyssal Writ, Shoal Warden, Slack Water, Salt Decree
+Description = Amphibious hierarchs who measure rank by depth and empire by coastline.
+
+[EMPIRE]
+Name        = Lumen Syndicate
+Race        = Lumari
+Adjective   = Lumari
+Leader      = Chair of Light
+Color       = #a9a6d1
+Homeworld   = arid
+Personality = technologist
+ShipNames   = Glint, Prism Clause, Bright Margin, Halation, Sunset Rider, Lux Bond, Afterimage, Refractor, Daystar Note, Corona, Zenith Bid
+Description = Photosynthetic financiers who buy tomorrow's science with today's sunlight.
+
+[EMPIRE]
+Name        = Hollow Reach
+Race        = Thren
+Adjective   = Thren
+Leader      = Eldest Warren
+Color       = #9fc46a
+Homeworld   = tundra
+Personality = defensive
+ShipNames   = Deep Root, Frostcomb, Quiet Chamber, Hive Lantern, Permafrost, Tunnel Light, Stillwater Comb, Burrowguard, Lichen Gate, Long Winter
+Description = Patient burrowers whose cities are older than most stars' names.

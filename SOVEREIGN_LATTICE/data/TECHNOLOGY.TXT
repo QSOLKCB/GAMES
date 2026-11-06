@@ -1,0 +1,51 @@
+; SOVEREIGN LATTICE -- TECHNOLOGY.TXT
+; Research fields. The keys must stay as listed; names, descriptions and costs
+; may change. Level N+1 costs Cost x (N+1) x (N+1) research points.
+;
+;   Name        Field name.
+;   Key         propulsion, weapons, armor, colonization, industry or sensors.
+;   Cost        Base cost multiplier.
+;   MaxLevel    Highest level.
+;   Description What the field improves.
+
+[TECH]
+Name        = Propulsion
+Key         = propulsion
+Cost        = 60
+MaxLevel    = 10
+Description = Faster ships: every level adds lane speed to every hull.
+
+[TECH]
+Name        = Weapons
+Key         = weapons
+Cost        = 60
+MaxLevel    = 10
+Description = Stronger weapons. Unlocks Seeker Torpedoes (2) and Phase Lances (5).
+
+[TECH]
+Name        = Armor
+Key         = armor
+Cost        = 60
+MaxLevel    = 10
+Description = Tougher plating and deflectors. Unlocks bigger hulls.
+
+[TECH]
+Name        = Colonization
+Key         = colonization
+Cost        = 60
+MaxLevel    = 10
+Description = Settle neighbouring climates (1), outposts and arcologies (2), harsh worlds (3) and barren rock (4).
+
+[TECH]
+Name        = Industry
+Key         = industry
+Cost        = 60
+MaxLevel    = 10
+Description = +10% minerals, energy and construction per level.
+
+[TECH]
+Name        = Sensors
+Key         = sensors
+Cost        = 60
+MaxLevel    = 10
+Description = Sensor Arrays (1); colonies and fleets see one jump further at levels 2 and 5.

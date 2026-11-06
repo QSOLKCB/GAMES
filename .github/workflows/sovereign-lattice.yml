@@ -1,0 +1,53 @@
+name: SOVEREIGN LATTICE
+
+on:
+  push:
+    paths:
+      - "SOVEREIGN_LATTICE/**"
+      - "shared/**"
+      - "SUBSPACE/skins.js"
+      - "vendor/three/**"
+      - ".github/workflows/sovereign-lattice.yml"
+  pull_request:
+    paths:
+      - "SOVEREIGN_LATTICE/**"
+      - "shared/**"
+      - "SUBSPACE/skins.js"
+      - "vendor/three/**"
+      - ".github/workflows/sovereign-lattice.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Rules, AI, OPT conformance, data files and offline boundary
+        run: npm --prefix SOVEREIGN_LATTICE test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: SOVEREIGN_LATTICE/package-lock.json
+      - name: Install pinned browser-test dependency
+        run: npm --prefix SOVEREIGN_LATTICE ci
+      - name: Install Chromium
+        run: npx --prefix SOVEREIGN_LATTICE playwright install --with-deps chromium
+      - name: Play through the interface from file://
+        run: npm --prefix SOVEREIGN_LATTICE run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sovereign-lattice-screenshots
+          path: SOVEREIGN_LATTICE/tests/*.png
+          if-no-files-found: ignore
