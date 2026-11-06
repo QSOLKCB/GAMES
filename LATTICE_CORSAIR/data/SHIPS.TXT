@@ -1,0 +1,129 @@
+; LATTICE CORSAIR -- SHIPS.TXT
+; Hulls a captain can fly or meet. Each borrows an original outline from
+; INERTIA ZERO's hull art (../SUBSPACE/skins.js) through its Skin key.
+; Format: one [SHIP] block per hull, "Key = Value". ';' starts a comment.
+;
+;   Name         Hull name shown in shipyards.
+;   Skin         INERTIA ZERO hull outline id.
+;   Hull         Structure points.
+;   Speed        Cruising speed (units per second).
+;   Thrust       Acceleration (units per second squared).
+;   Turn         Turn rate (radians per second).
+;   Radius       Collision radius.
+;   Weapons      Weapon hardpoints.
+;   Utility      Utility bays (shields, armour, engines, cargo, scanners...).
+;   Cargo        Base cargo hold.
+;   Cost         Price in credits (0 = not sold; the insurer's loaner).
+;   Description  Shipyard flavour text.
+
+[SHIP]
+Name        = Skiff
+Skin        = javelin
+Hull        = 90
+Speed       = 270
+Thrust      = 420
+Turn        = 3.6
+Radius      = 14
+Weapons     = 1
+Utility     = 2
+Cargo       = 10
+Cost        = 0
+Description = The insurer's loaner. It flies, it shoots, and it is not worth stealing.
+
+[SHIP]
+Name        = Wayfarer
+Skin        = weasel
+Hull        = 120
+Speed       = 300
+Thrust      = 460
+Turn        = 3.4
+Radius      = 14
+Weapons     = 1
+Utility     = 3
+Cargo       = 26
+Cost        = 9000
+Description = A courier's favourite: quick between gates, roomy enough to make the trip pay.
+
+[SHIP]
+Name        = Kestrel
+Skin        = warbird
+Hull        = 150
+Speed       = 285
+Thrust      = 520
+Turn        = 3.9
+Radius      = 16
+Weapons     = 2
+Utility     = 2
+Cargo       = 8
+Cost        = 14000
+Description = A nimble interceptor for captains who solve problems up close.
+
+[SHIP]
+Name        = Bulk Hauler
+Skin        = lancaster
+Hull        = 280
+Speed       = 195
+Thrust      = 260
+Turn        = 2.2
+Radius      = 20
+Weapons     = 1
+Utility     = 4
+Cargo       = 72
+Cost        = 26000
+Description = Slow, patient and very large inside. Pirates love them; so do accountants.
+
+[SHIP]
+Name        = Shade
+Skin        = spider
+Hull        = 170
+Speed       = 305
+Thrust      = 540
+Turn        = 3.8
+Radius      = 16
+Weapons     = 2
+Utility     = 3
+Cargo       = 18
+Cost        = 31000
+Description = Fast, quiet and favoured by people who would rather not be asked questions.
+
+[SHIP]
+Name        = Gunboat
+Skin        = terrier
+Hull        = 240
+Speed       = 235
+Thrust      = 420
+Turn        = 3.0
+Radius      = 18
+Weapons     = 3
+Utility     = 3
+Cargo       = 14
+Cost        = 38000
+Description = Three hardpoints on a hull built to take the reply.
+
+[SHIP]
+Name        = Marauder
+Skin        = shark
+Hull        = 310
+Speed       = 250
+Thrust      = 470
+Turn        = 3.1
+Radius      = 19
+Weapons     = 3
+Utility     = 4
+Cargo       = 20
+Cost        = 62000
+Description = A long, hungry hull that patrol captains and raiders both covet.
+
+[SHIP]
+Name        = Bastion
+Skin        = leviathan
+Hull        = 540
+Speed       = 175
+Thrust      = 300
+Turn        = 2.0
+Radius      = 24
+Weapons     = 4
+Utility     = 5
+Cargo       = 40
+Cost        = 115000
+Description = A private warship. Owning one changes how stations greet you.

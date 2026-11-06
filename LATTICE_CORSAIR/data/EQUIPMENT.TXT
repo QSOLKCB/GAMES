@@ -1,0 +1,174 @@
+; LATTICE CORSAIR -- EQUIPMENT.TXT
+; Ship equipment. Shipyards sell an item only when the station's faction has
+; researched its Requires level in the background war (SOVEREIGN LATTICE fields).
+;
+;   Name        Item name.
+;   Kind        laser, cannon, missile (weapons) or shield, armor, engine,
+;               cargo, scanner, repair, capacitor (utility).
+;   Cost        Price in credits (0 = fitted to the loaner, not sold).
+;   Requires    "<field> <level>" or "none".
+;   Damage      Weapons: damage per hit.
+;   Rate        Weapons: shots per second.
+;   Speed       Weapons: projectile speed.
+;   Range       Weapons: reach in units.
+;   Energy      Weapons: capacitor energy per shot.
+;   Pierce      Weapons: percent of damage that ignores shields.
+;   Ammo        Missiles: rounds carried (restocked at stations).
+;   Value       Utility: shield points, armour points, % thrust, cargo units,
+;               % scanner range, hull repaired per second or % capacitor.
+;   Regen       Shields: points recharged per second.
+;   Description Shipyard flavour text.
+
+[EQUIPMENT]
+Name        = Pulse Emitter
+Kind        = laser
+Cost        = 0
+Requires    = none
+Damage      = 8
+Rate        = 5
+Speed       = 950
+Range       = 650
+Energy      = 4
+Pierce      = 0
+Description = Standard-issue bolts. Every loaner carries one.
+
+[EQUIPMENT]
+Name        = Twin Pulse Emitter
+Kind        = laser
+Cost        = 4500
+Requires    = weapons 1
+Damage      = 12
+Rate        = 5
+Speed       = 980
+Range       = 680
+Energy      = 6
+Pierce      = 0
+Description = Two coupled emitters on one mount.
+
+[EQUIPMENT]
+Name        = Ion Scatter
+Kind        = laser
+Cost        = 7000
+Requires    = weapons 2
+Damage      = 6
+Rate        = 10
+Speed       = 760
+Range       = 430
+Energy      = 3
+Pierce      = 0
+Description = A hose of short-lived ions. Brutal inside a knife fight.
+
+[EQUIPMENT]
+Name        = Rail Driver
+Kind        = cannon
+Cost        = 12000
+Requires    = weapons 3
+Damage      = 30
+Rate        = 1.6
+Speed       = 1450
+Range       = 950
+Energy      = 11
+Pierce      = 0
+Description = Magnetic slugs that arrive before the target finishes turning.
+
+[EQUIPMENT]
+Name        = Arc Lance
+Kind        = cannon
+Cost        = 30000
+Requires    = weapons 5
+Damage      = 44
+Rate        = 1
+Speed       = 2000
+Range       = 820
+Energy      = 22
+Pierce      = 50
+Description = A focused discharge that tears half its force straight through shields.
+
+[EQUIPMENT]
+Name        = Seeker Rack
+Kind        = missile
+Cost        = 6000
+Requires    = weapons 1
+Damage      = 65
+Rate        = 0.8
+Speed       = 430
+Range       = 1300
+Energy      = 0
+Pierce      = 0
+Ammo        = 10
+Description = Self-guided warheads. Lock a target, then fire.
+
+[EQUIPMENT]
+Name        = Deflector Mk I
+Kind        = shield
+Cost        = 0
+Requires    = none
+Value       = 60
+Regen       = 8
+Description = A thin bubble that buys time.
+
+[EQUIPMENT]
+Name        = Deflector Mk II
+Kind        = shield
+Cost        = 9000
+Requires    = armor 2
+Value       = 140
+Regen       = 14
+Description = Layered field emitters with a faster recovery.
+
+[EQUIPMENT]
+Name        = Deflector Mk III
+Kind        = shield
+Cost        = 24000
+Requires    = armor 4
+Value       = 260
+Regen       = 22
+Description = Military-grade field. Stations ask where you got it.
+
+[EQUIPMENT]
+Name        = Composite Plating
+Kind        = armor
+Cost        = 3000
+Requires    = armor 1
+Value       = 70
+Description = Extra structure bolted to the spine.
+
+[EQUIPMENT]
+Name        = Ion Booster
+Kind        = engine
+Cost        = 5000
+Requires    = propulsion 1
+Value       = 22
+Description = More thrust and a higher cruising speed.
+
+[EQUIPMENT]
+Name        = Cargo Pod
+Kind        = cargo
+Cost        = 2000
+Requires    = none
+Value       = 16
+Description = An external hold. Ugly, and worth it.
+
+[EQUIPMENT]
+Name        = Survey Scanner
+Kind        = scanner
+Cost        = 4000
+Requires    = sensors 1
+Value       = 60
+Description = Longer radar reach; reads the holds of scanned ships.
+
+[EQUIPMENT]
+Name        = Repair Drones
+Kind        = repair
+Cost        = 15000
+Requires    = industry 2
+Value       = 2
+Description = Patient little machines that patch the hull in flight.
+
+[EQUIPMENT]
+Name        = Capacitor Bank
+Kind        = capacitor
+Cost        = 6000
+Requires    = industry 1
+Value       = 50
+Description = More stored energy for weapons and afterburner.

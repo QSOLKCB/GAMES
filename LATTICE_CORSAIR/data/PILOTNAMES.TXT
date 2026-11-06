@@ -1,0 +1,6 @@
+; LATTICE CORSAIR -- PILOTNAMES.TXT
+; Syllables for generated pilot callsigns.
+
+[NAMES]
+Given  = Ash, Bren, Cato, Dace, Ember, Fen, Galt, Hesk, Ilo, Jun, Kell, Lark, Mox, Nyra, Orrin, Pell, Quill, Rhea, Sorrel, Tamsin, Ulla, Vey, Wren, Yaro
+Family = Vance, Okoro, Thale, Mirov, Quist, Saar, Dunmore, Halloway, Ibsen, Kade, Lorne, Marchetti, Nkem, Ost, Pryce, Rask, Sallow, Tern
