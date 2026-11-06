@@ -58,12 +58,12 @@ const { chromium } = require("playwright");
     window.inertiaZero.attractTime = 0.137;
   });
   await page.waitForFunction(() => {
-    const shake = document.querySelector("#game").nativeStage.camera.userData.nativeShake;
+    const shake = document.querySelector("#game-canvas").nativeStage.camera.userData.nativeShake;
     return shake && (Math.abs(shake.x) > 0.01 || Math.abs(shake.y) > 0.01);
   });
   await page.evaluate(() => { window.inertiaZero.camera.shake = 0; });
   await page.waitForFunction(() => {
-    const shake = document.querySelector("#game").nativeStage.camera.userData.nativeShake;
+    const shake = document.querySelector("#game-canvas").nativeStage.camera.userData.nativeShake;
     return shake && Math.abs(shake.x) < 0.001 && Math.abs(shake.y) < 0.001;
   });
 

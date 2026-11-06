@@ -30,13 +30,16 @@ storage is required.
 
 ## Controls
 
-| Action | Keyboard | Touch / pointer |
-|---|---|---|
-| Move | Arrow keys or `WASD` | Drag over the play field |
-| Fire | `Z` or `Space` | Hold a drag over the play field |
-| Focus / slow movement | `Shift` | Hold **FOCUS** |
-| Bomb | `X` or `B` | Tap **BOMB** |
-| Pause | `P` or `Escape` | Use the **PAUSE** instrument |
+| Action | Keyboard | Touch / pointer | Standard gamepad |
+|---|---|---|---|
+| Move | Arrow keys or `WASD` | Drag over the play field | D-pad or left stick |
+| Fire | `Z` or `Space` | Hold a drag over the play field | A or RT |
+| Focus / slow movement | `Shift` | Hold **FOCUS** | LB, RB or LT |
+| Bomb | `X` or `B` | Tap **BOMB** | B or Y |
+| Pause | `P` or `Escape` | Use the **PAUSE** instrument | Start (also launches) |
+
+A gamepad must rest at neutral after connecting, launching, pausing or resuming
+before it acts. Disconnecting it during live flight pauses the run.
 
 ## Seeds and replays
 

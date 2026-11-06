@@ -8,6 +8,8 @@
   const canvas = $("game");
   const presentation = new window.SeedstormRenderer(canvas, core);
   const STEP_MS = 1000 / core.TICK_RATE;
+  const PAD = globalThis.QsolInput.BUTTON;
+  const gamepad = new globalThis.QsolInput.GamepadReader();
   const palettes = [
     { sky: "#091015", deep: "#111a20", grid: "#293943", ground: "#7d573f", accent: "#d46a43" },
     { sky: "#10120f", deep: "#191c18", grid: "#3a4037", ground: "#97886c", accent: "#df7148" },
@@ -61,6 +63,7 @@
   let mode = "standby";
   let paused = false;
   let heldInput = 0;
+  let padInput = 0;
   let bombQueued = false;
   let pointerActive = false;
   let pointerTarget = null;
@@ -193,6 +196,7 @@
     mode = "live";
     paused = false;
     heldInput = 0;
+    resetGamepad();
     bombQueued = false;
     pointerActive = false;
     accumulator = 0;
@@ -223,6 +227,7 @@
     mode = "replay";
     paused = false;
     heldInput = 0;
+    resetGamepad();
     bombQueued = false;
     pointerActive = false;
     accumulator = 0;
@@ -262,6 +267,7 @@
     if (!state || state.gameOver) return;
     paused = !paused;
     accumulator = 0;
+    resetGamepad();
     ui.pause.textContent = paused ? "RESUME" : "PAUSE";
     if (paused) showMessage(mode === "replay" ? "FLIGHT RECORDER" : "SYSTEM", "PAUSED", "Press P or Resume to continue");
     else {
@@ -284,8 +290,40 @@
     ui.seedInput.select();
   }
 
+  function resetGamepad() {
+    padInput = 0;
+    gamepad.reset();
+  }
+
+  // Standard pad: d-pad or left stick moves, A/RT fire, LB/RB/LT focus, B/Y
+  // bomb and Start launches, pauses or resumes. Replays ignore the pad.
+  function pollGamepad() {
+    gamepad.poll();
+    padInput = 0;
+    if (gamepad.linked) setStatus("Gamepad linked. Start pauses; A or RT fires.");
+    if (gamepad.lost && state && mode === "live" && !paused && !state.gameOver) {
+      togglePause();
+      showMessage("INPUT LOST", "CONTROLLER DISCONNECTED", "Reconnect the gamepad, release every control, then press Start or P");
+      return;
+    }
+    if (gamepad.pressed(PAD.START) && !ui.dialog.open) {
+      if (!ui.intro.classList.contains("is-hidden")) ui.start.click();
+      else if (state && !state.gameOver && !ui.pause.disabled) togglePause();
+      return;
+    }
+    if (!gamepad.armed || mode !== "live" || paused) return;
+    const direction = gamepad.direction(0.35);
+    if (direction.left) padInput |= core.INPUT.LEFT;
+    if (direction.right) padInput |= core.INPUT.RIGHT;
+    if (direction.up) padInput |= core.INPUT.UP;
+    if (direction.down) padInput |= core.INPUT.DOWN;
+    if (gamepad.any(PAD.SOUTH, PAD.RT)) padInput |= core.INPUT.FIRE;
+    if (gamepad.any(PAD.LB, PAD.RB, PAD.LT)) padInput |= core.INPUT.FOCUS;
+    if (gamepad.any(PAD.EAST, PAD.NORTH)) padInput |= core.INPUT.BOMB;
+  }
+
   function readLiveInput() {
-    let mask = heldInput;
+    let mask = heldInput | padInput;
     if (pointerActive && pointerTarget && state) {
       mask |= core.INPUT.FIRE;
       const px = state.player.x / core.SCALE;
@@ -412,7 +450,7 @@
   function render() {
     presentation.render(state, {
       palette: state ? palettes[state.blueprint.biomeIndex % palettes.length] : palettes[0],
-      heldInput,
+      heldInput: heldInput | padInput,
       effects: visualEffects,
       enemyHitUntil,
       paused,
@@ -426,6 +464,7 @@
   function frame(time) {
     const elapsed = Math.min(100, Math.max(0, time - lastTime));
     lastTime = time;
+    pollGamepad();
     if (state && !paused && !state.gameOver) {
       accumulator += elapsed;
       let steps = 0;
@@ -495,6 +534,7 @@
   globalThis.addEventListener("blur", () => {
     heldInput = 0;
     pointerActive = false;
+    resetGamepad();
     if (state && !paused && !state.gameOver && mode === "live") togglePause();
   });
 

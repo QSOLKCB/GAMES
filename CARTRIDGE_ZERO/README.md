@@ -22,6 +22,12 @@ Keyboard controls are arrows or `WASD`, `Space`/`Z` to fire, `X` for a secondary
 action, and `P` to pause. A touch controller appears on narrow or coarse-pointer
 devices.
 
+Standard-mapping gamepads work too. In the program directory the d-pad picks a
+program and A or Start inserts it. In play, the d-pad or left stick moves, A/RT
+fire, B/X/LT trigger the secondary action and Start pauses or confirms. The pad
+must rest at neutral after connecting, launching or resuming before it acts,
+and disconnecting it mid-run pauses.
+
 ## Seven programs
 
 | Program | Contract |

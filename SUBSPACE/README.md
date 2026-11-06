@@ -21,7 +21,7 @@ There is:
 - no web server requirement; and
 - no network request after the files are present.
 
-Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard controls are recommended. A standard gamepad is supported during flight; menus and pause dialogs require a keyboard or pointer.
+Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard and standard-mapping gamepads are both supported; Start launches from the hangar, pauses, resumes and confirms sector and game-over prompts. Hull and livery selection still use a keyboard or pointer.
 
 ## What is included
 
@@ -30,7 +30,15 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
   hull axis but never rotates the ship's existing travel vector. Flight assist
   now bleeds velocity slowly instead of imposing arcade-style drag.
 - One regenerating **energy bank** shared by hull integrity, guns, ordnance, boost, repel, and active systems.
-- Eight original vector hull silhouettes with classic/SVS-inspired ship identities.
+- Eight original layered hull skins: plated hull, raised deck, canopy, trim,
+  engine nozzles and navigation lights, shared by the WebGL arena and the SVG
+  hangar so the ship you pick is the ship you fly.
+- Five selectable liveries (Factory, Midnight, Ember, Ivory, Verdant); hostiles
+  always fly one readable red scheme.
+- Throttle-scaled engine flames, an afterburner flame, retro jets while reversing
+  and rotation thrusters while turning, so every control input is visible.
+- A drift vector that shows where momentum is carrying the hull, independent of
+  where the nose points.
 - Five honest AI tiers, from Cadet to Sovereign. Difficulty changes thinking quality—not enemy damage, speed, energy, or cooldown rules.
 - Predictive interception, correlated aim error, projectile threat analysis, energy discipline, range control, obstacle avoidance, A* navigation, coordinated orbit choices, and short-horizon manoeuvre evaluation.
 - Five deterministic arena recipes and four rotating mission types.
@@ -48,18 +56,33 @@ Chrome/Chromium, Firefox, and current Safari are the primary targets. Keyboard c
 
 | Action | Keyboard | Gamepad |
 |---|---|---|
-| Rotate | `A` / `D` or `←` / `→` | Left stick |
-| Forward thrust | `W` or `↑` | Left stick up / right trigger |
-| Reverse thrust | `S` or `↓` | Left stick down / left trigger |
+| Rotate | `A` / `D` or `←` / `→` | Left stick (fine aim near centre) or d-pad |
+| Forward thrust | `W` or `↑` | Right trigger (analog throttle), left stick up, or d-pad up |
+| Reverse thrust | `S` or `↓` | Left trigger (analog), left stick down, or d-pad down |
 | Primary gun | `Space` or `Ctrl` | A / Cross |
 | Secondary ordnance | `X` or `Tab` | B / Circle |
-| Afterburner | `Shift` | Right shoulder |
+| Afterburner | `Shift` | RB, LB or L3 |
 | Hull special | `Q` | X / Square |
 | Repel | `R` | Y / Triangle |
-| Pause | `P` or `Esc` | — |
+| Pause / launch / confirm | `P` or `Esc` | Start |
 | Mute | `M` | — |
 
 Mouse primary and secondary buttons may also fire the two weapon systems. Rotation remains inertial and hull-oriented—the pointer does not silently aim for you.
+
+### Flight feel
+
+- **No dropped taps.** Input is sampled on the fixed 60 Hz tick, and a key or
+  mouse press shorter than one tick still acts for that tick, so quick fire
+  taps and one-tick rotation nudges always register.
+- **Smooth at any refresh rate.** Ship rotation and the camera are interpolated
+  between ticks alongside position, so 120/144 Hz displays no longer see the
+  view step at 60 Hz.
+- **Look-ahead camera.** The view leads along your travel vector (bounded, and
+  disabled with reduced motion) so you see what you are flying into.
+- **Gamepad.** Handled by the shared reader in `../shared/qsol-input.js`:
+  standard-mapping pads only, rescaled deadzones, analog triggers, and a pad must
+  return to neutral after launch, pause or resume before it acts. Unplugging an
+  armed pad mid-sector pauses the game.
 
 ## Hull roster
 
@@ -131,6 +154,7 @@ SUBSPACE/
 ├── index.html              # Application shell, menu, HUD, and dialogs
 ├── style.css               # Responsive presentation and retro tactical UI
 ├── core.js                 # Seeded RNG, ship/AI data, geometry, pathfinding, world generation
+├── skins.js                # Original hull skins and liveries (presentation only)
 ├── app.js                  # Simulation, combat, AI, audio, rendering, objectives, and UI state
 ├── README.md
 └── tests/

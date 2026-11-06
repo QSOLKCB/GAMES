@@ -94,6 +94,10 @@
               <p>Eight classic arena roles. Every silhouette, sound, and system is original to INERTIA ZERO.</p>
             </div>
             <div id="ship-grid" class="ship-grid" aria-label="Ship selection"></div>
+            <div class="livery-row">
+              <span class="livery-label">LIVERY</span>
+              <div id="livery-grid" class="livery-grid" role="group" aria-label="Hull livery"></div>
+            </div>
 
             <div class="section-heading compact">
               <div><span class="step">02</span><h2>Authorise the opposition</h2></div>
@@ -229,7 +233,9 @@
           <article><kbd>Q</kbd><b>Hull special</b><p>Unique active system. Watch its energy cost and cooldown.</p></article>
           <article><kbd>R</kbd><b>Repel charge</b><p>Pushes nearby ships and hostile projectiles away.</p></article>
           <article><kbd>P</kbd><kbd>ESC</kbd><b>Pause</b><p>Freezes the local fixed-step simulation.</p></article>
+          <article><kbd>PAD</kbd><b>Standard gamepad</b><p>Left stick rotates with fine aim near centre; RT/LT are analog thrust and reverse. A gun, B ordnance, X special, Y repel, RB/LB afterburner, Start launches, pauses and confirms.</p></article>
         </div>
+        <p class="help-tip"><b>DRIFT VECTOR:</b> the teal marker ahead of your hull shows where momentum is carrying you. Turn against it and thrust to brake.</p>
         <p class="help-tip"><b>PILOT TIP:</b> Energy is health, ammunition, boost fuel, and systems power. An empty bank is a death sentence.</p>
       </div>
     </section>
@@ -240,6 +246,8 @@
   <noscript>QSOL INERTIA ZERO requires JavaScript. No network connection is required.</noscript>
   <script src="../vendor/three/three.min.js"></script>
   <script src="../shared/qsol-native.js"></script>
+  <script src="../shared/qsol-input.js"></script>
+  <script src="skins.js"></script>
   <script src="renderer.js"></script>
   <script src="core.js"></script>
   <script src="app.js"></script>

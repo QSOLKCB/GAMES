@@ -6,6 +6,7 @@
   const presentation = new window.CartridgeRenderer(canvas, core);
   const TICK_MS = 1000 / core.TICK_RATE;
   const MAX_FRAME_STEPS = 8;
+  const PAD = window.QsolInput.BUTTON;
 
   const bootLayer = document.querySelector("#bootLayer");
   const gameGrid = document.querySelector("#gameGrid");
@@ -65,6 +66,7 @@
   });
 
   const keys = new Set();
+  const gamepad = new window.QsolInput.GamepadReader();
   const touchActions = new Set();
   let selectedGameId = core.GAMES[0].id;
   let state = null;
@@ -189,6 +191,46 @@
     keys.clear();
     touchActions.clear();
     document.querySelectorAll("[data-action].active").forEach((button) => button.classList.remove("active"));
+    gamepad.reset();
+  }
+
+  // Standard pad. Directory: d-pad picks a program, A or Start inserts it.
+  // Play: d-pad or left stick, A/RT fire, B/X/LT secondary, Start pauses or
+  // confirms. Only live play records the result; replays ignore the pad.
+  function pollGamepad() {
+    gamepad.poll();
+    if (gamepad.linked && state) showNotice("GAMEPAD LINKED", 70);
+    if (gamepad.lost && state && mode === "live" && !paused && !state.gameOver && !state.victory) {
+      setPaused(true);
+      showMessage("INPUT LOST", "CONTROLLER DISCONNECTED", "Reconnect the gamepad, release every control, then resume.", "RESUME", () => setPaused(false));
+      return;
+    }
+    if (replayDialog.open || !gamepad.armed) return;
+    if (!bootLayer.hidden) {
+      const step = (gamepad.pressed(PAD.RIGHT) || gamepad.pressed(PAD.DOWN) ? 1 : 0) - (gamepad.pressed(PAD.LEFT) || gamepad.pressed(PAD.UP) ? 1 : 0);
+      if (step) {
+        const index = core.GAMES.findIndex((game) => game.id === selectedGameId);
+        setSelectedGame(core.GAMES[(index + step + core.GAMES.length) % core.GAMES.length].id);
+      }
+      if (gamepad.pressed(PAD.START) || gamepad.pressed(PAD.SOUTH)) startButton.click();
+      return;
+    }
+    if (!gamepad.pressed(PAD.START)) return;
+    if (!messageLayer.hidden) messageButton.click();
+    else if (state) setPaused(true);
+  }
+
+  function gamepadWord() {
+    if (!gamepad.armed) return 0;
+    const direction = gamepad.direction(0.35);
+    let word = 0;
+    if (direction.left) word |= core.INPUT.LEFT;
+    if (direction.right) word |= core.INPUT.RIGHT;
+    if (direction.up) word |= core.INPUT.UP;
+    if (direction.down) word |= core.INPUT.DOWN;
+    if (gamepad.any(PAD.SOUTH, PAD.RT)) word |= core.INPUT.FIRE;
+    if (gamepad.any(PAD.EAST, PAD.WEST, PAD.LT)) word |= core.INPUT.SECOND;
+    return word;
   }
 
   function inputWord() {
@@ -200,7 +242,7 @@
     if (active("down", ["ArrowDown", "KeyS"])) word |= core.INPUT.DOWN;
     if (active("fire", ["Space", "KeyZ"])) word |= core.INPUT.FIRE;
     if (active("second", ["KeyX", "ShiftLeft", "ShiftRight"])) word |= core.INPUT.SECOND;
-    return word;
+    return word | gamepadWord();
   }
 
   function showNotice(text, ticks) {
@@ -257,6 +299,7 @@
     lastTelemetryTick = -1;
     bootLayer.hidden = true;
     messageLayer.hidden = true;
+    gamepad.reset();
     pauseButton.disabled = false;
     resetButton.disabled = false;
     replayButton.disabled = false;
@@ -387,6 +430,7 @@
     if (!previousTime) previousTime = time;
     const elapsed = Math.min(250, time - previousTime);
     previousTime = time;
+    pollGamepad();
     if (state && !paused && !replayDialog.open) {
       accumulator += elapsed;
       let steps = 0;

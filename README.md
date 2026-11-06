@@ -14,7 +14,7 @@ Every project is designed for local, offline play with no account or telemetry. 
 | [BLACKSTAR AGA](BLACKSTAR_AGA/) | Offline native Three.js/WebGL | Four-mission FPS with expanded arsenal and opposition | Open [`BLACKSTAR_AGA/index.html`](BLACKSTAR_AGA/index.html) |
 | [PIXEL WARFRONT: Deterministic Command](PIXELWARFRONT/) | Offline native Three.js/WebGL | Polished deterministic RTS | Open [`PIXELWARFRONT/index.html`](PIXELWARFRONT/index.html) |
 | [SEEDSTORM: Deterministic Strike](SEEDSTORM/) | Offline native Three.js/WebGL | Polished deterministic vertical shooter | Open [`SEEDSTORM/index.html`](SEEDSTORM/index.html) |
-| [INERTIA ZERO](SUBSPACE/) | Offline native Three.js/WebGL | Retuned near-Newtonian arena combat | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
+| [INERTIA ZERO](SUBSPACE/) | Offline native Three.js/WebGL | Near-Newtonian arena combat with layered hull skins and liveries | Open [`SUBSPACE/index.html`](SUBSPACE/index.html) |
 | [TERNARY DRIFT — Web Edition](TERNARYDRIFT/web/) | Offline Three.js / HTML / CSS / JavaScript | Playable space-trading and combat sandbox | Open [`TERNARYDRIFT/web/index.html`](TERNARYDRIFT/web/index.html) locally |
 | [TERNARY DRIFT — Native Edition](TERNARYDRIFT/) | C99 / Win32 | Playable floppy-sized vertical slice | [Build and run `TERNARY.EXE`](TERNARYDRIFT/README.md#build) |
 
@@ -54,6 +54,19 @@ The source ZIP also includes the native Ternary Drift source. Follow its
 [build instructions](TERNARYDRIFT/README.md#build) to create `TERNARY.EXE`.
 That target uses Win32, a software framebuffer, and `waveOut`; its native payload
 contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
+
+## Gamepad support
+
+BLACKSTAR AGA, VECTOR ZERO, SEEDSTORM, CARTRIDGE ZERO and INERTIA ZERO read
+standard-mapping gamepads through [`shared/qsol-input.js`](shared/qsol-input.js), adapted from the
+input module of [QSOLKCB/VANILLAJS](https://github.com/QSOLKCB/VANILLAJS)
+(Apache-2.0, see [`shared/NOTICE.md`](shared/NOTICE.md)). Sticks use a rescaled
+deadzone; a pad must return to neutral after connecting, launching, pausing or
+resuming before it acts; Start launches, pauses and confirms prompts; and losing
+an armed pad pauses live play. Pad input is folded into each game's recorded
+input words, so replays and state digests stay deterministic. Per-game bindings
+are in each game's README. INERTIA ZERO also uses the reader's analog trigger
+values as a throttle. SIGNAL BREACH keeps its own gamepad handling.
 
 ## Shared rendering boundary
 

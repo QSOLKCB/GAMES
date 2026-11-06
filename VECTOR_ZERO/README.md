@@ -33,6 +33,25 @@ required.
 | `P` | Pause |
 | `Esc` | Release captured mouse |
 
+#### Gamepad
+
+Standard-mapping controllers are supported. After connecting, launching,
+pausing or resuming, the pad must return to neutral before it acts.
+Disconnecting it mid-run pauses the flight.
+
+| Pad | Action |
+|---|---|
+| Left stick | Thrust / strafe |
+| Right stick | Yaw and pitch |
+| D-pad left/right | Strafe |
+| A or d-pad up / B or d-pad down | Rise / fall |
+| LB / RB | Roll left / right |
+| RT | Pulse laser |
+| LT or X | Vector missile |
+| L3 or Y | Vector boost |
+| Hold View/Back | Mine-layer schematic |
+| Start | Launch, pause, or confirm the on-screen prompt |
+
 ## Campaign
 
 Each seeded campaign contains three increasingly large mines. A mine is a

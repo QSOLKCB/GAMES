@@ -9,6 +9,10 @@
   const TICK_MS = 1000 / core.TICK_RATE;
   const MAX_FRAME_STEPS = 8;
   const FOV = 11264;
+  const PAD = window.QsolInput.BUTTON;
+  const AXIS = window.QsolInput.AXIS;
+  const PAD_TURN_PER_TICK = 10;
+  const PAD_MOVE_THRESHOLD = 0.35;
   const TAU = Math.PI * 2;
 
   const bootLayer = document.querySelector("#bootLayer");
@@ -41,6 +45,8 @@
   const digestReadout = document.querySelector("#digestReadout");
 
   const keys = new Set();
+  const gamepad = new window.QsolInput.GamepadReader();
+  let padAutomap = false;
   const touchActions = new Set();
   let tapActions = 0;
   let mouseTurn = 0;
@@ -218,9 +224,52 @@
     if (down("Digit2")) actions |= core.INPUT.WEAPON_2;
     if (down("Digit3")) actions |= core.INPUT.WEAPON_3;
     for (const name of touchActions) actions |= core.INPUT[name] || 0;
+    actions |= gamepadActions();
     const turn = clamp(Math.trunc(mouseTurn), -64, 63);
     mouseTurn -= turn;
     return core.packInput(actions, turn);
+  }
+
+  // Standard pad: left stick moves/strafes, right stick turns, d-pad moves/turns.
+  // RT fires, A/X use, LT/L3 run, LB/Y/RB select weapons 1-3, View holds the
+  // automap and Start pauses or confirms. Read only for live recorded input.
+  function gamepadActions() {
+    if (!gamepad.armed) return 0;
+    const lx = gamepad.axis(AXIS.LX);
+    const ly = gamepad.axis(AXIS.LY);
+    let actions = 0;
+    if (ly <= -PAD_MOVE_THRESHOLD || gamepad.held(PAD.UP)) actions |= core.INPUT.FORWARD;
+    if (ly >= PAD_MOVE_THRESHOLD || gamepad.held(PAD.DOWN)) actions |= core.INPUT.BACK;
+    if (lx <= -PAD_MOVE_THRESHOLD) actions |= core.INPUT.STRAFE_LEFT;
+    if (lx >= PAD_MOVE_THRESHOLD) actions |= core.INPUT.STRAFE_RIGHT;
+    if (gamepad.held(PAD.LEFT)) actions |= core.INPUT.TURN_LEFT;
+    if (gamepad.held(PAD.RIGHT)) actions |= core.INPUT.TURN_RIGHT;
+    if (gamepad.held(PAD.RT)) actions |= core.INPUT.FIRE;
+    if (gamepad.any(PAD.SOUTH, PAD.WEST)) actions |= core.INPUT.USE;
+    if (gamepad.any(PAD.LT, PAD.L3)) actions |= core.INPUT.RUN;
+    if (gamepad.held(PAD.LB)) actions |= core.INPUT.WEAPON_1;
+    if (gamepad.held(PAD.NORTH)) actions |= core.INPUT.WEAPON_2;
+    if (gamepad.held(PAD.RB)) actions |= core.INPUT.WEAPON_3;
+    mouseTurn += gamepad.axis(AXIS.RX) * PAD_TURN_PER_TICK;
+    return actions;
+  }
+
+  function pollGamepad() {
+    gamepad.poll();
+    padAutomap = gamepad.held(PAD.SELECT);
+    if (gamepad.linked) {
+      notice = "GAMEPAD LINKED";
+      noticeTicks = 70;
+    }
+    if (gamepad.lost && state && mode === "live" && !paused && !state.gameOver && !state.victory) {
+      setPaused(true);
+      showMessage("INPUT LOST", "CONTROLLER DISCONNECTED", "Reconnect the gamepad, release every control, then resume.", "RESUME", () => setPaused(false));
+      return;
+    }
+    if (!gamepad.pressed(PAD.START) || replayDialog.open) return;
+    if (!messageLayer.hidden) messageButton.click();
+    else if (!bootLayer.hidden) startButton.click();
+    else if (state) setPaused(true);
   }
 
   function releaseInput() {
@@ -229,6 +278,8 @@
     tapActions = 0;
     mouseTurn = 0;
     mouseFire = false;
+    padAutomap = false;
+    gamepad.reset();
   }
 
   function startRun(seed, difficulty, runMode, decodedReplay) {
@@ -273,6 +324,7 @@
     } else {
       messageLayer.hidden = true;
       previousTime = performance.now();
+      gamepad.reset();
       canvas.focus();
     }
     updateTelemetry(true);
@@ -401,7 +453,7 @@
             Math.floor(shake / 2)
           : 0;
     presentation.render(state, {
-      automap,
+      automap: automap || padAutomap,
       paused,
       notice: noticeTicks > 0 ? notice : "",
       palette: state
@@ -442,6 +494,7 @@
     if (!previousTime) previousTime = time;
     const elapsed = Math.min(250, time - previousTime);
     previousTime = time;
+    pollGamepad();
     if (state && !paused && !replayDialog.open) {
       accumulator += elapsed;
       let steps = 0;

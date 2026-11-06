@@ -35,6 +35,24 @@ is required.
 
 Touch controls appear automatically on coarse-pointer devices.
 
+#### Gamepad
+
+Any controller that reports the browser's standard mapping works. It must rest
+at neutral once after connecting, launching, pausing or resuming before it acts,
+so a held button never fires by itself. Disconnecting a pad mid-run pauses.
+
+| Pad | Action |
+|---|---|
+| Left stick | Move / strafe |
+| Right stick or d-pad left/right | Turn |
+| D-pad up/down | Move forward / backward |
+| RT | Fire |
+| A or X | Use |
+| LT or L3 | Run |
+| LB / Y / RB | Select weapons 1 / 2 / 3 |
+| Hold View/Back | Tactical automap |
+| Start | Launch, pause, or confirm the on-screen prompt |
+
 ## Campaign
 
 - **Dock Nine:** recover the amber cipher and reach the uplink lift.

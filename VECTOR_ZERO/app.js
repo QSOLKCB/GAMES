@@ -10,6 +10,10 @@
   const NEAR = 72;
   const TICK_MS = 1000 / core.TICK_RATE;
   const MAX_FRAME_STEPS = 8;
+  const PAD = window.QsolInput.BUTTON;
+  const AXIS = window.QsolInput.AXIS;
+  const PAD_LOOK_PER_TICK = 6;
+  const PAD_MOVE_THRESHOLD = 0.35;
 
   const bootLayer = document.querySelector("#bootLayer");
   const startButton = document.querySelector("#startButton");
@@ -43,6 +47,8 @@
   const digestReadout = document.querySelector("#digestReadout");
 
   const keys = new Set();
+  const gamepad = new window.QsolInput.GamepadReader();
+  let padAutomap = false;
   let mouseYaw = 0;
   let mousePitch = 0;
   let mouseFire = false;
@@ -194,6 +200,50 @@
     mouseFire = false;
     mouseMissile = false;
     automap = false;
+    padAutomap = false;
+    gamepad.reset();
+  }
+
+  // Standard pad: left stick thrusts/strafes, right stick yaws/pitches, LB/RB
+  // roll, A/B or d-pad up/down rise/fall, RT fires, LT/X launch missiles,
+  // L3/Y boost, View holds the schematic and Start pauses or confirms.
+  function gamepadActions() {
+    if (!gamepad.armed) return 0;
+    const lx = gamepad.axis(AXIS.LX);
+    const ly = gamepad.axis(AXIS.LY);
+    let actions = 0;
+    if (ly <= -PAD_MOVE_THRESHOLD) actions |= core.INPUT.FORWARD;
+    if (ly >= PAD_MOVE_THRESHOLD) actions |= core.INPUT.BACK;
+    if (lx <= -PAD_MOVE_THRESHOLD || gamepad.held(PAD.LEFT)) actions |= core.INPUT.STRAFE_LEFT;
+    if (lx >= PAD_MOVE_THRESHOLD || gamepad.held(PAD.RIGHT)) actions |= core.INPUT.STRAFE_RIGHT;
+    if (gamepad.any(PAD.SOUTH, PAD.UP)) actions |= core.INPUT.RISE;
+    if (gamepad.any(PAD.EAST, PAD.DOWN)) actions |= core.INPUT.FALL;
+    if (gamepad.held(PAD.LB)) actions |= core.INPUT.ROLL_LEFT;
+    if (gamepad.held(PAD.RB)) actions |= core.INPUT.ROLL_RIGHT;
+    if (gamepad.held(PAD.RT)) actions |= core.INPUT.FIRE;
+    if (gamepad.any(PAD.LT, PAD.WEST)) actions |= core.INPUT.MISSILE;
+    if (gamepad.any(PAD.L3, PAD.NORTH)) actions |= core.INPUT.BOOST;
+    mouseYaw += gamepad.axis(AXIS.RX) * PAD_LOOK_PER_TICK;
+    mousePitch += gamepad.axis(AXIS.RY) * PAD_LOOK_PER_TICK;
+    return actions;
+  }
+
+  function pollGamepad() {
+    gamepad.poll();
+    padAutomap = gamepad.held(PAD.SELECT);
+    if (gamepad.linked) {
+      notice = "GAMEPAD LINKED";
+      noticeTicks = 70;
+    }
+    if (gamepad.lost && state && mode === "live" && !paused && !state.gameOver && !state.victory) {
+      setPaused(true);
+      showMessage("INPUT LOST", "CONTROLLER DISCONNECTED", "Reconnect the gamepad, release every control, then resume.", "RESUME FLIGHT", () => setPaused(false));
+      return;
+    }
+    if (!gamepad.pressed(PAD.START) || replayDialog.open) return;
+    if (!messageLayer.hidden) messageButton.click();
+    else if (!bootLayer.hidden) startButton.click();
+    else if (state) setPaused(true);
   }
 
   function inputWord() {
@@ -210,6 +260,7 @@
     if (down("Space") || mouseFire) actions |= core.INPUT.FIRE;
     if (down("KeyX") || mouseMissile) actions |= core.INPUT.MISSILE;
     if (down("ShiftLeft") || down("ShiftRight")) actions |= core.INPUT.BOOST;
+    actions |= gamepadActions();
     const pointerYaw = clamp(Math.trunc(mouseYaw), -64, 63);
     const pointerPitch = clamp(Math.trunc(mousePitch), -64, 63);
     mouseYaw -= pointerYaw;
@@ -294,7 +345,7 @@
           ? ((state.tick * 11) % (shake * 2 + 1)) - shake
           : 0;
     presentation.render(state, mineFaces, {
-      automap,
+      automap: automap || padAutomap,
       paused,
       notice: noticeTicks > 0 ? notice : "",
       palette: state ? PALETTES[state.sector - 1] || PALETTES[0] : PALETTES[0],
@@ -349,6 +400,7 @@
     } else {
       messageLayer.hidden = true;
       previousTime = performance.now();
+      gamepad.reset();
       canvas.focus();
     }
     updateTelemetry(true);
@@ -472,6 +524,7 @@
     if (!previousTime) previousTime = time;
     const elapsed = Math.min(250, time - previousTime);
     previousTime = time;
+    pollGamepad();
     if (state && !paused && !replayDialog.open) {
       accumulator += elapsed;
       let steps = 0;
