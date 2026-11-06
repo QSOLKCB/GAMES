@@ -8,6 +8,7 @@ Every project is designed for local, offline play with no account or telemetry. 
 
 | Game | Runtime | Status | Launch / build |
 |---|---|---|---|
+| [SOVEREIGN LATTICE](SOVEREIGN_LATTICE/) | Offline native Three.js/WebGL | Turn-based 4X: explore, colonize, research, design ships, conquer; moddable `.TXT` data | Open [`SOVEREIGN_LATTICE/index.html`](SOVEREIGN_LATTICE/index.html) |
 | [SIGNAL BREACH](SIGNAL_BREACH/) | Offline Three.js + Rust/Wasm | Playable tactical twin-stick shooter | Open [`SIGNAL_BREACH/index.html`](SIGNAL_BREACH/index.html) |
 | [CARTRIDGE ZERO: Seven Signals](CARTRIDGE_ZERO/) | Offline native Three.js/WebGL | Polished deterministic seven-game anthology | Open [`CARTRIDGE_ZERO/index.html`](CARTRIDGE_ZERO/index.html) |
 | [VECTOR ZERO](VECTOR_ZERO/) | Offline native Three.js/WebGL | High-visibility deterministic 6DOF shooter | Open [`VECTOR_ZERO/index.html`](VECTOR_ZERO/index.html) |
@@ -57,8 +58,8 @@ contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
 
 ## Gamepad support
 
-BLACKSTAR AGA, VECTOR ZERO, SEEDSTORM, CARTRIDGE ZERO and INERTIA ZERO read
-standard-mapping gamepads through [`shared/qsol-input.js`](shared/qsol-input.js), adapted from the
+BLACKSTAR AGA, VECTOR ZERO, SEEDSTORM, CARTRIDGE ZERO, INERTIA ZERO and
+SOVEREIGN LATTICE read standard-mapping gamepads through [`shared/qsol-input.js`](shared/qsol-input.js), adapted from the
 input module of [QSOLKCB/VANILLAJS](https://github.com/QSOLKCB/VANILLAJS)
 (Apache-2.0, see [`shared/NOTICE.md`](shared/NOTICE.md)). Sticks use a rescaled
 deadzone; a pad must return to neutral after connecting, launching, pausing or
@@ -70,7 +71,7 @@ values as a throttle. SIGNAL BREACH keeps its own gamepad handling.
 
 ## Shared rendering boundary
 
-All eight browser titles use Three.js for their **primary gameplay world**.
+All nine browser titles use Three.js for their **primary gameplay world**.
 The six former Canvas games now use one existing gameplay canvas, a WebGLRenderer,
 a Scene and a game-specific camera. Their simulation state drives native meshes,
 instanced geometry and world-space effects; there is no Canvas gameplay renderer,

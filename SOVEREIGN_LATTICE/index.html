@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+  <meta name="theme-color" content="#04080b">
+  <meta name="description" content="SOVEREIGN LATTICE: an offline, turn-based 4X strategy game of explored lanes, colonies, research, ship design and fleet war.">
+  <title>SOVEREIGN LATTICE — Offline 4X</title>
+  <link rel="stylesheet" href="../shared/qsol-native.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" class="app is-title">
+    <canvas id="game" tabindex="0" aria-label="Galaxy map. Click a star to inspect it; right-click to send the selected fleet."></canvas>
+    <div id="labels" class="labels" aria-hidden="true"></div>
+
+    <header id="topbar" class="topbar" hidden>
+      <div class="empire-chip"><i id="empireSwatch"></i><span><b id="empireName">—</b><small id="turnReadout">Turn 1</small></span></div>
+      <div class="stocks">
+        <span title="Minerals: stockpile (income per turn)"><small>MINERALS</small><b id="mineralsReadout">0</b></span>
+        <span title="Energy: stockpile (net after upkeep)"><small>ENERGY</small><b id="energyReadout">0</b></span>
+        <span class="research-stock" title="Research toward the current field"><small id="researchLabel">RESEARCH</small><b id="researchReadout">—</b><i><em id="researchBar"></em></i></span>
+      </div>
+      <nav class="topnav" aria-label="Panels">
+        <button type="button" data-tab="research">Research</button>
+        <button type="button" data-tab="designs">Designs</button>
+        <button type="button" data-tab="empires">Empires</button>
+        <button type="button" data-tab="log">Log</button>
+        <button type="button" data-action="save">Save</button>
+        <button type="button" data-action="help" aria-label="Help">?</button>
+        <button type="button" id="audioButton" data-action="audio" aria-pressed="false">Audio off</button>
+        <button type="button" data-action="menu">Menu</button>
+      </nav>
+      <button id="endTurn" class="end-turn" type="button" data-action="end-turn">End turn <kbd>Enter</kbd></button>
+    </header>
+
+    <aside id="panel" class="panel" hidden aria-live="polite"></aside>
+    <div id="report" class="report" hidden></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="modeHint" class="mode-hint" hidden>Move order: click a star (Esc cancels)</div>
+
+    <section id="title" class="overlay title-overlay" aria-labelledby="titleHeading">
+      <div class="title-shell">
+        <header class="title-hero">
+          <p class="kicker">QSOL // GAMES · OFFLINE TURN-BASED 4X</p>
+          <h1 id="titleHeading">SOVEREIGN<span>LATTICE</span></h1>
+          <p class="subtitle">Explore the lanes. Settle the worlds. Out-research, out-build and out-fight the rival empires.</p>
+        </header>
+        <div class="title-grid">
+          <section>
+            <h2><span>01</span> Choose your empire</h2>
+            <div id="empireGrid" class="empire-grid" role="radiogroup" aria-label="Empire"></div>
+          </section>
+          <section class="setup">
+            <h2><span>02</span> Charter the galaxy</h2>
+            <label>Galaxy size
+              <select id="sizeSelect">
+                <option value="small">Small — 18 stars</option>
+                <option value="medium" selected>Medium — 28 stars</option>
+                <option value="large">Large — 40 stars</option>
+              </select>
+            </label>
+            <label>Rival empires
+              <select id="rivalSelect">
+                <option value="1">1 rival</option>
+                <option value="2">2 rivals</option>
+                <option value="3" selected>3 rivals</option>
+                <option value="4">4 rivals</option>
+              </select>
+            </label>
+            <label>Turn limit
+              <select id="turnSelect">
+                <option value="120">120 turns — short</option>
+                <option value="250" selected>250 turns — standard</option>
+                <option value="400">400 turns — epic</option>
+              </select>
+            </label>
+            <label>Galaxy seed
+              <span class="seed-row"><input id="seedInput" type="text" maxlength="24" value="FIRST-CHARTER" spellcheck="false"><button id="randomSeed" type="button">Random</button></span>
+            </label>
+            <div class="title-actions">
+              <button id="beginButton" class="primary" type="button">Begin reign <kbd>Enter</kbd></button>
+              <button id="continueButton" type="button" hidden>Continue saved game</button>
+              <button type="button" data-action="help">How to play</button>
+            </div>
+            <p id="dataSource" class="data-source">Data: bundled</p>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="help" class="overlay modal" role="dialog" aria-modal="true" aria-labelledby="helpHeading" hidden>
+      <div class="modal-card help-card">
+        <button type="button" class="close" data-action="close-help" aria-label="Close help">×</button>
+        <h2 id="helpHeading">How to play</h2>
+        <div class="help-grid">
+          <article><b>Explore</b><p>Stars start unexplored. Scouts and colonies reveal systems. Ancient beacons grant research to the first empire that finds them.</p></article>
+          <article><b>Expand</b><p>Send a Settler Ark to a world your people can live on, then press <em>Colonize</em>. Colonization research opens new climates, outposts on gas giants and asteroids, and arcologies.</p></article>
+          <article><b>Exploit</b><p>Queue facilities and ships at your colonies. Minerals build, energy pays upkeep (a shortfall halves research and construction), labs make research.</p></article>
+          <article><b>Exterminate</b><p>Fleets fight automatically when hostiles share a system. Knock a colony's defences to zero, then land troops (Boarding Barges) to capture it. Capitals are fortified.</p></article>
+          <article><b>Design</b><p>Every ship is a hull plus components. Components scale with research, so existing ships upgrade as you learn. Bigger hulls need Armor research.</p></article>
+          <article><b>Win</b><p>Eliminate every rival, or lead the score when the turn limit arrives.</p></article>
+        </div>
+        <h3>Controls</h3>
+        <dl class="keys">
+          <div><dt>Click</dt><dd>Select a star or fleet</dd></div>
+          <div><dt>Right-click / M</dt><dd>Move the selected fleet</dd></div>
+          <div><dt>Drag / WASD / arrows</dt><dd>Pan</dd></div>
+          <div><dt>Wheel / + −</dt><dd>Zoom</dd></div>
+          <div><dt>Tab</dt><dd>Next idle fleet</dd></div>
+          <div><dt>C</dt><dd>Next colony</dd></div>
+          <div><dt>R / G / E / L</dt><dd>Research, designs, empires, log</dd></div>
+          <div><dt>Enter</dt><dd>End turn</dd></div>
+          <div><dt>Esc</dt><dd>Cancel / close</dd></div>
+          <div><dt>Gamepad</dt><dd>Left stick cursor · A select · X move · B back · LB/RB idle fleets · LT/RT zoom · right stick pan · Start end turn</dd></div>
+        </dl>
+        <p class="note">Game data lives in <code>data/*.TXT</code>. Edit those files to rename empires and ships or rebalance hulls and components, then run <code>node scripts/pack-data.js</code> (or serve the folder over HTTP to read the .TXT files directly).</p>
+      </div>
+    </section>
+
+    <section id="gameover" class="overlay modal" role="dialog" aria-modal="true" aria-labelledby="gameoverHeading" hidden>
+      <div class="modal-card">
+        <p class="kicker" id="gameoverKicker">THE LATTICE SETTLES</p>
+        <h2 id="gameoverHeading">Victory</h2>
+        <div id="gameoverBody"></div>
+        <div class="title-actions">
+          <button type="button" class="primary" data-action="menu">New game</button>
+          <button type="button" data-action="close-gameover">Keep looking</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="fatal" class="overlay modal" role="alertdialog" aria-labelledby="fatalHeading" hidden>
+      <div class="modal-card">
+        <h2 id="fatalHeading">The data files need attention</h2>
+        <pre id="fatalText"></pre>
+      </div>
+    </section>
+  </main>
+
+  <noscript>SOVEREIGN LATTICE needs JavaScript. No network connection is required.</noscript>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../shared/qsol-native.js"></script>
+  <script src="../shared/qsol-input.js"></script>
+  <script src="../SUBSPACE/skins.js"></script>
+  <script src="data/packed.js"></script>
+  <script src="renderer.js"></script>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

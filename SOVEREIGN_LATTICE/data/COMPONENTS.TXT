@@ -1,0 +1,110 @@
+; SOVEREIGN LATTICE -- COMPONENTS.TXT
+; Ship components. Stats grow with the empire's level in the named field, so
+; ships upgrade automatically as research completes.
+;
+;   Name        Component name.
+;   Kind        weapon, armor, shield, engine, colony, troops or sensor.
+;   Cost        Mineral cost per component.
+;   Requires    "field level" or "none".
+;   Base        Base value (damage, hit points, shield points, speed, troops).
+;   PerLevel    Added per level of the scaling field.
+;   Scaling     Field whose level improves this component.
+;   Reload      Weapons only: fires every N combat rounds.
+;   Pierce      Weapons only: percent of shields ignored.
+;   Description Shipyard flavour text.
+
+[COMPONENT]
+Name        = Pulse Laser
+Kind        = weapon
+Cost        = 20
+Requires    = none
+Base        = 10
+PerLevel    = 3
+Scaling     = weapons
+Reload      = 1
+Pierce      = 0
+Description = Reliable short bursts. Every navy starts here.
+
+[COMPONENT]
+Name        = Seeker Torpedo
+Kind        = weapon
+Cost        = 35
+Requires    = weapons 2
+Base        = 26
+PerLevel    = 7
+Scaling     = weapons
+Reload      = 2
+Pierce      = 0
+Description = Heavy warhead, slow reload.
+
+[COMPONENT]
+Name        = Phase Lance
+Kind        = weapon
+Cost        = 55
+Requires    = weapons 5
+Base        = 30
+PerLevel    = 6
+Scaling     = weapons
+Reload      = 1
+Pierce      = 50
+Description = Slips half its energy past enemy shields.
+
+[COMPONENT]
+Name        = Hull Plating
+Kind        = armor
+Cost        = 12
+Requires    = none
+Base        = 30
+PerLevel    = 10
+Scaling     = armor
+Description = Layered alloy. Absorbs damage after shields fail.
+
+[COMPONENT]
+Name        = Deflector
+Kind        = shield
+Cost        = 30
+Requires    = armor 2
+Base        = 8
+PerLevel    = 4
+Scaling     = armor
+Description = Absorbs damage every combat round, then recharges.
+
+[COMPONENT]
+Name        = Ion Drive
+Kind        = engine
+Cost        = 15
+Requires    = none
+Base        = 25
+PerLevel    = 3
+Scaling     = propulsion
+Description = More thrust per lane.
+
+[COMPONENT]
+Name        = Colony Pod
+Kind        = colony
+Cost        = 60
+Requires    = none
+Base        = 1
+PerLevel    = 0
+Scaling     = colonization
+Description = Settlers, seed stock and a prefabricated town. Used up on landing.
+
+[COMPONENT]
+Name        = Troop Bay
+Kind        = troops
+Cost        = 25
+Requires    = none
+Base        = 10
+PerLevel    = 2
+Scaling     = weapons
+Description = Marines for taking defenceless colonies.
+
+[COMPONENT]
+Name        = Sensor Array
+Kind        = sensor
+Cost        = 30
+Requires    = sensors 1
+Base        = 1
+PerLevel    = 0
+Scaling     = sensors
+Description = Lets the ship see one extra jump.

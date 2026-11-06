@@ -10,6 +10,7 @@ const games = [
   "VECTOR_ZERO",
   "SEEDSTORM",
   "SUBSPACE",
+  "SOVEREIGN_LATTICE",
 ];
 for (const game of games) {
   const html = fs.readFileSync(path.join(root, game, "index.html"), "utf8");
@@ -57,7 +58,7 @@ for (const [game, patterns] of Object.entries(feedbackContracts)) {
     assert.match(app, pattern, `${game}: native combat feedback contract`);
 }
 // Standard-gamepad support shares one reader (adapted from VANILLAJS input).
-for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM", "SUBSPACE"]) {
+for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM", "SUBSPACE", "SOVEREIGN_LATTICE"]) {
   const html = fs.readFileSync(path.join(root, game, "index.html"), "utf8");
   assert.match(
     html,
@@ -66,7 +67,7 @@ for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM
   );
   const app = fs.readFileSync(path.join(root, game, "app.js"), "utf8");
   assert.match(app, /new (?:window|globalThis)\.QsolInput\.GamepadReader\(\)/, `${game}: uses the shared gamepad reader`);
-  assert.match(app, /pollGamepad\(\);/, `${game}: polls the pad every frame`);
+  assert.match(app, /pollGamepad\([^)]*\);/, `${game}: polls the pad every frame`);
 }
 const sharedNative = fs.readFileSync(
   path.join(root, "shared/qsol-native.js"),

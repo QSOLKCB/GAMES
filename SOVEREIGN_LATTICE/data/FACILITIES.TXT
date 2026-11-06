@@ -1,0 +1,58 @@
+; SOVEREIGN LATTICE -- FACILITIES.TXT
+; Colony facilities. A colony has two facility slots per point of planet size.
+;
+;   Name        Facility name.
+;   Key         Internal id used by the rules: mine, reactor, lab, shipyard,
+;               battery or habitat. Keys must stay as listed.
+;   Cost        Mineral cost.
+;   Requires    "field level" or "none".
+;   Output      Per-turn output (minerals, energy, research), defence or pop %.
+;   Description Flavour text.
+
+[FACILITY]
+Name        = Deep Mine
+Key         = mine
+Cost        = 60
+Requires    = none
+Output      = 12
+Description = +12 minerals per turn.
+
+[FACILITY]
+Name        = Fusion Reactor
+Key         = reactor
+Cost        = 60
+Requires    = none
+Output      = 12
+Description = +12 energy per turn.
+
+[FACILITY]
+Name        = Research Lab
+Key         = lab
+Cost        = 80
+Requires    = none
+Output      = 10
+Description = +10 research per turn.
+
+[FACILITY]
+Name        = Orbital Shipyard
+Key         = shipyard
+Cost        = 120
+Requires    = none
+Output      = 0
+Description = Builds ships. One per colony.
+
+[FACILITY]
+Name        = Defence Battery
+Key         = battery
+Cost        = 90
+Requires    = none
+Output      = 120
+Description = Planetary guns and shields: +120 defence.
+
+[FACILITY]
+Name        = Arcology
+Key         = habitat
+Cost        = 140
+Requires    = colonization 2
+Output      = 25
+Description = +25% maximum population.

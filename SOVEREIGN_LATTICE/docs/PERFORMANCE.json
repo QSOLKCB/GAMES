@@ -1,0 +1,222 @@
+{
+  "generatedBy": "scripts/benchmark.js",
+  "repeats": 7,
+  "records": {
+    "OPT-INV-001 route table": {
+      "small": {
+        "systems": 18,
+        "queries": 324,
+        "parityChecked": 324,
+        "tableBuild": {
+          "medianMs": 0.294,
+          "samplesMs": [
+            0.294,
+            0.275,
+            0.431,
+            0.485,
+            0.275,
+            0.667,
+            0.288
+          ]
+        },
+        "tableQueries": {
+          "medianMs": 0.165,
+          "samplesMs": [
+            0.167,
+            0.203,
+            0.151,
+            0.193,
+            0.153,
+            0.144,
+            0.165
+          ]
+        },
+        "referenceQueries": {
+          "medianMs": 3.284,
+          "samplesMs": [
+            3.724,
+            3.15,
+            3.26,
+            3.237,
+            3.697,
+            5.606,
+            3.284
+          ]
+        }
+      },
+      "medium": {
+        "systems": 28,
+        "queries": 784,
+        "parityChecked": 784,
+        "tableBuild": {
+          "medianMs": 0.175,
+          "samplesMs": [
+            0.226,
+            0.178,
+            0.169,
+            0.175,
+            0.275,
+            0.161,
+            0.174
+          ]
+        },
+        "tableQueries": {
+          "medianMs": 0.097,
+          "samplesMs": [
+            0.089,
+            0.09,
+            0.142,
+            0.116,
+            0.099,
+            0.097,
+            0.089
+          ]
+        },
+        "referenceQueries": {
+          "medianMs": 7.464,
+          "samplesMs": [
+            11.316,
+            13.287,
+            9.829,
+            7.464,
+            6.996,
+            7.342,
+            7.259
+          ]
+        }
+      },
+      "large": {
+        "systems": 40,
+        "queries": 1600,
+        "parityChecked": 1600,
+        "tableBuild": {
+          "medianMs": 0.194,
+          "samplesMs": [
+            0.203,
+            0.487,
+            0.225,
+            0.194,
+            0.161,
+            0.163,
+            0.162
+          ]
+        },
+        "tableQueries": {
+          "medianMs": 0.141,
+          "samplesMs": [
+            0.134,
+            0.175,
+            0.145,
+            0.141,
+            0.139,
+            0.154,
+            0.137
+          ]
+        },
+        "referenceQueries": {
+          "medianMs": 20.466,
+          "samplesMs": [
+            24.198,
+            20.71,
+            20.466,
+            20.459,
+            24.876,
+            19.36,
+            19.194
+          ]
+        }
+      }
+    },
+    "OPT-INC-001 design stats": {
+      "large": {
+        "ships": 76,
+        "passes": 20,
+        "cached": {
+          "medianMs": 0.27,
+          "samplesMs": [
+            0.358,
+            0.376,
+            0.324,
+            0.261,
+            0.244,
+            0.27,
+            0.237
+          ]
+        },
+        "fresh": {
+          "medianMs": 0.927,
+          "samplesMs": [
+            1.669,
+            1.011,
+            0.889,
+            0.746,
+            0.754,
+            0.927,
+            1.239
+          ]
+        }
+      }
+    }
+  },
+  "endToEnd": {
+    "small": {
+      "medianMs": 40.617,
+      "samplesMs": [
+        59.711,
+        47.171,
+        38.561,
+        36.814,
+        40.617,
+        31.742,
+        46.498
+      ],
+      "turns": 100
+    },
+    "medium": {
+      "medianMs": 61.077,
+      "samplesMs": [
+        62.649,
+        52.082,
+        72.8,
+        51.271,
+        61.077,
+        54.466,
+        65.992
+      ],
+      "turns": 100
+    },
+    "large": {
+      "medianMs": 56.054,
+      "samplesMs": [
+        70.051,
+        53.505,
+        53.147,
+        79.834,
+        70.073,
+        56.054,
+        53.993
+      ],
+      "turns": 100
+    }
+  },
+  "environment": {
+    "node": "v22.23.4",
+    "platform": "linux x64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpus": 4
+  },
+  "sources": {
+    "core.js": "a97329b75ec20d7fcc525fb817d6610c60d29a9bb2a06e1f11c20e35ec739cca",
+    "scripts/benchmark.js": "60270a26f0f907408c0f684f9c5a15754d9194f72f0478861ae1c5f926635532",
+    "data/EMPIRES.TXT": "d2e02cb9aece8b71631f26f4936862e82ca8eeeccc04d24b60279afe8325208a",
+    "data/HULLS.TXT": "1abe3625f3622e80ea60ed45fef3427fea07dba8fcbbd68e0b7df6e7dd18783b",
+    "data/COMPONENTS.TXT": "65f060fba84b95b4c80fce7aa8fca5a5637a64257e6aeb6ede81535751fc1bff",
+    "data/FACILITIES.TXT": "eaa1f0d9c3c9519d49052a9b8636b472df4d99a834743727746367bcb0291f22",
+    "data/TECHNOLOGY.TXT": "4a1843750e0850ce9454ff9d20254e9ecbb8cf98131faac458f7770a2dcf8105",
+    "data/SYSTEMNAMES.TXT": "0911b61d3beff4a19b5035da880a132259f6ca2eabecb303d2962dd9b56ebb4a"
+  },
+  "rolledBack": {
+    "OPT-PRUNE-001 colony targeting": "Measured on this host before rollback (large galaxy, all empires x systems): pruned 7.57 ms vs exhaustive 7.20 ms median in one run and 12.49 vs 10.61 ms in another, evaluating 3122 of 8880 candidates. The distance sort cost more than the cheap scoring it skipped, so the exhaustive path is the only path."
+  },
+  "note": "Local observations on one host. Medians of repeated runs after one warm-up. Parity is checked on every measured workload. Not a portable speedup claim."
+}

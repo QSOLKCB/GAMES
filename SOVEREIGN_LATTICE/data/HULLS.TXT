@@ -1,0 +1,82 @@
+; SOVEREIGN LATTICE -- HULLS.TXT
+; Ship hull classes. Each hull borrows an original outline from INERTIA ZERO's
+; hull art (../SUBSPACE/skins.js) through its Skin key.
+;
+;   Name         Class name shown in the interface.
+;   Skin         INERTIA ZERO hull outline id.
+;   Slots        Component slots.
+;   Structure    Base hit points before armour.
+;   Speed        Base lane speed per turn (light-hours).
+;   Cost         Mineral cost of the bare hull.
+;   Requires     Technology field and level needed, e.g. "armor 3", or "none".
+;   Description  Shipyard flavour text.
+
+[HULL]
+Name        = Scout
+Skin        = javelin
+Slots       = 3
+Structure   = 50
+Speed       = 110
+Cost        = 30
+Requires    = none
+Description = A sensor mast with an engine bolted on. Built to look, not to fight.
+
+[HULL]
+Name        = Corvette
+Skin        = warbird
+Slots       = 4
+Structure   = 80
+Speed       = 95
+Cost        = 55
+Requires    = none
+Description = The workhorse escort: cheap, quick and expendable.
+
+[HULL]
+Name        = Transport
+Skin        = weasel
+Slots       = 4
+Structure   = 90
+Speed       = 85
+Cost        = 50
+Requires    = none
+Description = Wide cargo spine for colony pods and troop bays.
+
+[HULL]
+Name        = Frigate
+Skin        = terrier
+Slots       = 6
+Structure   = 130
+Speed       = 85
+Cost        = 95
+Requires    = armor 1
+Description = Twin weapon booms and enough armour to hold a lane.
+
+[HULL]
+Name        = Destroyer
+Skin        = shark
+Slots       = 8
+Structure   = 190
+Speed       = 80
+Cost        = 150
+Requires    = armor 2
+Description = Long-range line ship that sets the pace of a battle.
+
+[HULL]
+Name        = Cruiser
+Skin        = lancaster
+Slots       = 11
+Structure   = 290
+Speed       = 75
+Cost        = 230
+Requires    = armor 4
+Description = An armoured hexagon of guns. Flagship of most fleets.
+
+[HULL]
+Name        = Dreadnought
+Skin        = leviathan
+Slots       = 15
+Structure   = 480
+Speed       = 60
+Cost        = 380
+Requires    = armor 6
+Description = Slow, enormous and almost impossible to stop.
