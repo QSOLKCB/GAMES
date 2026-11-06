@@ -43,6 +43,10 @@ jobs:
           cache-dependency-path: CARTRIDGE_ZERO/package-lock.json
       - name: Install pinned browser-test dependency
         run: npm --prefix CARTRIDGE_ZERO ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: CARTRIDGE_ZERO
       - name: Install Chromium
         run: npx --prefix CARTRIDGE_ZERO playwright install --with-deps chromium
       - name: Browser cartridge, controls, AI, replay, offline, and mobile smoke test

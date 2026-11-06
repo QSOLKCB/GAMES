@@ -43,6 +43,10 @@ jobs:
           cache-dependency-path: VECTOR_ZERO/package-lock.json
       - name: Install pinned browser-test dependency
         run: npm --prefix VECTOR_ZERO ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: VECTOR_ZERO
       - name: Install Chromium
         run: npx --prefix VECTOR_ZERO playwright install --with-deps chromium
       - name: Browser boot, six-axis flight, replay, and offline smoke test

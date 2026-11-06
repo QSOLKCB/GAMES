@@ -41,6 +41,10 @@ jobs:
           cache-dependency-path: SOVEREIGN_LATTICE/package-lock.json
       - name: Install pinned browser-test dependency
         run: npm --prefix SOVEREIGN_LATTICE ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: SOVEREIGN_LATTICE
       - name: Install Chromium
         run: npx --prefix SOVEREIGN_LATTICE playwright install --with-deps chromium
       - name: Play through the interface from file://

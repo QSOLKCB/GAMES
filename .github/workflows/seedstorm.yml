@@ -43,6 +43,10 @@ jobs:
           cache-dependency-path: SEEDSTORM/package-lock.json
       - name: Install pinned browser-test dependency
         run: npm --prefix SEEDSTORM ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: SEEDSTORM
       - name: Install Chromium
         run: npx --prefix SEEDSTORM playwright install --with-deps chromium
       - name: Browser launch, input, and replay smoke test

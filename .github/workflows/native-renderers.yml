@@ -15,6 +15,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm --prefix BLACKSTAR_AGA ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: BLACKSTAR_AGA
       - run: npx --prefix BLACKSTAR_AGA playwright install --with-deps chromium
       - run: node tests/native-renderers.static.js
       - name: Shared standard-gamepad reader

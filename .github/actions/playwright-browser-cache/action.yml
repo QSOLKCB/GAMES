@@ -1,0 +1,24 @@
+name: Playwright browser cache
+description: >
+  Reuse the downloaded Playwright browsers across runs. A browser build is
+  fully determined by the runner OS/architecture and the installed Playwright
+  version (pinned by each project's package-lock.json), so the cache key is
+  that complete identity (invariant reuse, QSOLKCB/OPT OPT-INV-001). Run the
+  usual `playwright install --with-deps <browser>` afterwards: Playwright skips
+  browsers already present and verified, still installs the system packages
+  (which are never cached), and downloads again if anything is missing, so a
+  stale or partial cache fails closed to a fresh download.
+inputs:
+  prefix:
+    description: Project directory whose node_modules contains Playwright (run npm ci first).
+    required: true
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: echo "playwright=$(node -p "require('./${{ inputs.prefix }}/node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-browsers-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.playwright }}

@@ -43,6 +43,10 @@ jobs:
           cache-dependency-path: PIXELWARFRONT/package-lock.json
       - name: Install pinned browser-test dependency
         run: npm --prefix PIXELWARFRONT ci
+      - name: Reuse cached Playwright browsers
+        uses: ./.github/actions/playwright-browser-cache
+        with:
+          prefix: PIXELWARFRONT
       - name: Install Chromium
         run: npx --prefix PIXELWARFRONT playwright install --with-deps chromium
       - name: Browser launch, commands, and replay smoke test
