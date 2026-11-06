@@ -75,7 +75,7 @@ class FakeElement {
 }
 
 const ids = [
-  "app", "game-canvas", "radar-canvas", "hud", "menu", "ship-grid", "difficulty-select",
+  "app", "game-canvas", "radar-canvas", "hud", "menu", "ship-grid", "livery-grid", "difficulty-select",
   "difficulty-description", "bot-count-select", "arena-select", "seed-input", "random-seed",
   "launch-button", "help-button", "help-overlay", "close-help", "pause-button", "pause-overlay",
   "resume-button", "restart-button", "menu-button", "sector-overlay", "next-sector-button",
@@ -102,6 +102,8 @@ const windowListeners = new Map();
 const localValues = new Map();
 const fakeWindow = {
   InertiaZeroCore: Core,
+  QsolInput: require("../../shared/qsol-input.js"),
+  InertiaSkins: require("../skins.js"),
   // Explicit injected presentation seam: this harness makes no rendering claims.
   InertiaRenderer: class { constructor() { this.stage = { resize() {} }; } render() {} },
   innerWidth: 1440,
@@ -151,6 +153,40 @@ game.input.keys.delete("KeyW");
 game.input.keys.delete("Space");
 for (let tick = 0; tick < 420; tick += 1) game.update(1 / 60);
 game.render(0.5);
+
+// Responsiveness: a key tapped and released between two ticks still acts for
+// exactly one tick instead of being dropped.
+{
+  const shots = game.shotsFired;
+  game.player.gunCooldown = 0;
+  game.player.energy = game.player.config.maxEnergy;
+  game.input.pressed.add("Space");
+  game.update(1 / 60);
+  if (game.shotsFired !== shots + 1) throw new Error("A sub-tick fire tap was dropped");
+  game.player.gunCooldown = 0;
+  game.update(1 / 60);
+  if (game.shotsFired !== shots + 1) throw new Error("A tap fired for more than one tick");
+  const before = game.player.angle;
+  game.input.pressed.add("KeyD");
+  game.update(1 / 60);
+  if (!(game.player.angle !== before && game.player.previousAngle === before)) throw new Error("A sub-tick turn tap was dropped or not interpolable");
+}
+
+// Analog throttle: half throttle gives half the acceleration of full thrust.
+{
+  const ship = game.player;
+  const run = (thrust) => {
+    Object.assign(ship, { vx: 0, vy: 0, angle: 0, stun: 0, energy: ship.config.maxEnergy, alive: true });
+    ship.control = { ...game.emptyCommand(), thrust };
+    game.updateShip(ship, 1 / 60);
+    return ship.vx;
+  };
+  const full = run(true);
+  const half = run(0.5);
+  if (!(full > 0 && Math.abs(half - full / 2) < 1e-9)) throw new Error(`Analog throttle is not proportional (${half} vs ${full})`);
+}
+if (!Number.isFinite(game.camera.previousX) || !Number.isFinite(game.camera.previousY)) throw new Error("Camera interpolation state missing");
+console.log("PASS sub-tick tap latching, analog throttle, and interpolation state");
 
 
 const allFinite = game.ships.every((ship) => [ship.x, ship.y, ship.vx, ship.vy, ship.energy].every(Number.isFinite))

@@ -180,6 +180,47 @@ async function recordedRuns(page, game) {
       process.stdout.write(`ok - ${game.name} standard gamepad: neutral arming, recorded input, Start pause/resume, disconnect pause\n`);
       await page.close();
     }
+    // INERTIA ZERO: Start launches from the hangar, the left stick rotates
+    // with analog response, RT is an analog throttle, Start pauses/resumes and
+    // a lost pad pauses the sector.
+    {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      const errors = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.addInitScript(installFakePad);
+      await page.goto(pathToFileURL(path.join(root, "SUBSPACE", "index.html")).href);
+      await page.waitForFunction(() => window.inertiaZero && window.inertiaZero.mode === "menu");
+      await pad(page, { held: [B.START] }, 6);
+      assert.equal(await page.evaluate(() => window.inertiaZero.mode), "menu", "SUBSPACE: held Start ignored until neutral");
+      await tap(page, B.START);
+      assert.equal(await page.evaluate(() => window.inertiaZero.mode), "playing", "SUBSPACE: Start launches");
+      await page.evaluate(() => { window.inertiaZero.player.invulnerable = 999; });
+      const before = await page.evaluate(() => window.inertiaZero.player.angle);
+      await pad(page, {}, 4);
+      await pad(page, { axes: [1, 0, 0, 0] }, 20);
+      const turned = await page.evaluate(() => window.inertiaZero.player.angle);
+      assert.notEqual(turned, before, "SUBSPACE: left stick rotates the hull");
+      await pad(page, {}, 2);
+      // Half-pulled RT: an analog throttle between zero and full.
+      await page.evaluate(() => {
+        const trigger = navigator.getGamepads()[0].buttons[7];
+        trigger.value = 0.6;
+        trigger.pressed = true;
+      });
+      await page.evaluate(() => window.__frames(2));
+      const throttle = await page.evaluate(() => window.inertiaZero.player.control.thrust);
+      assert.ok(throttle > 0.4 && throttle < 0.7, `SUBSPACE: RT is an analog throttle (${throttle})`);
+      await tap(page, B.START);
+      assert.equal(await page.evaluate(() => window.inertiaZero.mode), "paused", "SUBSPACE: Start pauses");
+      await tap(page, B.START);
+      assert.equal(await page.evaluate(() => window.inertiaZero.mode), "playing", "SUBSPACE: Start resumes");
+      await pad(page, {}, 4);
+      await pad(page, null, 4);
+      assert.equal(await page.evaluate(() => window.inertiaZero.mode), "paused", "SUBSPACE: disconnect pauses");
+      assert.deepEqual(errors, [], "SUBSPACE: no page errors");
+      process.stdout.write("ok - SUBSPACE (INERTIA ZERO) standard gamepad: launch, analog rotate and throttle, Start pause/resume, disconnect pause\n");
+      await page.close();
+    }
   } finally {
     await browser.close();
   }

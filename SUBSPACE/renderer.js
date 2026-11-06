@@ -1,5 +1,7 @@
 (function (root) {
   "use strict";
+  const throttle = (value) =>
+    value === true ? 1 : Math.max(0, Math.min(1, Number(value) || 0));
   class InertiaRenderer {
     constructor(canvas, core, radar) {
       this.core = core;
@@ -11,6 +13,18 @@
       this.stage.hud.style.bottom = "17%";
       this.stage.hud.style.left = "35%";
       this.stage.hud.style.right = "35%";
+      this.skins = root.InertiaSkins;
+      for (const [type, hull] of Object.entries(this.skins.HULLS)) {
+        this.stage.shape(`skin-${type}`, hull.hull);
+        this.stage.shape(`skin-${type}-deck`, hull.deck);
+      }
+      // Engine flame: blunt at the nozzle (x = 0), tapering aft to x = -1.
+      this.stage.shape("flame", [
+        [0.12, 0],
+        [-0.15, -0.5],
+        [-1, 0],
+        [-0.15, 0.5],
+      ]);
     }
     render(game, interpolation) {
       const s = this.stage,
@@ -18,8 +32,16 @@
         arena = game.arena || game.menuArena,
         menu = game.mode === "menu" || !game.arena;
       s.begin("#03090b");
-      const left = menu ? 0 : game.camera.x - game.width / 2,
-        top = menu ? 0 : game.camera.y - game.height / 2,
+      // The camera moves on simulation ticks; interpolate it like the ships
+      // so high-refresh displays do not see the whole view step at 60 Hz.
+      const camX = menu
+          ? 0
+          : c.lerp(game.camera.previousX ?? game.camera.x, game.camera.x, interpolation),
+        camY = menu
+          ? 0
+          : c.lerp(game.camera.previousY ?? game.camera.y, game.camera.y, interpolation),
+        left = menu ? 0 : camX - game.width / 2,
+        top = menu ? 0 : camY - game.height / 2,
         shakeX =
           menu || s.reducedMotion
             ? 0
@@ -34,14 +56,14 @@
         const parallax = s.reducedMotion ? 0 : star.layer;
         const x =
           left +
-          (((((star.x - (menu ? 0 : game.camera.x) * parallax) % arena.width) +
+          (((((star.x - camX * parallax) % arena.width) +
             arena.width) %
             arena.width) /
             arena.width) *
             game.width;
         const y =
           top +
-          (((((star.y - (menu ? 0 : game.camera.y) * parallax) % arena.height) +
+          (((((star.y - camY * parallax) % arena.height) +
             arena.height) %
             arena.height) /
             arena.height) *
@@ -61,18 +83,23 @@
         );
       }
       if (menu) {
-        s.flat(
-          "menu-hull",
-          "dart",
-          game.width * 0.78,
-          game.height * 0.55,
-          0,
-          85,
-          85,
-          75,
-          "#86724d",
-          0.4,
-        );
+        const type = game.settings?.ship || "warbird";
+        const t = s.reducedMotion ? 0 : game.attractTime;
+        this.drawHull("menu-hull", {
+          type,
+          x: game.width * 0.78,
+          y: game.height * 0.55,
+          angle: -Math.PI / 2 + 0.35 + Math.sin(t * 0.4) * 0.12,
+          r: 70,
+          // Muted: this hull sits behind the hangar's briefing text.
+          paint: this.mutedPaint(game.settings?.livery, c.SHIPS[type]?.accent),
+          thrust: 0.4,
+          boost: false,
+          reverse: 0,
+          turn: 0,
+          time: t,
+          id: 0,
+        });
         s.text("");
         s.finish();
         this.radar.innerHTML = "";
@@ -232,47 +259,41 @@
           c.distanceSquared(e, game.player) > 250 * 250
         )
           continue;
-        if (!s.geometries.has(e.type))
-          s.shape(e.type, game.shipVertices(e.type));
         const x = c.lerp(e.previousX, e.x, interpolation),
           y = c.lerp(e.previousY, e.y, interpolation),
+          previousAngle = e.previousAngle ?? e.angle,
+          angle = previousAngle + c.angleDelta(previousAngle, e.angle) * interpolation,
           r = e.config.radius,
-          color = e.team === 1 ? "#edca78" : "#d97668";
-        s.flat(
-          e.isPlayer ? "player" : "enemies",
-          e.type,
+          control = e.control || {};
+        let paint = this.skins.paint(
+          e.team === 1 ? game.settings?.livery : "hostile",
+          e.config.accent,
+        );
+        if (e.flash > 0)
+          paint = { ...paint, hull: "#efd6aa", deck: "#fff0d0" };
+        const energyRatio = e.energy / e.config.maxEnergy;
+        if (
+          energyRatio < 0.22 &&
+          !s.reducedMotion &&
+          Math.sin(game.simulationTime * 14 + e.id) > 0.2
+        )
+          paint = { ...paint, deck: "#6a231c" };
+        this.drawHull(e.isPlayer ? "player" : "enemies", {
+          type: e.type,
           x,
           y,
-          9,
+          angle,
           r,
-          r,
-          r * 1.4,
-          e.flash > 0 ? "#efd6aa" : e.cloak > 0 ? "#334c48" : color,
-          e.angle,
-        );
-        s.line(
-          "hull-detail",
-          x - Math.cos(e.angle) * r * 0.4,
-          y - Math.sin(e.angle) * r * 0.4,
-          x + Math.cos(e.angle) * r * 0.7,
-          y + Math.sin(e.angle) * r * 0.7,
-          20,
-          e.config.accent,
-          2,
-        );
-        if ((e.control.thrust || e.control.boost) && !s.reducedMotion) {
-          const length = e.control.boost ? r * 1.8 : r * 0.9;
-          s.line(
-            "exhaust",
-            x - Math.cos(e.angle) * r * 0.7,
-            y - Math.sin(e.angle) * r * 0.7,
-            x - Math.cos(e.angle) * (r + length),
-            y - Math.sin(e.angle) * (r + length),
-            5,
-            "#c9a56a",
-            5,
-          );
-        }
+          paint,
+          cloaked: e.cloak > 0,
+          thrust: throttle(control.thrust),
+          reverse: throttle(control.reverse),
+          boost: Boolean(control.boost) && e.boostHeat > 0.05,
+          turn: control.turn || 0,
+          time: game.simulationTime,
+          id: e.id,
+        });
+        if (e.isPlayer) this.drawDrift(e, x, y, r);
         if (e.invulnerable > 0 || e.barrier > 0)
           s.ring(
             "shields",
@@ -355,6 +376,88 @@
       );
       this.drawRadar(game);
       s.finish();
+    }
+    // One skinned hull: plated base, raised deck, canopy, trim, nozzles,
+    // throttle-scaled flames, reverse and rotation thrusters, nav lights.
+    drawHull(group, o) {
+      const s = this.stage,
+        hull = this.skins.hull(o.type),
+        { x, y, r, angle, paint } = o,
+        cos = Math.cos(angle),
+        sin = Math.sin(angle),
+        local = (px, py) => [x + (px * cos - py * sin) * r, y + (px * sin + py * cos) * r],
+        steady = s.reducedMotion,
+        flicker = (seed) =>
+          steady ? 1 : 0.84 + 0.16 * Math.sin(o.time * 61 + seed * 2.3 + o.id * 1.7);
+      if (o.cloaked) {
+        // Cloaked: a faint hull ghost only, no lights or exhaust.
+        s.flat(group, `skin-${o.type}`, x, y, 9, r, r, r * 0.6, "#2a3f3c", angle);
+        return;
+      }
+      s.flat(group, `skin-${o.type}`, x, y, 9, r, r, r * 1.3, paint.hull, angle);
+      s.flat(group, `skin-${o.type}-deck`, x, y, 9 + r * 0.32, r, r, r * 0.55, paint.deck, angle);
+      const detail = `${group}-detail`;
+      for (const [x1, y1, x2, y2] of hull.stripes) {
+        const [ax, ay] = local(x1, y1),
+          [bx, by] = local(x2, y2);
+        s.line(detail, ax, ay, bx, by, 9 + r * 0.62, paint.trim, Math.max(1.5, r * 0.09));
+      }
+      const [cx, cy, cl, cw] = hull.canopy,
+        [canopyX, canopyY] = local(cx, cy);
+      s.flat(detail, "sphere", canopyX, canopyY, 9 + r * 0.6, cl * r, cw * r, r * 0.12, paint.canopy, angle, "glow");
+      const thrust = Math.max(o.thrust, o.boost ? 1 : 0);
+      for (const [index, [ex, ey, size]] of hull.engines.entries()) {
+        const [nx, ny] = local(ex, ey),
+          nozzle = size * r;
+        s.flat(detail, "sphere", nx, ny, 9 + r * 0.3, nozzle, nozzle, nozzle * 0.5, thrust > 0 ? paint.core : "#3a3328", 0, "glow");
+        if (thrust <= 0) continue;
+        const length = r * (o.boost ? 2.3 : 0.55 + 1.1 * thrust) * flicker(index),
+          width = nozzle * (o.boost ? 1.9 : 1.55);
+        s.flat("exhaust", "flame", nx, ny, 9, length, width, 2, o.boost ? this.skins.BOOST_FLAME : paint.flame, angle, "glow");
+        s.flat("exhaust", "flame", nx, ny, 10, length * 0.5, width * 0.5, 2, o.boost ? this.skins.BOOST_CORE : paint.core, angle, "glow");
+      }
+      if (o.reverse > 0) {
+        // Paired retro jets near the nose fire forward.
+        for (const side of [-1, 1]) {
+          const [jx, jy] = local(0.62, side * 0.26);
+          s.flat("exhaust", "flame", jx, jy, 10, r * 0.55 * o.reverse * flicker(side + 5), r * 0.16, 2, paint.flame, angle + Math.PI, "glow");
+        }
+      }
+      if (Math.abs(o.turn) > 0.05) {
+        // Rotation thrusters: nose kicks one way, tail the other.
+        const side = Math.sign(o.turn),
+          puff = r * (0.25 + 0.3 * Math.abs(o.turn)) * flicker(9);
+        const [nx, ny] = local(0.72, -side * 0.18),
+          [tx, ty] = local(-0.6, side * 0.3);
+        // A flame trails aft of its heading, so heading = exhaust direction + pi.
+        s.flat("exhaust", "flame", nx, ny, 10, puff, r * 0.12, 2, paint.core, angle + side * Math.PI / 2, "glow");
+        s.flat("exhaust", "flame", tx, ty, 10, puff, r * 0.12, 2, paint.core, angle - side * Math.PI / 2, "glow");
+      }
+      const blink = steady || Math.sin(o.time * 6.3 + o.id) > -0.3;
+      if (blink)
+        for (const [lx, ly] of hull.lights) {
+          const [px, py] = local(lx, ly);
+          s.flat(detail, "sphere", px, py, 9 + r * 0.7, r * 0.07, r * 0.07, r * 0.07, ly < 0 ? "#ff5a4f" : "#62ff9a", 0, "glow");
+        }
+    }
+    mutedPaint(livery, accent) {
+      const paint = this.skins.paint(livery, accent),
+        dim = (hex) => this.skins.shade(hex, 0.5);
+      return Object.fromEntries(
+        Object.entries(paint).map(([key, value]) => [key, key === "id" ? value : dim(value)]),
+      );
+    }
+    // Drift vector: where momentum is carrying the hull, independent of the
+    // nose. Makes Newtonian coasting and counter-thrust readable at a glance.
+    drawDrift(ship, x, y, r) {
+      const speed = Math.hypot(ship.vx, ship.vy);
+      if (speed < 24) return;
+      const dx = ship.vx / speed,
+        dy = ship.vy / speed,
+        start = r * 1.55,
+        end = start + Math.min(110, speed * 0.2);
+      this.stage.line("drift", x + dx * start, y + dy * start, x + dx * end, y + dy * end, 6, "#2f6c64", 1.25);
+      this.stage.flat("drift", "dart", x + dx * end, y + dy * end, 6, 5, 6, 2, "#6fc7b8", Math.atan2(dy, dx) + Math.PI / 2, "glow");
     }
     drawRadar(game) {
       const a = game.arena,

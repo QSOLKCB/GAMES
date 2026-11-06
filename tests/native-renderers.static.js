@@ -57,7 +57,7 @@ for (const [game, patterns] of Object.entries(feedbackContracts)) {
     assert.match(app, pattern, `${game}: native combat feedback contract`);
 }
 // Standard-gamepad support shares one reader (adapted from VANILLAJS input).
-for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM"]) {
+for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM", "SUBSPACE"]) {
   const html = fs.readFileSync(path.join(root, game, "index.html"), "utf8");
   assert.match(
     html,

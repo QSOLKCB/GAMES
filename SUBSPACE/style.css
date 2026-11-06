@@ -313,10 +313,75 @@ select:focus-visible {
 }
 
 .mini-ship {
-  width: 55px;
-  height: 42px;
+  width: 58px;
+  height: 58px;
+  margin: -6px -4px -10px 0;
   color: var(--ship-color);
-  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ship-color), transparent 60%));
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ship-color), transparent 55%));
+  transition: transform 180ms ease;
+}
+
+.ship-card:hover .mini-ship,
+.ship-card.is-selected .mini-ship {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.livery-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 12px;
+}
+
+.livery-label {
+  color: var(--dim);
+  font: 700 9px var(--mono);
+  letter-spacing: 0.16em;
+}
+
+.livery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.livery-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: rgba(5, 13, 15, 0.78);
+  color: var(--ink);
+  font: 700 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.livery-swatch i {
+  width: 22px;
+  height: 14px;
+  border: 1px solid var(--livery-trim);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--livery-hull) 0 50%, var(--livery-deck) 50% 100%);
+}
+
+.livery-swatch:hover {
+  border-color: rgba(232, 189, 104, 0.45);
+}
+
+.livery-swatch[aria-pressed="true"] {
+  border-color: var(--amber);
+  background: rgba(48, 43, 27, 0.8);
+}
+
+.livery-swatch:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }
 
 .ship-card b {
@@ -811,6 +876,11 @@ kbd {
   border: 1px solid var(--line-strong);
   color: var(--amber);
   font-size: 20px;
+}
+
+.hud-ship-svg {
+  width: 36px;
+  height: 36px;
 }
 
 .ship-identity b,

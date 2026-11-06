@@ -91,9 +91,13 @@ test("analog triggers use the threshold", () => {
   h.set([pad()]);
   h.set([pad({ values: { [BUTTON.RT]: 0.3 } })]);
   assert.equal(h.reader.held(BUTTON.RT), false);
+  assert.equal(h.reader.value(BUTTON.RT), 0.3);
   h.set([pad({ values: { [BUTTON.RT]: 0.75 } })]);
   assert.equal(h.reader.held(BUTTON.RT), true);
+  assert.equal(h.reader.value(BUTTON.RT), 0.75);
   assert.equal(h.reader.any(BUTTON.LT, BUTTON.RT), true);
+  h.reader.reset();
+  assert.equal(h.reader.value(BUTTON.RT), 0);
 });
 
 test("direction merges the d-pad and left stick", () => {

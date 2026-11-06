@@ -107,6 +107,7 @@
       this.linked = false;
       this.lost = false;
       this.axes = ZERO_AXES;
+      this.values = [];
       this.heldMask = 0;
       this.pressedMask = 0;
     }
@@ -115,6 +116,7 @@
     reset() {
       this.armed = false;
       this.axes = ZERO_AXES;
+      this.values = [];
       this.heldMask = 0;
       this.pressedMask = 0;
     }
@@ -157,7 +159,12 @@
       }
       this.axes = Object.freeze([0, 1, 2, 3].map((i) => deadzone(Number(rawAxes[i]) || 0, this.zone)));
       let held = 0;
-      for (let i = 0; i < count; i += 1) if (buttonValue(pad, i) >= this.threshold) held |= 1 << i;
+      const values = new Array(count);
+      for (let i = 0; i < count; i += 1) {
+        values[i] = buttonValue(pad, i);
+        if (values[i] >= this.threshold) held |= 1 << i;
+      }
+      this.values = values;
       held >>>= 0;
       this.pressedMask = (held & ~this.heldMask) >>> 0;
       this.heldMask = held;
@@ -172,6 +179,11 @@
     /** Button went down on this sample (edge). */
     pressed(button) {
       return ((this.pressedMask >>> button) & 1) === 1;
+    }
+
+    /** Analog button value in [0, 1] (triggers); 0 while unarmed. */
+    value(button) {
+      return this.values[button] || 0;
     }
 
     /** Deadzoned axis value in [-1, 1]. */

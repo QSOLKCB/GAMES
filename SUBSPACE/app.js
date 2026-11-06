@@ -3,10 +3,13 @@
 
   const Core = window.InertiaZeroCore;
   if (!Core) throw new Error("InertiaZeroCore failed to load");
+  const Skins = window.InertiaSkins;
+  if (!Skins) throw new Error("InertiaSkins failed to load");
 
   const VERSION = "1.0.0";
   const FIXED_STEP = 1 / 60;
   const MAX_FRAME_DELTA = 0.08;
+  const CAMERA_LEAD_SECONDS = 0.42;
   const PLAYER_TEAM = 1;
   const ENEMY_TEAM = 2;
   const STORAGE_KEY = "qsol-inertia-zero-settings-v1";
@@ -20,6 +23,7 @@
     hud: $("#hud"),
     menu: $("#menu"),
     shipGrid: $("#ship-grid"),
+    liveryGrid: $("#livery-grid"),
     difficulty: $("#difficulty-select"),
     difficultyDescription: $("#difficulty-description"),
     botCount: $("#bot-count-select"),
@@ -72,14 +76,37 @@
     bestScoreCopy: $("#best-score-copy")
   };
 
+  const PAD = window.QsolInput.BUTTON;
+  const AXIS = window.QsolInput.AXIS;
+  const PAD_STICK_THRESHOLD = 0.35;
+
+  // Analog stick rotation: fine aim near centre, full turn rate at full lock.
+  function shapeTurn(value) {
+    return Math.sign(value) * Math.pow(Math.abs(value), 1.6);
+  }
+
+  // Ignore resting trigger noise, then use the full 0..1 travel.
+  function triggerThrottle(value) {
+    return value <= 0.08 ? 0 : Math.min(1, (value - 0.08) / 0.92);
+  }
+
+  // Commands carry thrust as a boolean (AI) or a 0..1 throttle (player).
+  function throttle(value) {
+    return value === true ? 1 : Core.clamp(Number(value) || 0, 0, 1);
+  }
+
   class InputController {
     constructor(game) {
       this.game = game;
       this.keys = new Set();
+      // Keys pressed since the last simulation tick. A tap shorter than one
+      // 60 Hz tick still counts for that tick instead of being dropped.
       this.pressed = new Set();
       this.pointerPrimary = false;
       this.pointerSecondary = false;
-      this.gamepadWasActive = false;
+      this.pointerTapPrimary = false;
+      this.pointerTapSecondary = false;
+      this.gamepad = new window.QsolInput.GamepadReader();
       this.bind();
     }
 
@@ -91,7 +118,7 @@
       ]);
       window.addEventListener("keydown", (event) => {
         if (controlledKeys.has(event.code) && this.game.mode === "playing") event.preventDefault();
-        if (!this.keys.has(event.code)) this.pressed.add(event.code);
+        if (!this.keys.has(event.code) && !event.repeat) this.pressed.add(event.code);
         this.keys.add(event.code);
         if ((event.code === "KeyP" || event.code === "Escape") && !event.repeat) {
           if (this.game.mode === "playing" || this.game.mode === "paused") this.game.togglePause();
@@ -103,15 +130,13 @@
       }, { passive: false });
       window.addEventListener("keyup", (event) => this.keys.delete(event.code));
       window.addEventListener("blur", () => {
-        this.keys.clear();
-        this.pointerPrimary = false;
-        this.pointerSecondary = false;
+        this.release();
         if (this.game.mode === "playing") this.game.pause();
       });
       nodes.canvas.addEventListener("pointerdown", (event) => {
         if (this.game.mode !== "playing") return;
-        if (event.button === 0) this.pointerPrimary = true;
-        if (event.button === 2) this.pointerSecondary = true;
+        if (event.button === 0) this.pointerPrimary = this.pointerTapPrimary = true;
+        if (event.button === 2) this.pointerSecondary = this.pointerTapSecondary = true;
         this.game.audio.ensure();
       });
       window.addEventListener("pointerup", (event) => {
@@ -121,8 +146,20 @@
       nodes.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
     }
 
+    /** Clear every held control; the gamepad must return to neutral. */
+    release() {
+      this.keys.clear();
+      this.pressed.clear();
+      this.pointerPrimary = false;
+      this.pointerSecondary = false;
+      this.pointerTapPrimary = false;
+      this.pointerTapSecondary = false;
+      this.gamepad.reset();
+    }
+
+    /** Held now, or tapped since the last tick. */
     down(...codes) {
-      return codes.some((code) => this.keys.has(code));
+      return codes.some((code) => this.keys.has(code) || this.pressed.has(code));
     }
 
     consume(code) {
@@ -131,40 +168,62 @@
       return present;
     }
 
+    /** Poll the pad once per animation frame, including in menus and pauses. */
+    pollGamepad() {
+      const pad = this.gamepad.poll();
+      const game = this.game;
+      if (pad.linked && game.mode !== "menu") game.toast("GAMEPAD LINKED");
+      if (pad.lost && game.mode === "playing") {
+        game.pause();
+        game.toast("CONTROLLER DISCONNECTED");
+        return;
+      }
+      if (!pad.pressed(PAD.START)) return;
+      // Start drives whichever primary action is on screen.
+      if (game.mode === "menu") {
+        if (!nodes.helpOverlay.hidden) nodes.closeHelp.click();
+        else nodes.launch.click();
+      } else if (game.mode === "playing" || game.mode === "paused") game.togglePause();
+      else if (game.mode === "levelComplete" && !nodes.sectorOverlay.hidden) nodes.nextSector.click();
+      else if (game.mode === "gameover" && !nodes.gameoverOverlay.hidden) nodes.retry.click();
+    }
+
     sample() {
       const command = {
         turn: (this.down("KeyD", "ArrowRight") ? 1 : 0) - (this.down("KeyA", "ArrowLeft") ? 1 : 0),
-        thrust: this.down("KeyW", "ArrowUp"),
-        reverse: this.down("KeyS", "ArrowDown"),
+        thrust: this.down("KeyW", "ArrowUp") ? 1 : 0,
+        reverse: this.down("KeyS", "ArrowDown") ? 1 : 0,
         boost: this.down("ShiftLeft", "ShiftRight"),
-        fire: this.down("Space", "ControlLeft", "ControlRight") || this.pointerPrimary,
-        secondary: this.down("KeyX", "Tab") || this.pointerSecondary,
+        fire: this.down("Space", "ControlLeft", "ControlRight") || this.pointerPrimary || this.pointerTapPrimary,
+        secondary: this.down("KeyX", "Tab") || this.pointerSecondary || this.pointerTapSecondary,
         special: this.down("KeyQ"),
         repel: this.down("KeyR")
       };
 
-      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      const pad = Array.from(pads).find(Boolean);
-      if (pad) {
-        const axisX = Math.abs(pad.axes[0] || 0) > 0.18 ? pad.axes[0] : 0;
-        if (axisX) command.turn = Core.clamp(axisX, -1, 1);
-        command.thrust ||= (pad.axes[1] || 0) < -0.25 || Boolean(pad.buttons[7]?.pressed);
-        command.reverse ||= (pad.axes[1] || 0) > 0.25 || Boolean(pad.buttons[6]?.pressed);
-        command.fire ||= Boolean(pad.buttons[0]?.pressed);
-        command.secondary ||= Boolean(pad.buttons[1]?.pressed);
-        command.special ||= Boolean(pad.buttons[2]?.pressed);
-        command.repel ||= Boolean(pad.buttons[3]?.pressed);
-        command.boost ||= Boolean(pad.buttons[5]?.pressed);
-        if (!this.gamepadWasActive && pad.buttons.some((button) => button.pressed)) {
-          this.gamepadWasActive = true;
-          this.game.toast("GAMEPAD LINKED");
-        }
+      const pad = this.gamepad;
+      if (pad.armed) {
+        const stickX = pad.axis(AXIS.LX);
+        const stickY = pad.axis(AXIS.LY);
+        if (stickX) command.turn = Core.clamp(command.turn + shapeTurn(stickX), -1, 1);
+        else command.turn = Core.clamp(command.turn + (pad.held(PAD.RIGHT) ? 1 : 0) - (pad.held(PAD.LEFT) ? 1 : 0), -1, 1);
+        // Triggers are analog throttles; stick and d-pad give full thrust.
+        const digitalThrust = stickY <= -PAD_STICK_THRESHOLD || pad.held(PAD.UP) ? 1 : 0;
+        const digitalReverse = stickY >= PAD_STICK_THRESHOLD || pad.held(PAD.DOWN) ? 1 : 0;
+        command.thrust = Math.max(command.thrust, digitalThrust, triggerThrottle(pad.value(PAD.RT)));
+        command.reverse = Math.max(command.reverse, digitalReverse, triggerThrottle(pad.value(PAD.LT)));
+        command.fire ||= pad.held(PAD.SOUTH);
+        command.secondary ||= pad.held(PAD.EAST);
+        command.special ||= pad.held(PAD.WEST);
+        command.repel ||= pad.held(PAD.NORTH);
+        command.boost ||= pad.any(PAD.RB, PAD.LB, PAD.L3);
       }
       return command;
     }
 
     endTick() {
       this.pressed.clear();
+      this.pointerTapPrimary = false;
+      this.pointerTapSecondary = false;
     }
   }
 
@@ -275,6 +334,7 @@
       this.mode = "menu";
       this.settings = {
         ship: "warbird",
+        livery: "factory",
         difficulty: "ace",
         botCount: 4,
         arena: "mixed",
@@ -304,7 +364,7 @@
       this.pickups = [];
       this.player = null;
       this.objectiveState = null;
-      this.camera = { x: 0, y: 0, shake: 0 };
+      this.camera = { x: 0, y: 0, previousX: 0, previousY: 0, shake: 0 };
       this.width = 1280;
       this.height = 720;
       this.dpr = 1;
@@ -322,24 +382,13 @@
     }
 
     buildMenu() {
-      const shapes = {
-        warbird: "28,2 47,35 28,28 9,35",
-        javelin: "28,1 40,38 28,31 16,38",
-        spider: "28,5 35,18 51,10 42,26 50,38 30,31 28,39 26,31 6,38 14,26 5,10 21,18",
-        leviathan: "28,3 48,20 45,38 35,31 28,39 21,31 11,38 8,20",
-        terrier: "28,3 36,13 49,14 42,35 31,29 28,39 25,29 14,35 7,14 20,13",
-        weasel: "28,2 36,24 44,35 30,30 28,40 26,30 12,35 20,24",
-        lancaster: "28,2 39,12 46,37 31,30 28,40 25,30 10,37 17,12",
-        shark: "28,4 47,17 40,23 50,37 31,29 28,40 25,29 6,37 16,23 9,17"
-      };
-      nodes.shipGrid.innerHTML = Object.values(Core.SHIPS).map((ship, index) => `
-        <button class="ship-card${ship.id === this.settings.ship ? " is-selected" : ""}" type="button"
-          aria-pressed="${ship.id === this.settings.ship}" data-ship="${ship.id}" style="--ship-color:${ship.accent}">
-          <span class="ship-card-top"><span class="ship-number">HULL 0${index + 1}</span>
-            <svg class="mini-ship" viewBox="0 0 56 42" aria-hidden="true"><polygon points="${shapes[ship.id]}" fill="rgba(5,12,14,.9)" stroke="currentColor" stroke-width="1.4"/><line x1="28" y1="7" x2="28" y2="31" stroke="currentColor" opacity=".45"/></svg>
-          </span>
-          <b>${ship.name}</b><small>${ship.role}</small><span class="selected-mark">SELECTED</span>
-        </button>`).join("");
+      this.renderShipCards();
+      nodes.liveryGrid.innerHTML = Object.values(Skins.LIVERIES).map((livery) => {
+        const swatch = Skins.paint(livery.id, Core.SHIPS.warbird.accent);
+        return `<button class="livery-swatch" type="button" data-livery="${livery.id}" aria-pressed="false"
+          style="--livery-hull:${swatch.hull};--livery-deck:${swatch.deck};--livery-trim:${swatch.trim}">
+          <i aria-hidden="true"></i><span>${livery.name}</span></button>`;
+      }).join("");
       nodes.difficulty.innerHTML = Object.values(Core.DIFFICULTIES)
         .map((difficulty) => `<option value="${difficulty.id}">${difficulty.name} — ${difficulty.id === "sovereign" ? "maximum threat" : difficulty.summary.split(".")[0].toLowerCase()}</option>`)
         .join("");
@@ -348,7 +397,26 @@
         .join("");
     }
 
+    renderShipCards() {
+      nodes.shipGrid.innerHTML = Object.values(Core.SHIPS).map((ship, index) => `
+        <button class="ship-card${ship.id === this.settings.ship ? " is-selected" : ""}" type="button"
+          aria-pressed="${ship.id === this.settings.ship}" data-ship="${ship.id}" style="--ship-color:${ship.accent}">
+          <span class="ship-card-top"><span class="ship-number">HULL 0${index + 1}</span>
+            ${Skins.svg(ship.id, this.settings.livery, ship.accent)}
+          </span>
+          <b>${ship.name}</b><small>${ship.role}</small><span class="selected-mark">SELECTED</span>
+        </button>`).join("");
+    }
+
     bindUI() {
+      nodes.liveryGrid.addEventListener("click", (event) => {
+        const swatch = event.target.closest("[data-livery]");
+        if (!swatch || !Skins.LIVERIES[swatch.dataset.livery]) return;
+        this.settings.livery = swatch.dataset.livery;
+        this.renderShipCards();
+        this.syncMenu();
+        this.saveSettings();
+      });
       nodes.shipGrid.addEventListener("click", (event) => {
         const card = event.target.closest("[data-ship]");
         if (!card) return;
@@ -421,6 +489,8 @@
         const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (stored && Core.SHIPS[stored.ship] && Core.DIFFICULTIES[stored.difficulty] && Core.ARENA_STYLES[stored.arena]) {
           Object.assign(this.settings, stored);
+          if (!Skins.LIVERIES[this.settings.livery]) this.settings.livery = "factory";
+          this.renderShipCards();
         }
       } catch (error) {
         // Storage is optional; private/local-file contexts may reject access.
@@ -441,6 +511,9 @@
         const selected = card.dataset.ship === this.settings.ship;
         card.classList.toggle("is-selected", selected);
         card.setAttribute("aria-pressed", String(selected));
+      });
+      nodes.liveryGrid.querySelectorAll("[data-livery]").forEach((swatch) => {
+        swatch.setAttribute("aria-pressed", String(swatch.dataset.livery === this.settings.livery));
       });
       nodes.difficulty.value = this.settings.difficulty;
       nodes.botCount.value = String(this.settings.botCount);
@@ -555,10 +628,11 @@
       }
       this.navigationArena = { ...this.arena, obstacles: this.navigationObstacles };
       this.createPickups(9 + Math.min(7, this.level));
-      this.camera.x = this.player.x;
-      this.camera.y = this.player.y;
+      this.camera.x = this.camera.previousX = this.player.x;
+      this.camera.y = this.camera.previousY = this.player.y;
       this.camera.shake = 0;
       this.mode = "playing";
+      this.input.release();
       this.accumulator = 0;
       this.lastFrame = performance.now();
       this.updateHUD(true);
@@ -581,6 +655,7 @@
         vx: 0,
         vy: 0,
         angle,
+        previousAngle: angle,
         energy: config.maxEnergy,
         alive: true,
         isPlayer,
@@ -652,6 +727,7 @@
       this.lastFrame = time;
       this.fps += ((delta > 0 ? 1 / delta : 60) - this.fps) * 0.06;
       this.attractTime += delta;
+      this.input.pollGamepad();
       if (this.mode === "playing") {
         this.accumulator += delta;
         let steps = 0;
@@ -729,17 +805,20 @@
         ship.boostHeat = Math.max(0, ship.boostHeat - dt * 1.8);
       }
 
+      ship.previousAngle = ship.angle;
       ship.angle += control.turn * config.turnRate * dt;
       ship.angle = (ship.angle + Core.TAU) % Core.TAU;
       const forwardX = Math.cos(ship.angle);
       const forwardY = Math.sin(ship.angle);
-      if (control.thrust) {
-        const acceleration = config.thrust / config.mass * thrustScale;
+      const thrustAmount = throttle(control.thrust);
+      const reverseAmount = throttle(control.reverse);
+      if (thrustAmount > 0) {
+        const acceleration = config.thrust / config.mass * thrustScale * thrustAmount;
         ship.vx += forwardX * acceleration * dt;
         ship.vy += forwardY * acceleration * dt;
       }
-      if (control.reverse) {
-        const acceleration = config.thrust / config.mass * config.reverse;
+      if (reverseAmount > 0) {
+        const acceleration = config.thrust / config.mass * config.reverse * reverseAmount;
         ship.vx -= forwardX * acceleration * dt;
         ship.vy -= forwardY * acceleration * dt;
       }
@@ -1399,7 +1478,7 @@
       const spawn = this.arena.playerSpawn;
       Object.assign(this.player, {
         x: spawn.x, y: spawn.y, previousX: spawn.x, previousY: spawn.y,
-        vx: 0, vy: 0, angle: 0, energy: this.player.config.maxEnergy,
+        vx: 0, vy: 0, angle: 0, previousAngle: 0, energy: this.player.config.maxEnergy,
         alive: true, invulnerable: 2.6, rechargeLock: 0, stun: 0,
         cloak: 0, barrier: 0, overdrive: 0, dash: 0, multifire: 0,
         gunCooldown: 0, secondaryCooldown: 0, specialCooldown: 0, repelCooldown: 0,
@@ -1414,8 +1493,25 @@
       if (!target || !this.arena) return;
       const halfWidth = this.width * 0.5;
       const halfHeight = this.height * 0.5;
-      const desiredX = Core.clamp(target.x, Math.min(halfWidth, this.arena.width * 0.5), Math.max(this.arena.width - halfWidth, this.arena.width * 0.5));
-      const desiredY = Core.clamp(target.y, Math.min(halfHeight, this.arena.height * 0.5), Math.max(this.arena.height - halfHeight, this.arena.height * 0.5));
+      // Look ahead along the travel vector so a fast pilot sees where the
+      // hull is going, not where it has been. Bounded to a fraction of view.
+      let leadX = 0;
+      let leadY = 0;
+      if (target === this.player && !this.presentation.stage?.reducedMotion) {
+        leadX = (this.player.vx || 0) * CAMERA_LEAD_SECONDS;
+        leadY = (this.player.vy || 0) * CAMERA_LEAD_SECONDS;
+        const limit = Math.min(halfWidth, halfHeight) * 0.42;
+        const length = Math.hypot(leadX, leadY);
+        if (length > limit) {
+          leadX *= limit / length;
+          leadY *= limit / length;
+        }
+      }
+      const desiredX = Core.clamp(target.x + leadX, Math.min(halfWidth, this.arena.width * 0.5), Math.max(this.arena.width - halfWidth, this.arena.width * 0.5));
+      const desiredY = Core.clamp(target.y + leadY, Math.min(halfHeight, this.arena.height * 0.5), Math.max(this.arena.height - halfHeight, this.arena.height * 0.5));
+      // Previous position lets the renderer interpolate the view between ticks.
+      this.camera.previousX = this.camera.x;
+      this.camera.previousY = this.camera.y;
       const smoothing = 1 - Math.exp(-dt * 7.5);
       this.camera.x = Core.lerp(this.camera.x, desiredX, smoothing);
       this.camera.y = Core.lerp(this.camera.y, desiredY, smoothing);
@@ -1775,20 +1871,6 @@
       this.presentation.render(this, interpolation);
     }
 
-    shipVertices(type) {
-      const shapes = {
-        warbird: [[1.12, 0], [-0.82, -0.82], [-0.48, 0], [-0.82, 0.82]],
-        javelin: [[1.28, 0], [-0.82, -0.43], [-0.46, 0], [-0.82, 0.43]],
-        spider: [[1.02, 0], [0.2, -0.42], [-0.66, -0.95], [-0.45, -0.24], [-0.88, 0], [-0.45, 0.24], [-0.66, 0.95], [0.2, 0.42]],
-        leviathan: [[1.04, 0], [0.42, -0.64], [-0.56, -0.9], [-0.9, -0.34], [-0.72, 0], [-0.9, 0.34], [-0.56, 0.9], [0.42, 0.64]],
-        terrier: [[1.08, 0], [0.46, -0.38], [0.15, -0.84], [-0.65, -0.67], [-0.45, 0], [-0.65, 0.67], [0.15, 0.84], [0.46, 0.38]],
-        weasel: [[1.22, 0], [0.08, -0.45], [-0.74, -0.58], [-0.42, 0], [-0.74, 0.58], [0.08, 0.45]],
-        lancaster: [[1.12, 0], [0.38, -0.55], [-0.55, -0.72], [-0.82, -0.28], [-0.55, 0], [-0.82, 0.28], [-0.55, 0.72], [0.38, 0.55]],
-        shark: [[1.14, 0], [0.2, -0.36], [-0.72, -0.88], [-0.48, -0.2], [-0.84, 0], [-0.48, 0.2], [-0.72, 0.88], [0.2, 0.36]]
-      };
-      return shapes[type] || shapes.warbird;
-    }
-
     inView(x, y, padding) {
       const margin = padding || 0;
       return x >= this.camera.x - this.width * 0.5 - margin
@@ -1833,7 +1915,11 @@
       nodes.hudFPS.textContent = String(Math.round(this.fps));
       nodes.hudShip.textContent = config.name.toUpperCase();
       nodes.hudRole.textContent = config.role.toUpperCase();
-      nodes.hudShipIcon.textContent = { warbird: "▲", javelin: "△", spider: "✣", leviathan: "◆", terrier: "◇", weasel: "⌁", lancaster: "⬡", shark: "⋔" }[ship.type];
+      const iconKey = `${ship.type}:${this.settings.livery}`;
+      if (this.hudIconKey !== iconKey) {
+        this.hudIconKey = iconKey;
+        nodes.hudShipIcon.innerHTML = Skins.svg(ship.type, this.settings.livery, config.accent, "hud-ship-svg");
+      }
       nodes.hudEnergyText.textContent = `${Math.max(0, Math.ceil(ship.energy))} / ${config.maxEnergy}`;
       nodes.energyFill.style.width = `${Core.clamp(ship.energy / config.maxEnergy, 0, 1) * 100}%`;
       if (force) {
@@ -1872,6 +1958,7 @@
     pause() {
       if (this.mode !== "playing" || (!this.player.alive && this.lives <= 0)) return;
       this.mode = "paused";
+      this.input.release();
       nodes.pauseOverlay.hidden = false;
       nodes.resume.focus?.();
     }
@@ -1880,6 +1967,7 @@
       if (this.mode !== "paused") return;
       nodes.pauseOverlay.hidden = true;
       this.mode = "playing";
+      this.input.release();
       this.lastFrame = performance.now();
       this.accumulator = 0;
       nodes.canvas.focus?.();
