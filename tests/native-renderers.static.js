@@ -56,6 +56,18 @@ for (const [game, patterns] of Object.entries(feedbackContracts)) {
   for (const pattern of patterns)
     assert.match(app, pattern, `${game}: native combat feedback contract`);
 }
+// Standard-gamepad support shares one reader (adapted from VANILLAJS input).
+for (const game of ["BLACKSTAR_AGA", "CARTRIDGE_ZERO", "VECTOR_ZERO", "SEEDSTORM"]) {
+  const html = fs.readFileSync(path.join(root, game, "index.html"), "utf8");
+  assert.match(
+    html,
+    /<script src="\.\.\/shared\/qsol-native\.js"><\/script>\s*<script src="\.\.\/shared\/qsol-input\.js"><\/script>/,
+    `${game}: shared gamepad reader loads before the game`,
+  );
+  const app = fs.readFileSync(path.join(root, game, "app.js"), "utf8");
+  assert.match(app, /new (?:window|globalThis)\.QsolInput\.GamepadReader\(\)/, `${game}: uses the shared gamepad reader`);
+  assert.match(app, /pollGamepad\(\);/, `${game}: polls the pad every frame`);
+}
 const sharedNative = fs.readFileSync(
   path.join(root, "shared/qsol-native.js"),
   "utf8",

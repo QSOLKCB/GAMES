@@ -55,6 +55,19 @@ The source ZIP also includes the native Ternary Drift source. Follow its
 That target uses Win32, a software framebuffer, and `waveOut`; its native payload
 contains no HTML, JavaScript, WebAssembly, SDL, or external game runtime.
 
+## Gamepad support
+
+BLACKSTAR AGA, VECTOR ZERO, SEEDSTORM and CARTRIDGE ZERO read standard-mapping
+gamepads through [`shared/qsol-input.js`](shared/qsol-input.js), adapted from the
+input module of [QSOLKCB/VANILLAJS](https://github.com/QSOLKCB/VANILLAJS)
+(Apache-2.0, see [`shared/NOTICE.md`](shared/NOTICE.md)). Sticks use a rescaled
+deadzone; a pad must return to neutral after connecting, launching, pausing or
+resuming before it acts; Start launches, pauses and confirms prompts; and losing
+an armed pad pauses live play. Pad input is folded into each game's recorded
+input words, so replays and state digests stay deterministic. Per-game bindings
+are in each game's README. INERTIA ZERO and SIGNAL BREACH keep their own
+gamepad handling.
+
 ## Shared rendering boundary
 
 All eight browser titles use Three.js for their **primary gameplay world**.
