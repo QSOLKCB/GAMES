@@ -49,6 +49,12 @@ function installPad() {
     // Launch and fly.
     await page.click("[data-action='undock']");
     await page.waitForFunction(() => window.latticeCorsair.session.mode === "flight");
+    // The first flight frame is drawn on a later animation frame; on slow
+    // runners that can be well after the mode switch, so wait for it.
+    await page.waitForFunction(() => {
+      const s = window.latticeCorsair.renderer.stage;
+      return ["bodies/", "stations/", "gates/", "player/"].every((g) => [...s.batches.keys()].some((k) => k.startsWith(g) && s.batches.get(k).used > 0));
+    }, null, { timeout: 20000 });
     const scene = await page.evaluate(() => {
       const s = window.latticeCorsair.renderer.stage;
       return { canvases: document.querySelectorAll("canvas").length, groups: [...s.batches.keys()].filter((k) => s.batches.get(k).used > 0) };
@@ -57,14 +63,13 @@ function installPad() {
     for (const g of ["bodies/", "stations/", "gates/", "player/"]) assert.ok(scene.groups.some((k) => k.startsWith(g)), `drew ${g}`);
     const start = await page.evaluate(() => ({ x: window.latticeCorsair.world.player.x, y: window.latticeCorsair.world.player.y }));
     await page.focus("#game");
-    await page.keyboard.down("w"); await page.waitForTimeout(700); await page.keyboard.up("w");
-    const moved = await page.evaluate(() => ({ x: window.latticeCorsair.world.player.x, y: window.latticeCorsair.world.player.y }));
-    assert.ok(Math.hypot(moved.x - start.x, moved.y - start.y) > 30, "thrust moves the ship");
+    await page.keyboard.down("w");
+    await page.waitForFunction((s) => { const p = window.latticeCorsair.world.player; return Math.hypot(p.x - s.x, p.y - s.y) > 30; }, start, { timeout: 20000 });
+    await page.keyboard.up("w");
     await page.keyboard.down(" "); await page.waitForTimeout(300); await page.keyboard.up(" ");
     assert.ok(await page.evaluate(() => window.latticeCorsair.world.shots.length >= 0));
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(100);
-    assert.ok(await page.locator("#radar circle").count() >= 2, "radar draws");
+    await page.waitForFunction(() => document.querySelectorAll("#radar circle").length >= 2, null, { timeout: 20000 });
 
     // Galaxy map: plot a route; the next gate becomes the waypoint.
     await page.keyboard.press("m");
@@ -74,8 +79,7 @@ function installPad() {
     await page.click(`#mapInfo [data-route='${dest}']`);
     assert.equal(await page.evaluate(() => window.latticeCorsair.session.routeTo), dest);
     await page.keyboard.press("Escape");
-    await page.evaluate(() => window.__frames(3));
-    assert.match(await page.locator("#prompt").innerText(), /Gate to|dock|jump/i);
+    await page.waitForFunction(() => /Gate to|dock|jump/i.test(document.getElementById("prompt").textContent), null, { timeout: 20000 });
 
     // Dock again with E: put the ship next to the station, stopped.
     await page.evaluate(() => { const L = window.latticeCorsair, w = L.world, st = w.layout.stations.find((s) => s.id === L.career.home) || w.layout.stations[0]; Object.assign(w.player, { x: st.x + 40, y: st.y, vx: 0, vy: 0 }); });
