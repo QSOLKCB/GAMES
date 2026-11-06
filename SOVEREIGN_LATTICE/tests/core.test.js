@@ -284,6 +284,33 @@ test("review: an energy shortfall halves research the same turn it happens, and 
   assert.equal(me.researchPoints, recovered.rawResearch, "first recovered turn earns full research");
 });
 
+test("review: saves from before sightings keep their recorded colony reports", () => {
+  // Codex's case: small galaxy, seed "0", three rivals, player on AI, 10 turns.
+  const g = Core.createGame({ seed: "0", size: "small", rivals: 3, data });
+  g.empires[0].ai = true;
+  for (let i = 0; i < 10; i++) Core.endTurn(g);
+  // Legacy shape: no intel, only lastSeen reports.
+  const legacy = JSON.parse(Core.serialize(g));
+  for (const e of legacy.empires) delete e.intel;
+  const report = Object.entries(legacy.empires[0].lastSeen).find(([, r]) => !g.visible[0][r.system]);
+  assert.ok(report, "fixture: a reported colony in a system out of sensor range");
+  const [colonyId, seen] = report;
+  // Afterwards a rival settles another planet there; the old report must not reveal it.
+  const sys = g.galaxy.systems[seen.system];
+  const freePlanet = sys.planets.findIndex((p, i) => !g.colonies.some((c) => c.system === seen.system && c.planet === i));
+  if (freePlanet >= 0) legacy.colonies.push({ id: 99999, owner: 2, species: g.empires[2].native, system: seen.system, planet: freePlanet, pop: 1,
+    facilities: Object.fromEntries(Core.FACILITY_KEYS.map((k) => [k, 0])), queue: [], defense: 40, blockaded: false, founded: 11 });
+  const loaded = Core.deserialize(JSON.stringify(legacy), data);
+  const known = Core.knownColonies(loaded, 0, seen.system);
+  assert.ok(known && !known.live, "a recorded report is available for the unseen system");
+  const entry = known.colonies.find((c) => c.id === Number(colonyId));
+  assert.ok(entry, "the reported colony is shown");
+  assert.deepEqual({ owner: entry.owner, pop: entry.pop, defense: entry.defense }, { owner: seen.owner, pop: seen.pop, defense: seen.defense });
+  assert.ok(!known.colonies.some((c) => c.id === 99999), "a later, unseen colony is not revealed");
+  // New saves round-trip their intel unchanged.
+  assert.deepEqual(Core.deserialize(Core.serialize(g), data).empires[0].intel, JSON.parse(JSON.stringify(g.empires[0].intel)));
+});
+
 test("the core has no ambient clock, randomness, storage or DOM", () => {
   const source = fs.readFileSync(path.join(root, "core.js"), "utf8");
   assert.doesNotMatch(source, /Math\.random|Date\.|performance\.|localStorage|document\.|window\.|fetch\(/);

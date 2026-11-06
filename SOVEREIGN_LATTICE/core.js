@@ -1421,6 +1421,26 @@
   // ---------------------------------------------------------------------
   // Save / load / digest.
   // ---------------------------------------------------------------------
+  /**
+   * Saves from before per-system sightings kept only lastSeen colony reports
+   * (owner, pop, defence, turn). Rebuild each reported system's sighting from
+   * them. A colony's planet and founding species never change, so reading
+   * those from the colony reveals nothing new; owner, population and defence
+   * come only from the report. Systems with no report stay without one.
+   */
+  function legacyIntel(raw, empire) {
+    const intel = {};
+    for (const [id, report] of Object.entries(empire.lastSeen || {})) {
+      const colony = raw.colonies.find((c) => c.id === Number(id));
+      if (!colony || colony.system !== report.system) continue;
+      const entry = intel[report.system] || (intel[report.system] = { turn: report.turn, colonies: [] });
+      entry.turn = Math.max(entry.turn, report.turn);
+      entry.colonies.push({ id: colony.id, planet: colony.planet, owner: report.owner, species: colony.species, pop: report.pop, defense: report.defense });
+    }
+    for (const entry of Object.values(intel)) entry.colonies.sort((a, b) => a.planet - b.planet || a.id - b.id);
+    return intel;
+  }
+
   function serialize(state) {
     const plain = JSON.parse(JSON.stringify(state, (key, value) => (key === "visible" ? undefined : value)));
     return JSON.stringify({ kind: "sovereign-lattice-save", ...plain });
@@ -1431,7 +1451,7 @@
     if (raw.dataSignature !== data.signature) throw new Error("this save was made with different data files");
     delete raw.kind;
     raw.galaxy = deepFreeze(raw.galaxy);
-    for (const empire of raw.empires) empire.intel ||= {};
+    for (const empire of raw.empires) if (!empire.intel) empire.intel = legacyIntel(raw, empire);
     for (const empire of raw.empires) empire.designs = empire.designs.map((d) => Object.freeze({ ...d, components: Object.freeze(d.components.slice()) }));
     Object.defineProperty(raw, "data", { value: data, enumerable: false, writable: true });
     computeVisible(raw); // derived only: loading must not change the game
