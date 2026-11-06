@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+  <meta name="theme-color" content="#03070a">
+  <meta name="description" content="LATTICE CORSAIR: an offline, real-time space trading and combat game. Fly one ship through a galaxy at war: trade, take contracts, outfit and fight.">
+  <title>LATTICE CORSAIR — Offline Space Captain</title>
+  <link rel="stylesheet" href="../shared/qsol-native.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" class="app is-title">
+    <canvas id="game" tabindex="0" aria-label="Flight view. W thrust, A and D turn, Space fire, E dock or jump."></canvas>
+
+    <section id="hud" class="hud" hidden aria-label="Flight instruments">
+      <div class="hud-top-left">
+        <div class="where"><b id="hudSystem">—</b><small id="hudOwner">—</small></div>
+        <div class="ledger"><span>DAY <b id="hudDay">1</b></span><span>CR <b id="hudCredits">0</b></span><span>HOLD <b id="hudCargo">0/0</b></span></div>
+        <ol id="hudMissions" class="missions" aria-label="Active contracts"></ol>
+      </div>
+      <div class="hud-top-right">
+        <svg id="radar" class="radar" viewBox="-100 -100 200 200" role="img" aria-label="Radar"></svg>
+        <div id="targetPanel" class="target" hidden></div>
+      </div>
+      <div id="prompt" class="prompt" aria-live="polite"></div>
+      <ol id="comms" class="comms" aria-live="polite"></ol>
+      <div class="hud-bottom">
+        <div class="bars">
+          <label><span>SHIELD</span><i><em id="barShield"></em></i></label>
+          <label><span>HULL</span><i><em id="barHull"></em></i></label>
+          <label><span>ENERGY</span><i><em id="barEnergy"></em></i></label>
+        </div>
+        <div class="readouts"><span>SPEED <b id="hudSpeed">0</b></span><span>MISSILES <b id="hudAmmo">0</b></span><span id="hudAssist" class="chip">ASSIST</span><span id="hudAuto" class="chip" hidden>AUTOPILOT</span></div>
+        <div class="hud-buttons">
+          <button type="button" data-action="map">Map <kbd>M</kbd></button>
+          <button type="button" data-action="pause">Pause <kbd>P</kbd></button>
+          <button type="button" id="audioButton" data-action="audio" aria-pressed="false">Audio off</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="station" class="overlay station" hidden aria-labelledby="stationName">
+      <div class="station-card">
+        <header class="station-head">
+          <div><p class="kicker" id="stationKicker">DOCKED</p><h2 id="stationName">Station</h2><p class="sub" id="stationSub"></p></div>
+          <div class="station-wallet"><span>CR <b id="stationCredits">0</b></span><span>HOLD <b id="stationCargo">0/0</b></span><span>DAY <b id="stationDay">1</b></span></div>
+          <button type="button" class="primary" data-action="undock">Launch <kbd>L</kbd></button>
+        </header>
+        <nav class="tabs" aria-label="Station services">
+          <button type="button" data-tab="market">Market</button>
+          <button type="button" data-tab="shipyard">Shipyard</button>
+          <button type="button" data-tab="outfitting">Outfitting</button>
+          <button type="button" data-tab="contracts">Contracts</button>
+          <button type="button" data-tab="news">News &amp; standing</button>
+          <button type="button" data-action="map">Galaxy map</button>
+        </nav>
+        <div id="stationBody" class="station-body"></div>
+      </div>
+    </section>
+
+    <section id="map" class="overlay map" hidden aria-labelledby="mapHeading">
+      <div class="map-card">
+        <header class="row"><h2 id="mapHeading">Galaxy map</h2><p class="sub" id="mapSub">Click a star to plot a route. The next gate is marked in flight.</p><button type="button" class="close" data-action="close-map" aria-label="Close map">×</button></header>
+        <div class="map-grid">
+          <svg id="mapSvg" class="map-svg" role="img" aria-label="Galaxy map"></svg>
+          <aside id="mapInfo" class="map-info"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="title" class="overlay title" aria-labelledby="titleHeading">
+      <div class="title-shell">
+        <header>
+          <p class="kicker">QSOL // GAMES · OFFLINE SPACE CAPTAIN · THE SOVEREIGN LATTICE</p>
+          <h1 id="titleHeading">LATTICE<span>CORSAIR</span></h1>
+          <p class="subtitle">One ship. Five empires at war. Trade the lanes, take the contracts, and choose whose side you fly for.</p>
+        </header>
+        <div class="title-grid">
+          <section>
+            <h2><span>01</span> Choose your flag</h2>
+            <div id="factionGrid" class="faction-grid" role="radiogroup" aria-label="Starting faction"></div>
+          </section>
+          <section class="setup">
+            <h2><span>02</span> Sign the charter</h2>
+            <label>Captain's name<input id="pilotInput" type="text" maxlength="24" value="Captain Vale" spellcheck="false"></label>
+            <label>Difficulty
+              <select id="difficultySelect">
+                <option value="relaxed">Relaxed — softer foes, cheap insurance</option>
+                <option value="standard" selected>Standard</option>
+                <option value="ironclad">Ironclad — harder foes, costly insurance</option>
+              </select>
+            </label>
+            <label>Galaxy seed<span class="seed-row"><input id="seedInput" type="text" maxlength="24" value="FIRST-LANE" spellcheck="false"><button id="randomSeed" type="button">Random</button></span></label>
+            <div class="actions">
+              <button id="beginButton" class="primary" type="button">Launch career <kbd>Enter</kbd></button>
+              <button id="continueButton" type="button" hidden>Continue career</button>
+              <button type="button" data-action="help">How to fly</button>
+            </div>
+            <p id="dataSource" class="data-source">Data: bundled</p>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="help" class="overlay modal" role="dialog" aria-modal="true" aria-labelledby="helpHeading" hidden>
+      <div class="modal-card">
+        <button type="button" class="close" data-action="close-help" aria-label="Close help">×</button>
+        <h2 id="helpHeading">How to fly</h2>
+        <div class="help-grid">
+          <article><b>The galaxy</b><p>The five empires of the Sovereign Lattice are at war, and the war keeps moving while you fly: every two days the empires take a turn. Their colonies are the stations you dock at.</p></article>
+          <article><b>Trade</b><p>Stations sell what their world produces cheaply and pay well for what it consumes. War fronts pay extra for alloys, fuel, medicine and munitions. Selling a lot at once lowers the price.</p></article>
+          <article><b>Contracts</b><p>Bounties, couriers, patrols and war contracts pay credits and standing. Missed deadlines cost standing.</p></article>
+          <article><b>Standing</b><p>Killing outlaws earns favour; attacking an empire's ships angers that empire and pleases its enemies. Fall too low and its patrols attack and its stations refuse you.</p></article>
+          <article><b>Outfit</b><p>Shipyards sell what their empire has researched. Better hulls, weapons, deflectors, boosters, pods and drones change how you fly.</p></article>
+          <article><b>Insurance</b><p>If you are destroyed, the insurer returns you to your last port with a loaner, keeps a share of your credits and your cargo is gone.</p></article>
+        </div>
+        <h3>Controls</h3>
+        <dl class="keys">
+          <div><dt>W / S</dt><dd>Thrust / brake</dd></div>
+          <div><dt>A / D</dt><dd>Turn</dd></div>
+          <div><dt>Space</dt><dd>Fire</dd></div>
+          <div><dt>F</dt><dd>Missile (needs a target)</dd></div>
+          <div><dt>Shift</dt><dd>Afterburner</dd></div>
+          <div><dt>E</dt><dd>Dock / jump (slow down)</dd></div>
+          <div><dt>Tab / R</dt><dd>Cycle target / nearest hostile</dd></div>
+          <div><dt>J</dt><dd>Autopilot to route or target</dd></div>
+          <div><dt>X</dt><dd>Flight assist on/off</dd></div>
+          <div><dt>M</dt><dd>Galaxy map</dd></div>
+          <div><dt>+ / − / wheel</dt><dd>Zoom</dd></div>
+          <div><dt>P / Esc</dt><dd>Pause</dd></div>
+          <div><dt>Gamepad</dt><dd>Left stick fly · RT fire · LT missile · A dock/jump · B afterburner · X nearest hostile · LB/RB targets · Y map · View assist · Start pause</dd></div>
+        </dl>
+        <p class="note">Game data lives in <code>data/*.TXT</code> (ships, equipment, commodities, outlaw clans, contract texts, pilot names). The empires come from SOVEREIGN LATTICE's <code>EMPIRES.TXT</code>. After editing, run <code>node scripts/pack-data.js</code>.</p>
+      </div>
+    </section>
+
+    <section id="pause" class="overlay modal" hidden aria-labelledby="pauseHeading">
+      <div class="modal-card small">
+        <h2 id="pauseHeading">Paused</h2>
+        <p class="sub">The galaxy waits.</p>
+        <div class="actions"><button type="button" class="primary" data-action="resume">Resume <kbd>P</kbd></button><button type="button" data-action="help">Controls</button><button type="button" data-action="menu">Save &amp; quit to title</button></div>
+      </div>
+    </section>
+
+    <section id="dead" class="overlay modal" hidden aria-labelledby="deadHeading">
+      <div class="modal-card small">
+        <p class="kicker">SIGNAL LOST</p>
+        <h2 id="deadHeading">Ship destroyed</h2>
+        <p id="deadText" class="sub"></p>
+        <div class="actions"><button type="button" class="primary" data-action="insurance">Accept the insurer's terms</button></div>
+      </div>
+    </section>
+
+    <section id="fatal" class="overlay modal" role="alertdialog" aria-labelledby="fatalHeading" hidden>
+      <div class="modal-card"><h2 id="fatalHeading">The data files need attention</h2><pre id="fatalText"></pre></div>
+    </section>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <noscript>LATTICE CORSAIR needs JavaScript. No network connection is required.</noscript>
+  <script src="../vendor/three/three.min.js"></script>
+  <script src="../shared/qsol-native.js"></script>
+  <script src="../shared/qsol-input.js"></script>
+  <script src="../SUBSPACE/skins.js"></script>
+  <script src="../SOVEREIGN_LATTICE/data/packed.js"></script>
+  <script src="../SOVEREIGN_LATTICE/core.js"></script>
+  <script src="data/packed.js"></script>
+  <script src="universe.js"></script>
+  <script src="flight.js"></script>
+  <script src="renderer.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

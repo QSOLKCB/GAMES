@@ -1,0 +1,152 @@
+{
+  "generatedBy": "scripts/benchmark.js",
+  "repeats": 7,
+  "records": {
+    "OPT-REDUCE-001 broad-phase, 14 ships": {
+      "ships": 14,
+      "projectiles": 34,
+      "passes": 50,
+      "grid": {
+        "medianMs": 1.014,
+        "samplesMs": [
+          1.434,
+          2.502,
+          0.607,
+          1.014,
+          1.23,
+          0.633,
+          0.995
+        ]
+      },
+      "bruteForce": {
+        "medianMs": 0.278,
+        "samplesMs": [
+          1.635,
+          0.276,
+          0.271,
+          0.276,
+          0.431,
+          0.278,
+          0.338
+        ]
+      }
+    },
+    "OPT-REDUCE-001 broad-phase, 26 ships": {
+      "ships": 26,
+      "projectiles": 46,
+      "passes": 50,
+      "grid": {
+        "medianMs": 0.907,
+        "samplesMs": [
+          3.144,
+          1.786,
+          0.907,
+          0.874,
+          1.371,
+          0.786,
+          0.818
+        ]
+      },
+      "bruteForce": {
+        "medianMs": 0.915,
+        "samplesMs": [
+          0.846,
+          0.938,
+          0.938,
+          0.915,
+          0.899,
+          0.921,
+          0.895
+        ]
+      }
+    },
+    "OPT-REDUCE-001 broad-phase, 58 ships": {
+      "ships": 58,
+      "projectiles": 69,
+      "passes": 50,
+      "grid": {
+        "medianMs": 1.129,
+        "samplesMs": [
+          1.17,
+          1.106,
+          1.108,
+          1.648,
+          1.112,
+          1.129,
+          1.591
+        ]
+      },
+      "bruteForce": {
+        "medianMs": 2.656,
+        "samplesMs": [
+          2.494,
+          2.844,
+          2.917,
+          2.547,
+          2.656,
+          2.524,
+          2.676
+        ]
+      }
+    },
+    "OPT-INC-001 market tables": {
+      "stations": 19,
+      "readsPerStation": 60,
+      "cached": {
+        "medianMs": 0.896,
+        "samplesMs": [
+          1.173,
+          0.896,
+          0.741,
+          0.969,
+          0.763,
+          1.142,
+          0.546
+        ]
+      },
+      "fresh": {
+        "medianMs": 9.492,
+        "samplesMs": [
+          8.697,
+          6.984,
+          7.066,
+          10.359,
+          11.294,
+          9.492,
+          11.634
+        ]
+      }
+    }
+  },
+  "flightMinute": {
+    "medianMs": 10.26,
+    "samplesMs": [
+      24.213,
+      27.274,
+      15.62,
+      10.26,
+      7.907,
+      6.798,
+      9.418
+    ]
+  },
+  "environment": {
+    "node": "v22.23.4",
+    "platform": "linux x64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpus": 4
+  },
+  "sources": {
+    "universe.js": "afd354abe0972a248b6950e3b292ca03d9cbbe676209aaa27e7a58d2697b448f",
+    "flight.js": "10acbb920dc704def4f107cc244a331dba82c9ab80d7a7410afcb725b8a08c58",
+    "scripts/benchmark.js": "5ac78ab79a33abbd45e18a5754c490e77f120bb84daa2555df276c4da1c95c25",
+    "../SOVEREIGN_LATTICE/core.js": "1da000785c44ddfa4ab628796d65ee7f18d26334e036cf09c8377fddaf2df7e7",
+    "data/SHIPS.TXT": "3b131ea633528426c088e8d8946ed5b19eeab54e6a164ad118a5d325e45cdfd4",
+    "data/EQUIPMENT.TXT": "1231a7efb37ea56a57a80ca7049de4c37382bc5de52b40826db8731b08386ac1",
+    "data/COMMODITIES.TXT": "9027c517e2c36d43077aaa86b48d5e1205cf1437fd730ba50aaf7ae1227306e5",
+    "data/OUTLAWS.TXT": "8b039d957b8fa84ba58f2aa8729ff553d0aefde8d4b3070753abc09932490ef8",
+    "data/MISSIONS.TXT": "1b071afd3fbb56f1ac6f8e12d68bfa0be411efe721dcf816e43766a82c9c4d63",
+    "data/PILOTNAMES.TXT": "bdbc911c270b725f041981ffe0fe9b387bfcf9789e04f3fafecc00253ee6d691"
+  },
+  "note": "Local observations on one host. Medians after one warm-up. Parity checked on every workload. Not a portable speedup claim."
+}

@@ -1,0 +1,50 @@
+; LATTICE CORSAIR -- MISSIONS.TXT
+; Mission briefings posted on station boards. Placeholders:
+;   {faction} the posting empire     {target} a ship or clan name
+;   {system} the target system       {station} the destination station
+;   {count} kills required           {days} days allowed
+;   {reward} payment in credits
+;
+;   Type    bounty, courier, patrol or war.
+;   Title   Board headline.
+;   Brief   Briefing text.
+
+[MISSION]
+Type  = bounty
+Title = Bounty: {target}
+Brief = {target} has been raiding convoys near {system}. The {faction} pays {reward} credits for proof of destruction within {days} days.
+
+[MISSION]
+Type  = bounty
+Title = Wanted in {system}
+Brief = Security has a name, a hull signature and a reward. Find {target} in {system} and end the problem. {reward} credits, {days} days.
+
+[MISSION]
+Type  = courier
+Title = Sealed dispatch to {station}
+Brief = A sealed case for {station}. Deliver within {days} days and do not open it. {reward} credits on arrival.
+
+[MISSION]
+Type  = courier
+Title = Priority parcel: {station}
+Brief = Time-critical parts are needed at {station}. One cargo unit, {days} days, {reward} credits.
+
+[MISSION]
+Type  = patrol
+Title = Clear the lanes at {system}
+Brief = Outlaws are thick around {system}. Destroy {count} hostile ships there within {days} days. {reward} credits.
+
+[MISSION]
+Type  = patrol
+Title = Sweep {system}
+Brief = Convoys will not move until {system} is quiet. Account for {count} hostiles in {days} days for {reward} credits.
+
+[MISSION]
+Type  = war
+Title = War contract: {system}
+Brief = The {faction} needs pressure on the front at {system}. Destroy {count} ships of the {target} within {days} days. {reward} credits.
+
+[MISSION]
+Type  = war
+Title = Raid the {target}
+Brief = Hit the {target} where it hurts: {count} kills in {system}, {days} days, {reward} credits. The {faction} will remember.

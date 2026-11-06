@@ -1,0 +1,111 @@
+; LATTICE CORSAIR -- COMMODITIES.TXT
+; Trade goods. A station is cheap for what its world produces and pays well
+; for what its world consumes. Planet types: terran, ocean, tundra, volcanic,
+; arid, barren, gas, asteroid.
+;
+;   Name        Commodity name.
+;   Base        Base price per unit.
+;   Produced    Planet types that sell it cheaply (comma list, or none).
+;   Consumed    Planet types that buy it dearly (comma list, or none).
+;   War         yes = demand rises in systems on a war front.
+;   Illegal     yes = patrols confiscate it and fine you.
+;   Description Market flavour text.
+
+[COMMODITY]
+Name        = Grain Stock
+Base        = 30
+Produced    = terran, ocean
+Consumed    = barren, asteroid, volcanic
+War         = no
+Illegal     = no
+Description = Sealed staples. Nobody gets rich, nobody goes hungry.
+
+[COMMODITY]
+Name        = Water Ice
+Base        = 22
+Produced    = tundra, asteroid
+Consumed    = arid, volcanic
+War         = no
+Illegal     = no
+Description = Frozen blocks cut from cold worlds and rocks.
+
+[COMMODITY]
+Name        = Raw Ore
+Base        = 40
+Produced    = barren, asteroid, volcanic
+Consumed    = terran, ocean
+War         = no
+Illegal     = no
+Description = Unrefined metal-bearing rock.
+
+[COMMODITY]
+Name        = Alloy Ingots
+Base        = 95
+Produced    = volcanic, barren
+Consumed    = terran, arid, gas
+War         = yes
+Illegal     = no
+Description = Smelted structural metal for hulls and habitats.
+
+[COMMODITY]
+Name        = Fuel Cells
+Base        = 70
+Produced    = gas
+Consumed    = terran, tundra, asteroid
+War         = yes
+Illegal     = no
+Description = Charged cells skimmed from gas giants.
+
+[COMMODITY]
+Name        = Machinery
+Base        = 140
+Produced    = terran, arid
+Consumed    = asteroid, barren, tundra
+War         = no
+Illegal     = no
+Description = Pumps, presses and printers for frontier industry.
+
+[COMMODITY]
+Name        = Medical Kits
+Base        = 180
+Produced    = ocean
+Consumed    = volcanic, barren
+War         = yes
+Illegal     = no
+Description = Field surgery in a box. Always welcome near the front.
+
+[COMMODITY]
+Name        = Circuitry
+Base        = 220
+Produced    = arid
+Consumed    = ocean, gas
+War         = no
+Illegal     = no
+Description = Etched logic boards and sensor cores.
+
+[COMMODITY]
+Name        = Fine Goods
+Base        = 320
+Produced    = ocean, terran
+Consumed    = arid, tundra
+War         = no
+Illegal     = no
+Description = Art, textiles and vintages for people who already have everything.
+
+[COMMODITY]
+Name        = Munitions
+Base        = 160
+Produced    = volcanic
+Consumed    = none
+War         = yes
+Illegal     = no
+Description = Shells, cells and warheads. Prices follow the fighting.
+
+[COMMODITY]
+Name        = Glimmer Resin
+Base        = 600
+Produced    = none
+Consumed    = terran, ocean, tundra, volcanic, arid
+War         = no
+Illegal     = yes
+Description = A banned stimulant. Outlaw dens sell it; patrols do not care why you have it.

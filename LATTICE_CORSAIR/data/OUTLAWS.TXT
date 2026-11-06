@@ -1,0 +1,25 @@
+; LATTICE CORSAIR -- OUTLAWS.TXT
+; Outlaw clans who prey on the lanes. They are hostile to every empire.
+;
+;   Name        Clan name.
+;   Color       Hex colour.
+;   ShipNames   Names for their ships.
+;   Taunts      Lines they broadcast before attacking (separated by |).
+
+[OUTLAW]
+Name        = The Rust Tithe
+Color       = #c98b4a
+ShipNames   = Collector, Late Fee, Second Notice, Garnish, Lien, Foreclosure, Penalty Clause
+Taunts      = Your cargo is overdue for collection. | Pay the tithe or pay the vacuum. | We accept hulls in lieu of credits.
+
+[OUTLAW]
+Name        = Saltwake Brotherhood
+Color       = #6fb3c9
+ShipNames   = Brine Knife, Undertaker, Shoal Ghost, Low Tide, Wreck Song, Drowned Bell
+Taunts      = The lanes are salt and so are you. | Cut your engines and nobody drowns. | Saltwake takes what floats.
+
+[OUTLAW]
+Name        = Hollow Crown
+Color       = #b07ad1
+ShipNames   = Pretender, Ash Regent, Usurper, False Heir, Paper Throne, Mock Herald
+Taunts      = Kneel to the Hollow Crown. | Every empire falls; we just help. | Your loyalty is noted and refused.

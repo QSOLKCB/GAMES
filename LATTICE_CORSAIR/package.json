@@ -1,0 +1,18 @@
+{
+  "name": "qsol-lattice-corsair-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development-only tests for the dependency-free LATTICE CORSAIR space trading and combat browser game",
+  "scripts": {
+    "test": "node tests/core.test.js && node tests/offline.test.js",
+    "test:browser": "node tests/browser-smoke.js",
+    "pack-data": "node scripts/pack-data.js",
+    "bench": "node scripts/benchmark.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
