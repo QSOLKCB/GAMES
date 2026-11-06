@@ -166,6 +166,8 @@
     session.camera = { x: home.x + panelShift / 1.1, y: home.y, zoom: 1.1 };
     session.selection = { system: home.id, fleet: null };
     session.tab = "system"; session.moveMode = false; session.draft = null; session.pulses = [];
+    // Galaxy-specific references must not survive into a different galaxy.
+    session.hover = null; session.preview = null; session.cursor = null; session.dragging = null;
     session.lastPanelKey = ""; session.lastLabelKey = ""; session.lastTopKey = "";
     gamepad.reset();
     ui.canvas.focus({ preventScroll: true });
@@ -426,15 +428,20 @@
     }
     let html = `<h2>${esc(sys.name)}</h2><p class="sub">${esc(sys.star)} star · ${sys.planets.length} planet${sys.planets.length === 1 ? "" : "s"}${sys.ruins && !state.ruinsClaimed.includes(id) ? " · ancient beacon" : ""}</p>`;
     const colonyShips = state.fleets.filter((f) => f.owner === ME && f.system === id && f.progress === 0 && Core.fleetStats(state, f).colony);
+    // Live data in sensor range; otherwise only what we last saw here.
+    const intel = Core.knownColonies(state, ME, id);
+    if (intel && !intel.live) html += `<p class="meta">Out of sensor range · last surveyed turn ${intel.turn}</p>`;
     sys.planets.forEach((planet, i) => {
-      const colony = Core.colonyAt(state, id, i);
-      const mine = colony && colony.owner === ME;
+      const colony = intel ? intel.colonies.find((c) => c.planet === i) || null : null;
+      const mine = Boolean(colony && colony.owner === ME && intel.live);
       html += `<div class="card${mine ? " mine" : ""}"><div class="row"><b>${esc(sys.name)} ${roman(i + 1)}</b>
         <span class="chip">${planet.type}</span><span class="chip">size ${planet.size}</span><span class="chip">richness ${planet.richness}</span></div>`;
       if (colony) {
         const owner = state.empires[colony.owner];
-        const seen = mine || state.visible[ME][id];
-        html += `<div class="meta"><span class="owner" style="background:${owner.color}"></span>${esc(owner.name)}${colony.species !== owner.native ? ` · ${esc(colony.species)} population` : ""}${seen ? ` · pop ${colony.pop}/${Core.colonyMaxPop(state, colony)} · defence ${colony.defense}/${Core.maxDefense(state, colony)}` : " · last known"}</div>`;
+        const detail = intel.live
+          ? ` · pop ${colony.pop}/${Core.colonyMaxPop(state, colony)} · defence ${colony.defense}/${Core.maxDefense(state, colony)}`
+          : ` · last seen: pop ${colony.pop} · defence ${colony.defense}`;
+        html += `<div class="meta"><span class="owner" style="background:${owner.color}"></span>${esc(owner.name)}${colony.species !== owner.native ? ` · ${esc(colony.species)} population` : ""}${detail}</div>`;
         if (mine) html += colonyControls(colony);
       } else {
         html += `<div class="meta">${planetLine(me, planet)} · value ${Core.planetValue(me, planet)}</div>`;
@@ -819,6 +826,8 @@
   // Main loop.
   // ---------------------------------------------------------------------
   function frame(time) {
+    // Schedule first: an exception in one frame must never stop the loop.
+    requestAnimationFrame(frame);
     const dt = Math.min(0.1, Math.max(0, (time - (session.lastTime || time)) / 1000));
     session.lastTime = time;
     pollGamepad(dt);
@@ -843,7 +852,6 @@
       moveMode: session.moveMode, preview: session.preview, pulses: session.pulses, cursor: session.cursor,
       time: time / 1000, reducedMotion: presentation.stage.reducedMotion,
     });
-    requestAnimationFrame(frame);
   }
 
   // ---------------------------------------------------------------------

@@ -125,6 +125,26 @@ function installPad() {
     await page.waitForFunction(() => window.sovereignLattice.state);
     assert.equal(await page.evaluate(() => window.SovereignCore.digest(window.sovereignLattice.state)), digest);
 
+    // Review regression: hover/preview from a large galaxy must not survive
+    // into a smaller one (the render loop used to die on the stale id).
+    await page.click("[data-action='menu']");
+    await page.selectOption("#sizeSelect", "large");
+    await page.click("#beginButton");
+    await page.waitForFunction(() => window.sovereignLattice.state && window.sovereignLattice.state.galaxy.systems.length === 40);
+    await page.evaluate(() => { const S = window.sovereignLattice.session; S.hover = 39; S.preview = [39, 38]; S.selection.system = 39; });
+    await page.click("[data-action='menu']");
+    await page.selectOption("#sizeSelect", "small");
+    await page.click("#beginButton");
+    await page.waitForFunction(() => window.sovereignLattice.state && window.sovereignLattice.state.galaxy.systems.length === 18);
+    const session = await page.evaluate(() => { const S = window.sovereignLattice.session; return { hover: S.hover, preview: S.preview }; });
+    assert.deepEqual(session, { hover: null, preview: null });
+    const frameBefore = await page.evaluate(() => window.sovereignLattice.session.lastTime);
+    await page.evaluate(() => window.__frames(5));
+    assert.ok(await page.evaluate(() => window.sovereignLattice.session.lastTime) > frameBefore, "the render loop is still running");
+    await page.click("[data-action='menu']");
+    await page.click("#continueButton");
+    await page.waitForFunction(() => window.sovereignLattice.state);
+
     // Help opens and closes; phone width keeps the controls reachable.
     await page.click("[data-action='help']");
     assert.equal(await page.locator("#help").isVisible(), true);

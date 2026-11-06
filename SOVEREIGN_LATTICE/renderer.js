@@ -65,8 +65,14 @@
       for (const d of this.dust(g, state.seed)) s.flat("dust", "sphere", d.x, d.y, -60, d.r / cam.zoom, d.r / cam.zoom, 1, d.c, 0, "glow");
 
       // Territory halos under owned systems.
+      // Territory from the player's own knowledge: live in sensor range,
+      // otherwise the last sighting (never the hidden simulation).
       const owners = new Map();
-      for (const c of state.colonies) if (known[c.system] && !owners.has(c.system)) owners.set(c.system, c.owner);
+      for (let s = 0; s < g.systems.length; s++) {
+        if (!known[s]) continue;
+        const intel = core.knownColonies(state, me, s);
+        if (intel && intel.colonies.length) owners.set(s, intel.colonies[0].owner);
+      }
       for (const [system, owner] of owners) {
         const sys = g.systems[system];
         s.flat("territory", "sphere", sys.x, sys.y, -40, 46, 46, 1, shade(state.empires[owner].color, 0.16), 0, "glow");
@@ -90,7 +96,7 @@
       };
       for (const fleet of state.fleets) if (fleet.owner === me && fleet.path.length) drawPath(fleet, "#3c5d55");
       if (selectedFleet && selectedFleet.owner === me) drawPath(selectedFleet, "#e8bd68");
-      if (view.preview && view.preview.length > 1) {
+      if (view.preview && view.preview.length > 1 && view.preview.every((id) => g.systems[id])) {
         for (let i = 1; i < view.preview.length; i++) {
           const A = g.systems[view.preview[i - 1]], B = g.systems[view.preview[i]];
           const segments = 6;
@@ -148,11 +154,11 @@
       }
 
       // Selection, hover, battle pulses and the gamepad cursor.
-      if (view.selection?.system != null) {
+      if (view.selection?.system != null && g.systems[view.selection.system]) {
         const sys = g.systems[view.selection.system];
         s.ring("selection", sys.x, sys.y, 20, 20 + (view.reducedMotion ? 0 : Math.sin(t * 4) * 1.5), "#e8bd68");
       }
-      if (view.hover != null && view.hover !== view.selection?.system) {
+      if (view.hover != null && g.systems[view.hover] && view.hover !== view.selection?.system) {
         const sys = g.systems[view.hover];
         s.ring("selection", sys.x, sys.y, 20, 18, view.moveMode ? "#9bddd1" : "#5d7a74");
       }

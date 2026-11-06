@@ -32,9 +32,9 @@ observations on one host, not portable speedup claims.
 
 | Galaxy | Systems | Queries | Table | Fresh searches | Table build (once) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| small | 18 | 324 | 0.127 ms | 2.574 ms | 0.214 ms |
-| medium | 28 | 784 | 0.054 ms | 10.252 ms | 0.138 ms |
-| large | 40 | 1600 | 0.147 ms | 24.619 ms | 0.19 ms |
+| small | 18 | 324 | 0.165 ms | 3.284 ms | 0.294 ms |
+| medium | 28 | 784 | 0.097 ms | 7.464 ms | 0.175 ms |
+| large | 40 | 1600 | 0.141 ms | 20.466 ms | 0.194 ms |
 
 - **Adaptation.** The first version re-hashed every lane on each query to verify
   a content signature; measured, that was slower than a fresh search on graphs of
@@ -52,8 +52,8 @@ observations on one host, not portable speedup claims.
   change advances `empire.techEpoch`, a monotonic epoch.
 - **Validation.** Cached and fresh statistics are compared for every design across
   twelve tech changes; a cached value is never served across a tech change.
-- **Measured.** 60 ships x 20 passes: cached
-  0.231 ms vs fresh 0.601 ms (large galaxy).
+- **Measured.** 76 ships x 20 passes: cached
+  0.27 ms vs fresh 0.927 ms (large galaxy).
 - **Interface use.** The side panel and star labels redraw only when their
   signature changes. Signatures include `state.version`, a monotonic epoch that
   every core mutation advances, so an A to B to A edit still redraws (tested).
@@ -81,4 +81,4 @@ Per OPT's rollback rule the exhaustive argmax is the only path.
 ## Context
 
 Whole-game cost is small either way: 100 self-play turns with four AIs take
-small 47.17 ms, medium 64.021 ms, large 45.027 ms on this host.
+small 40.617 ms, medium 61.077 ms, large 56.054 ms on this host.

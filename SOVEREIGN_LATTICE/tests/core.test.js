@@ -219,6 +219,71 @@ test("full self-play games finish with finite, valid state", () => {
   }
 });
 
+test("review: a fleet arriving at an unexplored beacon claims it (seed 5, small galaxy)", () => {
+  const g = Core.createGame({ seed: "5", size: "small", rivals: 3, data });
+  const sys = g.galaxy.systems[4];
+  assert.ok(sys.ruins && !g.empires[0].known[4] && !g.ruinsClaimed.includes(4), "fixture: system 4 is an unexplored beacon");
+  const scout = g.fleets.find((f) => f.owner === 0 && !Core.fleetStats(g, f).armed && !Core.fleetStats(g, f).colony);
+  Core.orderMove(g, 0, scout.id, 4);
+  const before = g.empires[0].researchPoints;
+  const events = Core.endTurn(g);
+  assert.ok(g.ruinsClaimed.includes(4), "beacon claimed on arrival");
+  assert.ok(events.some((e) => e.type === "ruins" && e.empire === 0 && e.system === 4));
+  assert.ok(!events.some((e) => e.type === "ruins" && e.empire !== 0), "no one else is credited");
+  // Research ledger: the beacon's 120 points arrived on top of normal income.
+  const spent = Core.FIELDS.reduce((n, f) => { let t = 0; for (let l = 1; l <= g.empires[0].tech[f]; l++) t += Core.techCost(data, f, l); return n + t; }, 0);
+  assert.ok(g.empires[0].researchPoints + spent >= before + 120);
+});
+
+test("review: out-of-range systems show the last sighting, not the live simulation", () => {
+  const g = game("INTEL");
+  const me = g.empires[0];
+  // A system we surveyed but no longer see.
+  const target = me.known.findIndex((k, s) => k && !g.visible[0][s] && !g.colonies.some((c) => c.system === s));
+  const surveyed = target >= 0 ? target : (() => {
+    const s = g.visible[0].findIndex((v, i) => !v && !g.colonies.some((c) => c.system === i));
+    me.known[s] = 1; me.intel[s] = { turn: 1, colonies: [] };
+    return s;
+  })();
+  const before = Core.knownColonies(g, 0, surveyed);
+  assert.equal(before.live, false);
+  // A rival settles there while we are not looking.
+  g.colonies.push({ id: g.nextId++, owner: 1, species: g.empires[1].native, system: surveyed, planet: 0, pop: 3,
+    facilities: Object.fromEntries(Core.FACILITY_KEYS.map((k) => [k, 0])), queue: [], defense: 40, blockaded: false, founded: g.turn });
+  const after = Core.knownColonies(g, 0, surveyed);
+  assert.equal(after.live, false);
+  assert.ok(!after.colonies.some((c) => c.owner === 1), "the new rival colony is not revealed without sensors");
+  // Sending a ship there reveals it and updates the record.
+  const scout = g.fleets.find((f) => f.owner === 0);
+  scout.system = surveyed; scout.path = []; scout.progress = 0;
+  Core.endTurn(g);
+  const seen = Core.knownColonies(g, 0, surveyed);
+  assert.ok(seen.colonies.some((c) => c.owner === 1), "a fresh survey shows the rival colony");
+  assert.ok(g.empires[0].intel[surveyed].colonies.some((c) => c.owner === 1));
+});
+
+test("review: an energy shortfall halves research the same turn it happens, and recovery restores it at once", () => {
+  const g = game("DEFICIT"), me = g.empires[0];
+  for (const e of g.empires) e.ai = e.id !== 0;
+  const warship = me.designs.find((d) => d.role === "warship");
+  const fleet = g.fleets.find((f) => f.owner === 0);
+  for (let i = 0; i < 12; i++) fleet.ships.push({ id: g.nextId++, name: `Upkeep ${i}`, design: warship.id, damage: 0 });
+  me.energy = 0; me.deficit = false; me.researchField = "weapons"; me.researchPoints = 0;
+  const income = Core.empireIncome(g, me);
+  assert.ok(income.deficit && income.energy < 0, "fixture: this turn's upkeep cannot be paid");
+  assert.equal(income.research, Math.floor(income.rawResearch / 2));
+  Core.endTurn(g);
+  assert.equal(me.deficit, true);
+  assert.equal(me.researchPoints, Math.floor(income.rawResearch / 2), "first unpaid turn already halves research");
+  // Recovery: plenty of energy again, full research that same turn.
+  me.energy = 100000; me.researchPoints = 0;
+  const recovered = Core.empireIncome(g, me);
+  assert.equal(recovered.deficit, false);
+  Core.endTurn(g);
+  assert.equal(me.deficit, false);
+  assert.equal(me.researchPoints, recovered.rawResearch, "first recovered turn earns full research");
+});
+
 test("the core has no ambient clock, randomness, storage or DOM", () => {
   const source = fs.readFileSync(path.join(root, "core.js"), "utf8");
   assert.doesNotMatch(source, /Math\.random|Date\.|performance\.|localStorage|document\.|window\.|fetch\(/);

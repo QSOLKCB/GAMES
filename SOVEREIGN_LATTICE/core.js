@@ -622,7 +622,7 @@
         native: def.homeworld, personality: def.personality, ai: slot !== 0, alive: true,
         minerals: 260, energy: 120, researchPoints: 0, researchField: slot === 0 ? "colonization" : null,
         tech: Object.fromEntries(FIELDS.map((f) => [f, 0])), techEpoch: 0, designs: [],
-        known: new Array(galaxy.systems.length).fill(0), lastSeen: {}, shipNameIndex: 0, deficit: false, capital: galaxy.homes[slot],
+        known: new Array(galaxy.systems.length).fill(0), lastSeen: {}, intel: {}, shipNameIndex: 0, deficit: false, capital: galaxy.homes[slot],
       };
       state.empires.push(empire);
       const colony = foundColony(state, empire, galaxy.homes[slot], 0, HOME_POP);
@@ -646,7 +646,7 @@
     const colony = { id: state.nextId++, owner: empire.id, species: empire.native, system, planet, pop: int(pop, "pop"),
       facilities: Object.fromEntries(FACILITY_KEYS.map((k) => [k, 0])), queue: [], defense: 0, blockaded: false, founded: state.turn };
     state.colonies.push(colony);
-    empire.known[system] = 1;
+    explore(state, empire, system);
     state.version++;
     return colony;
   }
@@ -708,6 +708,12 @@
     return { minerals: int(minerals), energy: int(energy), research: int(research), construction: int(construction) };
   }
 
+  /**
+   * This turn's income. `deficit` is whether this turn's upkeep cannot be paid
+   * from the stockpile plus income; when it is, research is halved this same
+   * turn (and construction, in runEconomy). The interface shows the same
+   * projection the economy then applies.
+   */
   function empireIncome(state, empire) {
     let minerals = 0, energy = 0, research = 0, upkeep = 0;
     for (const c of state.colonies) {
@@ -716,8 +722,8 @@
       minerals += o.minerals; energy += o.energy; research += o.research; upkeep += facilitiesUsed(c);
     }
     for (const f of state.fleets) if (f.owner === empire.id) for (const s of f.ships) upkeep += shipStats(state, empire, s).upkeep;
-    if (empire.deficit) research = Math.floor(research / 2);
-    return { minerals, energy: energy - upkeep, grossEnergy: energy, upkeep, research };
+    const net = energy - upkeep, deficit = empire.energy + net < 0;
+    return { minerals, energy: net, grossEnergy: energy, upkeep, research: deficit ? Math.floor(research / 2) : research, rawResearch: research, deficit };
   }
 
   // ---------------------------------------------------------------------
@@ -752,24 +758,51 @@
   }
 
   /** Turn step: refresh coverage, then explore, claim ruins and record sightings. */
+  /**
+   * An empire surveys a system: it becomes known, its colonies are recorded
+   * as this empire's sighting, and an unclaimed beacon pays the first empire
+   * to reach it. Every path that reveals a system goes through here, so a
+   * fleet arriving mid-turn claims the beacon exactly as sensors would.
+   */
+  function explore(state, empire, s) {
+    const sys = state.galaxy.systems[s];
+    empire.known[s] = 1;
+    if (sys.ruins && !state.ruinsClaimed.includes(s)) {
+      state.ruinsClaimed.push(s);
+      empire.researchPoints += 120;
+      event(state, { type: "ruins", empire: empire.id, system: s, text: `${empire.adjective} surveyors decode an ancient beacon at ${sys.name}: +120 research.` });
+    }
+    // Intelligence: what this empire last saw here. Interfaces show this for
+    // systems out of sensor range instead of the live simulation.
+    const colonies = [];
+    for (const c of state.colonies) if (c.system === s) {
+      colonies.push({ id: c.id, planet: c.planet, owner: c.owner, species: c.species, pop: c.pop, defense: c.defense });
+      // Remember enemy colonies for honest AI estimates.
+      if (c.owner !== empire.id) empire.lastSeen[c.id] = { owner: c.owner, system: s, defense: c.defense, pop: c.pop, turn: state.turn };
+    }
+    empire.intel[s] = { turn: state.turn, colonies };
+  }
+
   function updateVisibility(state) {
     computeVisible(state);
     for (const empire of state.empires) {
       const seen = state.visible[empire.id];
-      for (let s = 0; s < seen.length; s++) if (seen[s]) {
-        if (!empire.known[s]) {
-          empire.known[s] = 1;
-          const sys = state.galaxy.systems[s];
-          if (sys.ruins && !state.ruinsClaimed.includes(s)) {
-            state.ruinsClaimed.push(s);
-            empire.researchPoints += 120;
-            event(state, { type: "ruins", empire: empire.id, system: s, text: `${empire.adjective} surveyors decode an ancient beacon at ${sys.name}: +120 research.` });
-          }
-        }
-        // Remember what was last seen of enemy colonies for honest AI estimates.
-        for (const c of state.colonies) if (c.system === s && c.owner !== empire.id) empire.lastSeen[c.id] = { owner: c.owner, system: s, defense: c.defense, pop: c.pop, turn: state.turn };
-      }
+      for (let s = 0; s < seen.length; s++) if (seen[s]) explore(state, empire, s);
     }
+  }
+
+  /**
+   * Colonies of a system as an empire knows them: live while in sensor range
+   * (or where it has its own colony), otherwise its last recorded sighting.
+   * Returns null for systems it has never surveyed.
+   */
+  function knownColonies(state, empireId, s) {
+    const empire = state.empires[empireId];
+    if (state.visible?.[empireId]?.[s] || state.colonies.some((c) => c.system === s && c.owner === empireId)) {
+      return { live: true, turn: state.turn, colonies: state.colonies.filter((c) => c.system === s) };
+    }
+    const intel = empire.intel[s];
+    return intel ? { live: false, turn: intel.turn, colonies: intel.colonies } : null;
   }
 
   function event(state, e) { state.events.push(Object.assign({ turn: state.turn }, e)); }
@@ -1127,7 +1160,7 @@
         if (budget < remaining) { fleet.progress += budget; budget = 0; break; }
         budget -= remaining;
         fleet.system = next; fleet.progress = 0; fleet.path.shift();
-        state.empires[fleet.owner].known[next] = 1;
+        explore(state, state.empires[fleet.owner], next);
         // Interdiction: armed hostiles stop movement at their system.
         if (fleet.path.length && hostileArmedAt(state, next, fleet.owner)) {
           event(state, { type: "interdict", empire: fleet.owner, system: next, text: `${fleet.name} is intercepted at ${state.galaxy.systems[next].name}.` });
@@ -1283,7 +1316,7 @@
       // Unpaid upkeep cannot be borrowed: the stockpile stops at zero and the
       // shortfall halves research and construction until it is fixed.
       const energy = int(empire.energy + income.energy);
-      empire.deficit = energy < 0;
+      empire.deficit = income.deficit; // same test: energy < 0
       empire.energy = Math.max(0, energy);
       // Research.
       if (!empire.researchField || (empire.tech[empire.researchField] || 0) >= state.data.techs[empire.researchField].maxLevel) empire.researchField = chooseResearch(state, empire);
@@ -1398,6 +1431,7 @@
     if (raw.dataSignature !== data.signature) throw new Error("this save was made with different data files");
     delete raw.kind;
     raw.galaxy = deepFreeze(raw.galaxy);
+    for (const empire of raw.empires) empire.intel ||= {};
     for (const empire of raw.empires) empire.designs = empire.designs.map((d) => Object.freeze({ ...d, components: Object.freeze(d.components.slice()) }));
     Object.defineProperty(raw, "data", { value: data, enumerable: false, writable: true });
     computeVisible(raw); // derived only: loading must not change the game
@@ -1412,7 +1446,7 @@
     habitability, canSettle, maxPop, colonyMaxPop, planetValue, isOutpostType,
     designStats, designStatsFresh, designById, autoDesign, designAvailable, createDesign, bestComponent,
     fleetStats, shipStats, garrison, isCapital, OFFENSIVE_TURN, colonyOutput, empireIncome, facilitySlots, facilitiesUsed, maxDefense, canQueue, buildCost, techCost,
-    coloniesOf, fleetsAt, colonyAt, planetOf, empireOf, systemOf,
+    coloniesOf, fleetsAt, knownColonies, colonyAt, planetOf, empireOf, systemOf,
     orderMove, orderColonize, orderStop, mergeFleets, detachShip, renameFleet, queueBuild, dequeue, setResearch,
     colonyCandidates, bestColonyTarget, targetScore,
     score, serialize, deserialize, digest, roman,
